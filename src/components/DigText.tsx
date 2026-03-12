@@ -3,47 +3,63 @@ import { Plus, X } from "lucide-react";
 
 /**
  * DigText markup format:
- * Use >>hidden text<< to mark expandable sections.
- * Nesting is not supported in this version.
- * 
- * Example:
- * "The sky is blue. >>It appears blue because molecules in the atmosphere scatter shorter wavelengths of light more than longer ones.<< This is basic physics."
+ * Use >>text<< to mark expandable sections.
+ * Nesting is supported: >>outer >>inner<< outer<<
  */
 
 type Segment = {
   type: "visible" | "expandable";
   text: string;
   id: number;
+  children: Segment[];
+  depth: number;
 };
 
-function parseDigText(raw: string): Segment[] {
+let globalId = 0;
+
+function parseDigText(raw: string, depth = 0): Segment[] {
   const segments: Segment[] = [];
-  let idCounter = 0;
-  const regex = />>(.*?)<<|([^]*?)(?=>>|$)/gs;
-  
-  // Simpler approach: split by >> and <<
-  const parts = raw.split(/(>>|<<)/);
-  let inExpand = false;
-  
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    if (part === ">>") {
-      inExpand = true;
-      continue;
+  let i = 0;
+  let currentText = "";
+
+  const flush = () => {
+    if (currentText.length > 0) {
+      segments.push({ type: "visible", text: currentText, id: globalId++, children: [], depth });
+      currentText = "";
     }
-    if (part === "<<") {
-      inExpand = false;
-      continue;
+  };
+
+  while (i < raw.length) {
+    if (raw[i] === ">" && raw[i + 1] === ">") {
+      flush();
+      // Find matching close, accounting for nesting
+      let nestLevel = 1;
+      let j = i + 2;
+      while (j < raw.length && nestLevel > 0) {
+        if (raw[j] === ">" && raw[j + 1] === ">") {
+          nestLevel++;
+          j += 2;
+        } else if (raw[j] === "<" && raw[j + 1] === "<") {
+          nestLevel--;
+          if (nestLevel === 0) break;
+          j += 2;
+        } else {
+          j++;
+        }
+      }
+      const inner = raw.slice(i + 2, j);
+      const children = parseDigText(inner, depth + 1);
+      segments.push({ type: "expandable", text: inner, id: globalId++, children, depth });
+      i = j + 2; // skip <<
+    } else if (raw[i] === "<" && raw[i + 1] === "<") {
+      // Shouldn't happen at this level, but safety
+      i += 2;
+    } else {
+      currentText += raw[i];
+      i++;
     }
-    if (part.length === 0) continue;
-    
-    segments.push({
-      type: inExpand ? "expandable" : "visible",
-      text: part,
-      id: idCounter++,
-    });
   }
-  
+  flush();
   return segments;
 }
 
@@ -67,13 +83,53 @@ interface DigTextProps {
   className?: string;
 }
 
+function collectExpandableIds(segments: Segment[]): number[] {
+  const ids: number[] = [];
+  for (const seg of segments) {
+    if (seg.type === "expandable") {
+      ids.push(seg.id);
+      ids.push(...collectExpandableIds(seg.children));
+    }
+  }
+  return ids;
+}
+
+const SegmentRenderer: React.FC<{
+  segments: Segment[];
+  expandedIds: Set<number>;
+  toggle: (id: number) => void;
+}> = ({ segments, expandedIds, toggle }) => {
+  return (
+    <>
+      {segments.map((seg) => {
+        if (seg.type === "visible") {
+          return <span key={seg.id}>{seg.text}</span>;
+        }
+
+        const isExpanded = expandedIds.has(seg.id);
+        return (
+          <span key={seg.id}>
+            <ExpandButton isExpanded={isExpanded} onClick={() => toggle(seg.id)} />
+            {isExpanded && (
+              <span className="bg-expanded-bg rounded px-1 py-0.5 transition-all">
+                <SegmentRenderer segments={seg.children} expandedIds={expandedIds} toggle={toggle} />
+              </span>
+            )}
+          </span>
+        );
+      })}
+    </>
+  );
+};
+
 const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
+  globalId = 0;
   const segments = parseDigText(content);
-  const expandableIds = segments.filter(s => s.type === "expandable").map(s => s.id);
+  const allExpandableIds = collectExpandableIds(segments);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggle = useCallback((id: number) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -81,19 +137,14 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
     });
   }, []);
 
-  const collapseAll = useCallback(() => {
-    setExpandedIds(new Set());
-  }, []);
-
-  const expandAll = useCallback(() => {
-    setExpandedIds(new Set(expandableIds));
-  }, [expandableIds]);
+  const collapseAll = useCallback(() => setExpandedIds(new Set()), []);
+  const expandAll = useCallback(() => setExpandedIds(new Set(allExpandableIds)), [allExpandableIds]);
 
   const anyExpanded = expandedIds.size > 0;
 
   return (
     <div className={className}>
-      {expandableIds.length > 0 && (
+      {allExpandableIds.length > 0 && (
         <div className="flex justify-end mb-4">
           <button
             onClick={anyExpanded ? collapseAll : expandAll}
@@ -105,23 +156,7 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
         </div>
       )}
       <div className="text-lg leading-[1.85] font-serif">
-        {segments.map((seg) => {
-          if (seg.type === "visible") {
-            return <span key={seg.id}>{seg.text}</span>;
-          }
-          
-          const isExpanded = expandedIds.has(seg.id);
-          return (
-            <span key={seg.id}>
-              <ExpandButton isExpanded={isExpanded} onClick={() => toggle(seg.id)} />
-              {isExpanded && (
-                <span className="bg-expanded-bg rounded px-1 py-0.5 transition-all">
-                  {seg.text}
-                </span>
-              )}
-            </span>
-          );
-        })}
+        <SegmentRenderer segments={segments} expandedIds={expandedIds} toggle={toggle} />
       </div>
     </div>
   );
