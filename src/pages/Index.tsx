@@ -22,7 +22,7 @@ const Index = () => {
       {/* Article */}
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* Back button */}
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover transition-colors mb-8">
           <ArrowLeft size={16} strokeWidth={1.5} />
           <span className="font-sans text-sm font-medium tracking-wider uppercase">
             All Articles
