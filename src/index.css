@@ -82,9 +82,9 @@
     --input: 20 8% 22%;
     --ring: 35 20% 88%;
 
-    --expanded-bg: 25 15% 15%;
-    --expand-button: 35 10% 55%;
-    --expand-button-hover: 35 15% 70%;
+    --expanded-bg: 250 20% 15%;
+    --expand-button: 250 15% 60%;
+    --expand-button-hover: 250 20% 70%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
