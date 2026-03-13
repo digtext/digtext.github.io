@@ -24,7 +24,7 @@ const Index = () => {
         {/* Back button */}
         <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover transition-colors mb-8">
           <ArrowLeft size={16} strokeWidth={1.5} />
-          <span className="font-sans text-sm font-medium tracking-wider uppercase">
+          <span className="font-sans text-xs font-medium tracking-wider uppercase">
             All Articles
           </span>
         </Link>
