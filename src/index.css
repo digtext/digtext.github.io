@@ -36,9 +36,9 @@
 
     --radius: 0.375rem;
 
-    --expanded-bg: 45 50% 92%;
-    --expand-button: 20 8% 50%;
-    --expand-button-hover: 20 15% 35%;
+    --expanded-bg: 250 25% 95%;
+    --expand-button: 250 20% 55%;
+    --expand-button-hover: 250 25% 45%;
 
     --font-serif: 'Newsreader', Georgia, serif;
     --font-sans: 'Inter', system-ui, sans-serif;
