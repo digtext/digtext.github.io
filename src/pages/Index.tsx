@@ -10,9 +10,12 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border">
         <div className="max-w-2xl mx-auto px-6 py-5 flex items-center justify-between">
-          <h1 className="font-sans text-sm font-semibold tracking-[0.2em] uppercase text-foreground">
-            Dig.txt
-          </h1>
+          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={16} />
+            <span className="font-sans text-sm font-semibold tracking-[0.2em] uppercase">
+              Dig.txt
+            </span>
+          </Link>
           <p className="font-sans text-xs text-muted-foreground tracking-wide">
             Progressive reading
           </p>
