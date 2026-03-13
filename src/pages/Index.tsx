@@ -42,21 +42,6 @@ const Index = () => {
         {/* Dig Text content */}
         <DigText content={sampleArticle} />
 
-        {/* About section */}
-        <div className="mt-16 pt-8 border-t border-border">
-          <h3 className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-muted-foreground mb-4">
-            What is Dig.txt?
-          </h3>
-          <p className="text-base leading-relaxed text-muted-foreground font-serif">
-            Dig.txt presents text in its most collapsed form by default. Click the{" "}
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-expand-button text-expand-button align-middle mx-0.5">
-              <span className="text-xs">+</span>
-            </span>{" "}
-            buttons to expand sections you find valuable or interesting. 
-            This reverses the traditional approach of showing everything at once, 
-            letting you dig into the depth you choose.
-          </p>
-        </div>
       </main>
     </div>
   );
