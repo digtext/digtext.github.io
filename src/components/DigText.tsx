@@ -155,7 +155,7 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
           </button>
         </div>
       )}
-      <div className="text-lg leading-[1.85] font-serif">
+      <div className="text-lg leading-[1.85] font-serif whitespace-pre-wrap">
         <SegmentRenderer segments={segments} expandedIds={expandedIds} toggle={toggle} />
       </div>
     </div>
