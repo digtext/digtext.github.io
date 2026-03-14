@@ -1,47 +1,5 @@
 import { Link } from "react-router-dom";
-
-const articles = [
-  {
-    id: "china-gay-rights",
-    title: "China's reluctance to gay rights",
-    subtitle: "Despite a historically relaxed view of homosexuality, China seems reluctant to embrace gay rights",
-    source: "The Economist explains",
-    date: "Jun 6th 2017",
-    active: true,
-  },
-  {
-    id: "future-of-work",
-    title: "The future of remote work after the pandemic",
-    subtitle: "How companies are rethinking office culture and what it means for employees worldwide",
-    source: "Harvard Business Review",
-    date: "Mar 15th 2023",
-    active: false,
-  },
-  {
-    id: "ocean-cleanup",
-    title: "Can we really clean up the oceans?",
-    subtitle: "New technologies promise to tackle plastic pollution, but the scale of the problem remains daunting",
-    source: "Nature",
-    date: "Sep 2nd 2022",
-    active: false,
-  },
-  {
-    id: "ai-creativity",
-    title: "When machines learn to create",
-    subtitle: "Artificial intelligence is producing art, music, and literature — raising questions about authorship",
-    source: "The Atlantic",
-    date: "Nov 20th 2023",
-    active: false,
-  },
-  {
-    id: "urban-farming",
-    title: "The rise of vertical farms in megacities",
-    subtitle: "Urban agriculture could transform how cities feed themselves in an era of climate uncertainty",
-    source: "Wired",
-    date: "Jan 8th 2024",
-    active: false,
-  },
-];
+import { articles } from "@/content/articles";
 
 const Home = () => {
   return (
