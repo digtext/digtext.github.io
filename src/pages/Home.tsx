@@ -9,9 +9,12 @@ const Home = () => {
           <h1 className="font-sans text-sm font-semibold tracking-[0.2em] uppercase text-foreground">
             Dig.txt
           </h1>
-          <p className="font-sans text-xs text-muted-foreground tracking-wide">
-            Progressive reading
-          </p>
+          <nav className="flex items-center gap-5 font-sans text-xs">
+            <span className="text-muted-foreground tracking-wide">Progressive reading</span>
+            <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors tracking-wide">
+              About
+            </Link>
+          </nav>
         </div>
       </header>
 
