@@ -2,30 +2,48 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import DigText from "@/components/DigText";
-import { getArticleById } from "@/content/articles";
+import { getArticleById, type Article } from "@/content/articles";
 import { cn } from "@/lib/utils";
 import NotFound from "./NotFound";
 
 type ViewTab = "dig" | "raw";
+
+/**
+ * Compose a single markdown source containing the title, subtitle, meta line,
+ * and article body. This becomes the source of truth for both views — the
+ * Dig text view re-parses it on every keystroke so edits are reflected live.
+ */
+const composeRaw = (a: Article): string => {
+  const meta = [a.source, a.date, a.readTime].filter(Boolean).join(" · ");
+  return `# ${a.title}
+
+*${a.subtitle}*
+
+${meta}
+
+---
+
+${a.content ?? ""}`;
+};
 
 const ArticlePage = () => {
   const { articleId } = useParams();
   const article = getArticleById(articleId);
 
   const [tab, setTab] = useState<ViewTab>("dig");
-  const [rawContent, setRawContent] = useState(article?.content ?? "");
+  const [rawContent, setRawContent] = useState(() => (article ? composeRaw(article) : ""));
 
   // Reset editable buffer when navigating to a different article
   useEffect(() => {
-    setRawContent(article?.content ?? "");
-    setTab("dig");
-  }, [article?.id, article?.content]);
+    if (article) {
+      setRawContent(composeRaw(article));
+      setTab("dig");
+    }
+  }, [article?.id]);
 
   if (!article?.active || !article.content) {
     return <NotFound />;
   }
-
-  const meta = [article.source, article.date, article.readTime].filter(Boolean).join(" · ");
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,27 +59,18 @@ const ArticlePage = () => {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-12">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover transition-colors mb-8">
-          <ArrowLeft size={16} strokeWidth={1.5} />
-          <span className="font-sans text-sm font-medium tracking-wider uppercase">
-            All Articles
-          </span>
-        </Link>
+        {/* All Articles link + tab switcher on the same row */}
+        <div className="mb-10 flex items-center justify-between gap-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover transition-colors"
+          >
+            <ArrowLeft size={16} strokeWidth={1.5} />
+            <span className="font-sans text-sm font-medium tracking-wider uppercase">
+              All Articles
+            </span>
+          </Link>
 
-        <div className="mb-8">
-          <p className="font-sans text-xs text-muted-foreground tracking-wider uppercase mb-3">
-            {meta}
-          </p>
-          <h2 className="text-3xl md:text-4xl font-serif font-semibold leading-tight mb-4 text-foreground">
-            {article.title}
-          </h2>
-          <p className="text-lg font-serif italic text-muted-foreground leading-relaxed">
-            {article.subtitle}
-          </p>
-        </div>
-
-        {/* Pill tab switcher */}
-        <div className="mb-8 flex justify-start">
           <div
             role="tablist"
             aria-label="View mode"
@@ -96,10 +105,8 @@ const ArticlePage = () => {
           </div>
         </div>
 
-        <div className="w-12 h-px bg-border mb-8" />
-
         {tab === "dig" ? (
-          <DigText key={`${article.id}-${rawContent.length}`} content={rawContent} />
+          <DigText content={rawContent} />
         ) : (
           <div>
             <p className="font-sans text-xs text-muted-foreground mb-2">
@@ -109,7 +116,7 @@ const ArticlePage = () => {
               value={rawContent}
               onChange={(e) => setRawContent(e.target.value)}
               spellCheck={false}
-              className="w-full min-h-[60vh] rounded-md border border-border bg-muted/30 px-4 py-3 font-mono text-sm leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+              className="w-full min-h-[70vh] rounded-md border border-border bg-muted/30 px-4 py-3 font-mono text-sm leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
             />
           </div>
         )}
