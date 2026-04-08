@@ -1,80 +1,144 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { articles } from "@/content/articles";
+import DigText from "@/components/DigText";
+import SiteHeader from "@/components/SiteHeader";
+import { cn } from "@/lib/utils";
+
+type HomeTab = "dig" | "raw";
+
+const PLACEHOLDER = `Paste your text here…
+
+Wrap any block of text between >> and << markers to make it collapsible.
+
+When you're ready, switch to the Dig text tab above to read it collapsed-first.`;
 
 const Home = () => {
+  const [tab, setTab] = useState<HomeTab>("raw");
+  const [rawContent, setRawContent] = useState("");
+
+  const tabBtn = (id: HomeTab, label: string) => (
+    <button
+      role="tab"
+      aria-selected={tab === id}
+      onClick={() => setTab(id)}
+      className={cn(
+        "px-4 py-1.5 rounded-full text-sm font-sans font-medium transition-colors",
+        tab === id
+          ? "bg-neutral-900 text-white dark:bg-neutral-50 dark:text-neutral-900"
+          : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50",
+      )}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="max-w-2xl mx-auto px-6 py-5 flex items-center justify-between">
-          <h1 className="font-sans text-sm font-semibold tracking-[0.2em] uppercase text-foreground">
-            Dig.txt
-          </h1>
-          <nav className="flex items-center gap-5 font-sans text-xs">
-            <span className="text-muted-foreground tracking-wide">Progressive reading</span>
-            <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors tracking-wide">
-              About
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
+      <SiteHeader />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
-        <div className="mb-10">
-          <h2 className="text-3xl md:text-4xl font-serif font-semibold leading-tight text-foreground mb-2">
-            Library
-          </h2>
-          <p className="text-base font-serif italic text-muted-foreground">
-            Choose a text to explore at your own depth
-          </p>
+        {/* Tab switcher — left aligned */}
+        <div className="mb-6 flex justify-start">
+          <div
+            role="tablist"
+            aria-label="Home view"
+            className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white p-0.5 dark:bg-neutral-900 dark:border-neutral-800"
+          >
+            {tabBtn("dig", "Dig text")}
+            {tabBtn("raw", "Raw text")}
+          </div>
         </div>
 
-        <div className="space-y-0 divide-y divide-border">
-          {articles.map((article) => {
-            const inner = (
-              <div className="py-6 group">
-                <p className="font-sans text-xs text-muted-foreground tracking-wider uppercase mb-2">
-                  {article.source} · {article.date}
-                </p>
-                <h3 className={`text-xl font-serif font-semibold leading-snug mb-1.5 ${article.active ? "text-foreground group-hover:text-primary transition-colors" : "text-muted-foreground"}`}>
-                  {article.title}
-                </h3>
-                <p className={`text-sm font-serif leading-relaxed ${article.active ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
-                  {article.subtitle}
-                </p>
-                {!article.active && (
-                  <span className="inline-block mt-2 text-xs font-sans tracking-wider uppercase text-muted-foreground/40">
-                    Coming soon
-                  </span>
-                )}
-              </div>
-            );
+        {/* Tab body */}
+        {tab === "raw" && (
+          <textarea
+            value={rawContent}
+            onChange={(e) => setRawContent(e.target.value)}
+            spellCheck={false}
+            placeholder={PLACEHOLDER}
+            className="w-full min-h-[220px] rounded-md border border-neutral-200 bg-neutral-50/50 px-4 py-3 font-mono text-sm leading-relaxed text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300 resize-y dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-50 dark:placeholder:text-neutral-500 dark:focus:ring-neutral-700"
+          />
+        )}
 
-            return article.active ? (
-              <Link key={article.id} to={`/article/${article.id}`} className="block">
-                {inner}
-              </Link>
+        {tab === "dig" && (
+          <div className="min-h-[220px]">
+            {rawContent.trim() ? (
+              <DigText content={rawContent} />
             ) : (
-              <div key={article.id} className="opacity-60 cursor-default">
-                {inner}
+              <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50/50 px-6 py-16 text-center dark:bg-neutral-900/50 dark:border-neutral-800">
+                <p className="font-serif text-lg text-neutral-500 mb-2 dark:text-neutral-400">
+                  Nothing to dig into yet.
+                </p>
+                <p className="font-sans text-sm text-neutral-400 dark:text-neutral-500">
+                  Switch to{" "}
+                  <button
+                    onClick={() => setTab("raw")}
+                    className="underline underline-offset-2 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
+                  >
+                    Raw text
+                  </button>{" "}
+                  and paste something to begin.
+                </p>
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
+        )}
 
-        <div className="mt-16 pt-8 border-t border-border">
-          <h3 className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-muted-foreground mb-4">
-            What is Dig.txt?
-          </h3>
-          <p className="text-base leading-relaxed text-muted-foreground font-serif">
-            Dig.txt presents text in its most collapsed form by default. Click the{" "}
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-expand-button text-expand-button align-middle mx-0.5">
-              <span className="text-xs">+</span>
-            </span>{" "}
-            buttons to expand sections you find valuable or interesting.
-            This reverses the traditional approach of showing everything at once,
-            letting you dig into the depth you choose.
-          </p>
-        </div>
+        {/* About-style footer card — previews the look of the About page */}
+        <Link
+          to="/about"
+          className="group mt-10 block relative overflow-hidden rounded-2xl border border-neutral-200 bg-white hover:border-neutral-300 transition-colors dark:bg-neutral-900 dark:border-neutral-800 dark:hover:border-neutral-700"
+        >
+          {/* Gradient orbs (mirrors About hero) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 -right-24 h-[400px] w-[400px] rounded-full opacity-40 blur-[100px]"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(251,191,36,0.5) 0%, rgba(244,63,94,0.35) 40%, rgba(139,92,246,0.3) 70%, transparent 80%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-20 -left-20 h-[280px] w-[280px] rounded-full opacity-25 blur-[80px]"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(244,63,94,0.2) 60%, transparent 80%)",
+            }}
+          />
+
+          <div className="relative px-8 py-12">
+            <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400">
+              What is Dig text?
+            </span>
+
+            <h3 className="mt-4 font-serif text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.05] tracking-tight">
+              It is{" "}
+              <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
+                ridiculous
+              </em>{" "}
+              that we read text in its{" "}
+              <em className="not-italic bg-gradient-to-r from-amber-400 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
+                most expanded
+              </em>{" "}
+              form by default.
+            </h3>
+
+            <p className="mt-5 max-w-xl font-serif text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
+              <span className="font-semibold text-neutral-900 dark:text-neutral-50">Dig text</span>{" "}
+              flips it. Text arrives{" "}
+              <span className="italic text-rose-500">collapsed</span>, with the
+              most important things first. You{" "}
+              <span className="italic text-violet-600">dig</span> only as deep
+              as you want.
+            </p>
+
+            <span className="mt-6 inline-flex items-center gap-1.5 font-sans text-sm font-medium text-neutral-900 group-hover:gap-2.5 transition-all dark:text-neutral-50">
+              Read more about it
+              <span aria-hidden>→</span>
+            </span>
+          </div>
+        </Link>
       </main>
     </div>
   );

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, Copy } from "lucide-react";
 import DigText from "@/components/DigText";
+import SiteHeader from "@/components/SiteHeader";
 
-const PROMPT = `You are converting a piece of text into "dig.txt" format — a progressive, collapsed-by-default reading layout.
+const PROMPT = `You are converting a piece of text into "dig text" format — a progressive, collapsed-by-default reading layout.
 
 The syntax is simple. Wrap any block of text between >> and << markers to make it collapsible. >>Like this: this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.<< Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
 
@@ -21,14 +22,14 @@ Rules:
 
 6. After you finish, re-read only the top-level visible text — everything outside any >> << markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
 
-Output only the converted text. No preamble, no explanation, no code fences. The output should be ready to paste directly into dig.txt.
+Output only the converted text. No preamble, no explanation, no code fences. The output should be ready to paste directly into dig text.
 
 Now transform the following text:
 
 <paste your text here>`;
 
-// Demo content written in dig.txt format (>> opens, << closes)
-const DEMO_CONTENT = `Dig text lays out texts in its most collapsed form by default. Click the button to dig into the meaning. >>Dig text enables readers to expand the parts they find valuable or interesting. >>This is a sub-sentence. You can keep going deeper: >>and here is a sub-sub-sentence.<<<< Nesting has no limit — every layer is a choice the reader makes, and they know they don't have to read everything to understand the context of what comes after. When you're done, collapse it all back using the "collapse all" button on the top right.<< Switch to the Raw text view above to see exactly how this is written — anything you wrap between the double chevron markers becomes collapsible.`;
+// Demo content written in dig text format (>> opens, << closes)
+const DEMO_CONTENT = `Dig text enables readers to expand the parts of text they find valuable or interesting. >>Nesting has no limit >>every layer is a choice the reader makes, and they don't have to read everything to understand the context of what comes after. When you're done, collapse it all back using the "collapse all" button in the top right.<<<< Try dig text yourself. Anything you wrap between double chevrons becomes collapsible. >>Switch to the Raw text view above to play with it and see exactly how this is written. >>This is an addition to Markdown, so you can bring any Markdown file with double chevrons and read dig text on our homepage.<<<< Use our LLM prompt below to automatically transform any text into dig text.`;
 
 const About = () => {
   const [copied, setCopied] = useState(false);
@@ -50,36 +51,8 @@ const About = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
-
-      {/* Sticky nav */}
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-100">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            to="/"
-            className="font-sans text-sm font-semibold tracking-[0.2em] uppercase text-neutral-900"
-          >
-            Dig.txt
-          </Link>
-          <nav className="flex items-center gap-1 font-sans text-sm">
-            <Link
-              to="/"
-              className="px-3 py-1.5 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-all"
-            >
-              Home
-            </Link>
-            <span className="px-3 py-1.5 rounded-full text-neutral-900 font-medium">
-              About
-            </span>
-          </nav>
-          <Link
-            to="/"
-            className="rounded-full bg-neutral-900 px-4 py-1.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors"
-          >
-            Use it →
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
+      <SiteHeader />
 
       {/* ── HERO ── */}
       <section className="relative overflow-hidden">
@@ -103,9 +76,9 @@ const About = () => {
 
         <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
           {/* Eyebrow */}
-          <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1">
+          <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 dark:border-neutral-800">
             <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-            <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500">
+            <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500 dark:text-neutral-400">
               a new interface for text
             </span>
           </div>
@@ -128,12 +101,12 @@ const About = () => {
           </h1>
 
           {/* Sub-headline */}
-          <p className="mt-12 max-w-2xl font-serif text-xl md:text-2xl leading-snug text-neutral-600">
-            <span className="font-semibold text-neutral-900">Dig.txt</span>{" "}
+          <p className="mt-12 max-w-2xl font-serif text-xl md:text-2xl leading-snug text-neutral-600 dark:text-neutral-300">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-50">Dig text</span>{" "}
             flips it. Text arrives{" "}
             <span className="italic text-rose-500">collapsed</span>, with most
             important things first. You{" "}
-            <span className="italic text-violet-600">dig</span> only as deep
+            <span className="italic text-violet-600 dark:text-violet-400">dig</span> only as deep
             as you want.
           </p>
 
@@ -141,13 +114,13 @@ const About = () => {
           <div className="mt-12 flex items-center gap-3 flex-wrap">
             <button
               onClick={() => scrollTo("example")}
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               See example
             </button>
             <button
               onClick={() => scrollTo("prompt")}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 font-sans text-sm text-neutral-700 hover:border-neutral-500 hover:text-neutral-900 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 font-sans text-sm text-neutral-700 hover:border-neutral-500 hover:text-neutral-900 transition-colors dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-50"
             >
               Get the LLM prompt
             </button>
@@ -158,10 +131,10 @@ const About = () => {
       {/* ── EXAMPLE ── */}
       <section
         id="example"
-        className="border-t border-neutral-100 scroll-mt-[65px]"
+        className="border-t border-neutral-100 scroll-mt-[65px] dark:border-neutral-800"
       >
         <div className="max-w-4xl mx-auto px-6 py-24">
-          <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400">
+          <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
             Example
           </span>
 
@@ -177,17 +150,20 @@ const About = () => {
             </span>
           </h2>
 
-          {/* Embedded live dig.txt demo */}
-          <div className="mt-10 rounded-2xl border border-neutral-200 bg-neutral-50/50 overflow-hidden">
-            {/* Top bar with view switcher */}
-            <div className="flex items-center justify-between border-b border-neutral-200/70 px-4 py-2.5 bg-white/70">
-              <div className="flex items-center gap-1 p-0.5 rounded-full border border-neutral-200 bg-white">
+          {/* Embedded live dig text demo */}
+          <div className="mt-10 rounded-2xl border border-neutral-200 bg-neutral-50/50 overflow-hidden dark:bg-neutral-900/50 dark:border-neutral-800">
+            {/* Top bar — live demo label left, switcher right */}
+            <div className="flex items-center justify-between border-b border-neutral-200/70 px-4 py-2.5 bg-white/70 dark:bg-neutral-900/70 dark:border-neutral-800">
+              <span className="font-sans text-[11px] tracking-widest uppercase text-neutral-400">
+                live demo
+              </span>
+              <div className="flex items-center gap-1 p-0.5 rounded-full border border-neutral-200 bg-white dark:bg-neutral-900 dark:border-neutral-800">
                 <button
                   onClick={() => setDemoView("digtext")}
                   className={`px-3 py-1 rounded-full font-sans text-[11px] tracking-wide transition-all ${
                     demoView === "digtext"
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:text-neutral-900"
+                      ? "bg-neutral-900 text-white dark:bg-neutral-50 dark:text-neutral-900"
+                      : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50"
                   }`}
                 >
                   Dig text
@@ -196,16 +172,13 @@ const About = () => {
                   onClick={() => setDemoView("raw")}
                   className={`px-3 py-1 rounded-full font-sans text-[11px] tracking-wide transition-all ${
                     demoView === "raw"
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:text-neutral-900"
+                      ? "bg-neutral-900 text-white dark:bg-neutral-50 dark:text-neutral-900"
+                      : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50"
                   }`}
                 >
                   Raw text
                 </button>
               </div>
-              <span className="font-sans text-[11px] tracking-widest uppercase text-neutral-400">
-                live demo
-              </span>
             </div>
 
             {/* Body */}
@@ -213,7 +186,7 @@ const About = () => {
               {demoView === "digtext" ? (
                 <DigText content={DEMO_CONTENT} />
               ) : (
-                <pre className="font-mono text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words">
+                <pre className="font-mono text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words dark:text-neutral-300">
                   {DEMO_CONTENT}
                 </pre>
               )}
@@ -223,7 +196,7 @@ const About = () => {
           <div className="mt-8">
             <button
               onClick={() => scrollTo("prompt")}
-              className="font-sans text-sm text-neutral-400 hover:text-neutral-900 transition-colors"
+              className="font-sans text-sm text-neutral-400 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
             >
               Get the prompt ↓
             </button>
@@ -234,10 +207,10 @@ const About = () => {
       {/* ── PROMPT ── */}
       <section
         id="prompt"
-        className="border-t border-neutral-100 bg-neutral-50/50 scroll-mt-[65px]"
+        className="border-t border-neutral-100 bg-neutral-50/50 scroll-mt-[65px] dark:border-neutral-800 dark:bg-neutral-900/40"
       >
         <div className="max-w-4xl mx-auto px-6 py-24">
-          <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400">
+          <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
             A new paradigm of using text
           </span>
 
@@ -250,31 +223,31 @@ const About = () => {
             </span>
           </h2>
 
-          <p className="mt-6 mb-10 max-w-xl font-serif text-lg leading-relaxed text-neutral-600">
+          <p className="mt-6 mb-10 max-w-xl font-serif text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
             Paste this into your favorite LLM with any text you want
             converted. Then drop the output on the{" "}
-            <Link to="/" className="underline underline-offset-2 hover:text-neutral-900 transition-colors">
-              dig.txt homepage
+            <Link to="/" className="underline underline-offset-2 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50">
+              dig text homepage
             </Link>{" "}
             to read it collapsed-first.
           </p>
 
           {/* Prompt box */}
-          <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm">
+          <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
             {/* Top bar */}
-            <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
+            <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
               <div className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-rose-400/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
-                <span className="ml-3 font-sans text-[11px] tracking-widest uppercase text-neutral-400">
-                  dig.txt prompt
+                <span className="ml-3 font-sans text-[11px] tracking-widest uppercase text-neutral-400 dark:text-neutral-500">
+                  dig text prompt
                 </span>
               </div>
               <button
                 onClick={handleCopy}
                 aria-label="Copy prompt"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-sans text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-sans text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-neutral-50"
               >
                 {copied ? (
                   <>
@@ -291,19 +264,19 @@ const About = () => {
             </div>
 
             {/* Body */}
-            <pre className="px-5 py-5 font-mono text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words max-h-[480px] overflow-auto">
+            <pre className="px-5 py-5 font-mono text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words max-h-[480px] overflow-auto dark:text-neutral-300">
               {PROMPT}
             </pre>
           </div>
 
-          <p className="mt-8 font-serif text-sm italic text-neutral-400">
+          <p className="mt-8 font-serif text-sm italic text-neutral-400 dark:text-neutral-500">
             Then read what you wrote — collapsed first.
           </p>
 
           <div className="mt-6">
             <button
               onClick={() => scrollTo("example")}
-              className="font-sans text-sm text-neutral-400 hover:text-neutral-900 transition-colors"
+              className="font-sans text-sm text-neutral-400 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
             >
               ↑ Back to example
             </button>
