@@ -1,12 +1,25 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import DigText from "@/components/DigText";
 import { getArticleById } from "@/content/articles";
+import { cn } from "@/lib/utils";
 import NotFound from "./NotFound";
+
+type ViewTab = "dig" | "raw";
 
 const ArticlePage = () => {
   const { articleId } = useParams();
   const article = getArticleById(articleId);
+
+  const [tab, setTab] = useState<ViewTab>("dig");
+  const [rawContent, setRawContent] = useState(article?.content ?? "");
+
+  // Reset editable buffer when navigating to a different article
+  useEffect(() => {
+    setRawContent(article?.content ?? "");
+    setTab("dig");
+  }, [article?.id, article?.content]);
 
   if (!article?.active || !article.content) {
     return <NotFound />;
@@ -47,9 +60,59 @@ const ArticlePage = () => {
           </p>
         </div>
 
+        {/* Pill tab switcher */}
+        <div className="mb-8 flex justify-start">
+          <div
+            role="tablist"
+            aria-label="View mode"
+            className="inline-flex items-center gap-1 rounded-full bg-muted p-1"
+          >
+            <button
+              role="tab"
+              aria-selected={tab === "dig"}
+              onClick={() => setTab("dig")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-sans font-medium transition-colors",
+                tab === "dig"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Dig text
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "raw"}
+              onClick={() => setTab("raw")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-sans font-medium transition-colors",
+                tab === "raw"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Raw text
+            </button>
+          </div>
+        </div>
+
         <div className="w-12 h-px bg-border mb-8" />
 
-        <DigText key={article.id} content={article.content} />
+        {tab === "dig" ? (
+          <DigText key={`${article.id}-${rawContent.length}`} content={rawContent} />
+        ) : (
+          <div>
+            <p className="font-sans text-xs text-muted-foreground mb-2">
+              Markdown source · edits update the Dig text view live
+            </p>
+            <textarea
+              value={rawContent}
+              onChange={(e) => setRawContent(e.target.value)}
+              spellCheck={false}
+              className="w-full min-h-[60vh] rounded-md border border-border bg-muted/30 px-4 py-3 font-mono text-sm leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+            />
+          </div>
+        )}
       </main>
     </div>
   );
