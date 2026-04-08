@@ -148,7 +148,7 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
         <div className="flex justify-end mb-4">
           <button
             onClick={anyExpanded ? collapseAll : expandAll}
-            className="flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full border border-expand-button px-3 py-1 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover hover:border-expand-button-hover transition-colors"
           >
             {anyExpanded ? <X size={12} /> : <Plus size={12} />}
             {anyExpanded ? "Collapse all" : "Expand all"}
