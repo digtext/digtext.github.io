@@ -1,66 +1,78 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 /**
  * DigText markup format:
- * Use >>text<< to mark expandable sections.
- * Nesting is supported: >>outer >>inner<< outer<<
+ * - Standard markdown (headings, bold, lists, links, code, etc.)
+ * - Use >>text<< to mark expandable sections (nesting supported)
+ *
+ * Implementation: extract every >>...<< block into a placeholder map,
+ * leaving a "shadow" markdown string with private-use-area tokens. The
+ * shadow is rendered with react-markdown; custom component overrides
+ * scan their own string children for tokens and replace each with an
+ * <ExpandSegment> button. When expanded, the segment recursively renders
+ * its inner shadow (so markdown + nested expanders work inside).
  */
 
-type Segment = {
-  type: "visible" | "expandable";
-  text: string;
+const TOKEN_PREFIX = "\uE000EXP";
+const TOKEN_SUFFIX = "\uE001";
+const TOKEN_RE = /\uE000EXP(\d+)\uE001/g;
+
+interface Expandable {
   id: number;
-  children: Segment[];
-  depth: number;
-};
+  shadow: string;
+}
 
-let globalId = 0;
+interface ExtractResult {
+  shadow: string;
+  map: Map<number, Expandable>;
+}
 
-function parseDigText(raw: string, depth = 0): Segment[] {
-  const segments: Segment[] = [];
-  let i = 0;
-  let currentText = "";
+function extractExpandables(raw: string): ExtractResult {
+  const map = new Map<number, Expandable>();
+  let nextId = 0;
 
-  const flush = () => {
-    if (currentText.length > 0) {
-      segments.push({ type: "visible", text: currentText, id: globalId++, children: [], depth });
-      currentText = "";
+  const process = (text: string): string => {
+    let out = "";
+    let i = 0;
+    while (i < text.length) {
+      if (text[i] === ">" && text[i + 1] === ">") {
+        // find matching << at this nest level
+        let nest = 1;
+        let j = i + 2;
+        while (j < text.length && nest > 0) {
+          if (text[j] === ">" && text[j + 1] === ">") {
+            nest++;
+            j += 2;
+          } else if (text[j] === "<" && text[j + 1] === "<") {
+            nest--;
+            if (nest === 0) break;
+            j += 2;
+          } else {
+            j++;
+          }
+        }
+        const inner = text.slice(i + 2, j);
+        const innerShadow = process(inner);
+        const id = nextId++;
+        map.set(id, { id, shadow: innerShadow });
+        out += `${TOKEN_PREFIX}${id}${TOKEN_SUFFIX}`;
+        i = j + 2; // skip closing <<
+      } else if (text[i] === "<" && text[i + 1] === "<") {
+        // stray closing — skip silently
+        i += 2;
+      } else {
+        out += text[i];
+        i++;
+      }
     }
+    return out;
   };
 
-  while (i < raw.length) {
-    if (raw[i] === ">" && raw[i + 1] === ">") {
-      flush();
-      // Find matching close, accounting for nesting
-      let nestLevel = 1;
-      let j = i + 2;
-      while (j < raw.length && nestLevel > 0) {
-        if (raw[j] === ">" && raw[j + 1] === ">") {
-          nestLevel++;
-          j += 2;
-        } else if (raw[j] === "<" && raw[j + 1] === "<") {
-          nestLevel--;
-          if (nestLevel === 0) break;
-          j += 2;
-        } else {
-          j++;
-        }
-      }
-      const inner = raw.slice(i + 2, j);
-      const children = parseDigText(inner, depth + 1);
-      segments.push({ type: "expandable", text: inner, id: globalId++, children, depth });
-      i = j + 2; // skip <<
-    } else if (raw[i] === "<" && raw[i + 1] === "<") {
-      // Shouldn't happen at this level, but safety
-      i += 2;
-    } else {
-      currentText += raw[i];
-      i++;
-    }
-  }
-  flush();
-  return segments;
+  const shadow = process(raw);
+  return { shadow, map };
 }
 
 interface ExpandButtonProps {
@@ -73,59 +85,163 @@ const ExpandButton: React.FC<ExpandButtonProps> = ({ isExpanded, onClick }) => (
     onClick={onClick}
     className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-expand-button text-expand-button hover:text-expand-button-hover hover:border-expand-button-hover transition-colors mx-0.5 align-middle cursor-pointer"
     aria-label={isExpanded ? "Collapse" : "Expand"}
+    type="button"
   >
     {isExpanded ? <X size={11} strokeWidth={2.5} /> : <Plus size={11} strokeWidth={2.5} />}
   </button>
 );
+
+interface ExpandSegmentProps {
+  id: number;
+  inner: string;
+  expandedIds: Set<number>;
+  toggle: (id: number) => void;
+  expandablesMap: Map<number, Expandable>;
+}
+
+const ExpandSegment: React.FC<ExpandSegmentProps> = ({
+  id,
+  inner,
+  expandedIds,
+  toggle,
+  expandablesMap,
+}) => {
+  const isExpanded = expandedIds.has(id);
+  return (
+    <span>
+      <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
+      {isExpanded && (
+        <span className="bg-expanded-bg rounded px-1 py-0.5 transition-all">
+          <ShadowMarkdown
+            shadow={inner}
+            expandedIds={expandedIds}
+            toggle={toggle}
+            expandablesMap={expandablesMap}
+            inline
+          />
+        </span>
+      )}
+    </span>
+  );
+};
+
+interface ShadowMarkdownProps {
+  shadow: string;
+  expandedIds: Set<number>;
+  toggle: (id: number) => void;
+  expandablesMap: Map<number, Expandable>;
+  /** When true, render in an inline context: paragraphs collapse to spans
+   *  so the content can sit inside a parent <p> without breaking flow. */
+  inline?: boolean;
+}
+
+const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
+  shadow,
+  expandedIds,
+  toggle,
+  expandablesMap,
+  inline = false,
+}) => {
+  const replaceTokens = useCallback(
+    (children: React.ReactNode): React.ReactNode => {
+      return React.Children.map(children, (child, idx) => {
+        if (typeof child !== "string") return child;
+        const parts: React.ReactNode[] = [];
+        let last = 0;
+        TOKEN_RE.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = TOKEN_RE.exec(child)) !== null) {
+          if (match.index > last) parts.push(child.slice(last, match.index));
+          const id = Number(match[1]);
+          const exp = expandablesMap.get(id);
+          if (exp) {
+            parts.push(
+              <ExpandSegment
+                key={`exp-${id}-${idx}`}
+                id={id}
+                inner={exp.shadow}
+                expandedIds={expandedIds}
+                toggle={toggle}
+                expandablesMap={expandablesMap}
+              />,
+            );
+          }
+          last = TOKEN_RE.lastIndex;
+        }
+        if (last < child.length) parts.push(child.slice(last));
+        return parts.length > 0 ? parts : child;
+      });
+    },
+    [expandedIds, toggle, expandablesMap],
+  );
+
+  const components: Components = useMemo(() => {
+    // In inline mode, block elements collapse to spans so the content can
+    // live inside a parent <p> without producing invalid (or visually broken)
+    // HTML. Multiple paragraphs in an inline context are joined with a space.
+    const inlineP: Components["p"] = ({ node: _n, children }) => (
+      <span>{replaceTokens(children)}</span>
+    );
+    const inlineH: Components["h1"] = ({ node: _n, children }) => (
+      <span className="font-semibold">{replaceTokens(children)}</span>
+    );
+
+    return {
+      p: inline
+        ? inlineP
+        : ({ node: _n, children, ...props }) => <p {...props}>{replaceTokens(children)}</p>,
+      h1: inline
+        ? inlineH
+        : ({ node: _n, children, ...props }) => <h1 {...props}>{replaceTokens(children)}</h1>,
+      h2: inline
+        ? inlineH
+        : ({ node: _n, children, ...props }) => <h2 {...props}>{replaceTokens(children)}</h2>,
+      h3: inline
+        ? inlineH
+        : ({ node: _n, children, ...props }) => <h3 {...props}>{replaceTokens(children)}</h3>,
+      h4: inline
+        ? inlineH
+        : ({ node: _n, children, ...props }) => <h4 {...props}>{replaceTokens(children)}</h4>,
+      h5: inline
+        ? inlineH
+        : ({ node: _n, children, ...props }) => <h5 {...props}>{replaceTokens(children)}</h5>,
+      h6: inline
+        ? inlineH
+        : ({ node: _n, children, ...props }) => <h6 {...props}>{replaceTokens(children)}</h6>,
+      blockquote: inline
+        ? ({ node: _n, children }) => <span>{replaceTokens(children)}</span>
+        : ({ node: _n, children, ...props }) => (
+            <blockquote {...props}>{replaceTokens(children)}</blockquote>
+          ),
+      li: ({ node: _n, children, ...props }) => <li {...props}>{replaceTokens(children)}</li>,
+      em: ({ node: _n, children, ...props }) => <em {...props}>{replaceTokens(children)}</em>,
+      strong: ({ node: _n, children, ...props }) => (
+        <strong {...props}>{replaceTokens(children)}</strong>
+      ),
+      a: ({ node: _n, children, ...props }) => <a {...props}>{replaceTokens(children)}</a>,
+      code: ({ node: _n, children, ...props }) => (
+        <code {...props}>{replaceTokens(children)}</code>
+      ),
+      td: ({ node: _n, children, ...props }) => <td {...props}>{replaceTokens(children)}</td>,
+      th: ({ node: _n, children, ...props }) => <th {...props}>{replaceTokens(children)}</th>,
+    };
+  }, [replaceTokens, inline]);
+
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      {shadow}
+    </ReactMarkdown>
+  );
+};
 
 interface DigTextProps {
   content: string;
   className?: string;
 }
 
-function collectExpandableIds(segments: Segment[]): number[] {
-  const ids: number[] = [];
-  for (const seg of segments) {
-    if (seg.type === "expandable") {
-      ids.push(seg.id);
-      ids.push(...collectExpandableIds(seg.children));
-    }
-  }
-  return ids;
-}
-
-const SegmentRenderer: React.FC<{
-  segments: Segment[];
-  expandedIds: Set<number>;
-  toggle: (id: number) => void;
-}> = ({ segments, expandedIds, toggle }) => {
-  return (
-    <>
-      {segments.map((seg) => {
-        if (seg.type === "visible") {
-          return <span key={seg.id}>{seg.text}</span>;
-        }
-
-        const isExpanded = expandedIds.has(seg.id);
-        return (
-          <span key={seg.id}>
-            <ExpandButton isExpanded={isExpanded} onClick={() => toggle(seg.id)} />
-            {isExpanded && (
-              <span className="bg-expanded-bg rounded px-1 py-0.5 transition-all">
-                <SegmentRenderer segments={seg.children} expandedIds={expandedIds} toggle={toggle} />
-              </span>
-            )}
-          </span>
-        );
-      })}
-    </>
-  );
-};
-
 const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
-  globalId = 0;
-  const segments = parseDigText(content);
-  const allExpandableIds = collectExpandableIds(segments);
+  const { shadow, map } = useMemo(() => extractExpandables(content), [content]);
+  const allIds = useMemo(() => Array.from(map.keys()), [map]);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggle = useCallback((id: number) => {
@@ -138,25 +254,55 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
   }, []);
 
   const collapseAll = useCallback(() => setExpandedIds(new Set()), []);
-  const expandAll = useCallback(() => setExpandedIds(new Set(allExpandableIds)), [allExpandableIds]);
+  const expandAll = useCallback(() => setExpandedIds(new Set(allIds)), [allIds]);
 
   const anyExpanded = expandedIds.size > 0;
 
   return (
     <div className={className}>
-      {allExpandableIds.length > 0 && (
+      {allIds.length > 0 && (
         <div className="flex justify-end mb-4">
           <button
             onClick={anyExpanded ? collapseAll : expandAll}
             className="flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover transition-colors"
+            type="button"
           >
             {anyExpanded ? <X size={12} /> : <Plus size={12} />}
             {anyExpanded ? "Collapse all" : "Expand all"}
           </button>
         </div>
       )}
-      <div className="text-lg leading-[1.85] font-serif whitespace-pre-wrap">
-        <SegmentRenderer segments={segments} expandedIds={expandedIds} toggle={toggle} />
+      <div
+        className={[
+          "text-lg leading-[1.85] font-serif",
+          // Inline markdown styling without the typography plugin
+          "[&_h1]:text-3xl [&_h1]:font-serif [&_h1]:font-semibold [&_h1]:mt-8 [&_h1]:mb-4",
+          "[&_h2]:text-2xl [&_h2]:font-serif [&_h2]:font-semibold [&_h2]:mt-7 [&_h2]:mb-3",
+          "[&_h3]:text-xl [&_h3]:font-serif [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2",
+          "[&_h4]:text-lg [&_h4]:font-serif [&_h4]:font-semibold [&_h4]:mt-5 [&_h4]:mb-2",
+          "[&_p]:my-4",
+          "[&_strong]:font-semibold",
+          "[&_em]:italic",
+          "[&_a]:text-expand-button [&_a:hover]:text-expand-button-hover [&_a]:underline",
+          "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4",
+          "[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4",
+          "[&_li]:my-1",
+          "[&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-4",
+          "[&_code]:font-mono [&_code]:text-sm [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded",
+          "[&_pre]:bg-muted [&_pre]:p-4 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:my-4",
+          "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+          "[&_hr]:my-8 [&_hr]:border-border",
+          "[&_table]:w-full [&_table]:my-4 [&_table]:border-collapse",
+          "[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold",
+          "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2",
+        ].join(" ")}
+      >
+        <ShadowMarkdown
+          shadow={shadow}
+          expandedIds={expandedIds}
+          toggle={toggle}
+          expandablesMap={map}
+        />
       </div>
     </div>
   );
