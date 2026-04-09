@@ -1,27 +1,66 @@
 import { Link } from "react-router-dom";
 import SiteHeader from "@/components/SiteHeader";
 
-const links = [
-  { label: "About v1", to: "/p/about-v1" },
+type Version = { label: string; to: string; live?: boolean };
+type Group = { title: string; versions: Version[] };
+
+const groups: Group[] = [
+  {
+    title: "Home",
+    versions: [
+      { label: "Home v1", to: "/p/home-v1", live: true },
+    ],
+  },
+  {
+    title: "Articles",
+    versions: [
+      { label: "Articles v1", to: "/p/articles-v1", live: true },
+    ],
+  },
+  {
+    title: "About",
+    versions: [
+      { label: "About v1", to: "/p/about-v1", live: true },
+      { label: "About v1.1", to: "/p/about-v1-1" },
+    ],
+  },
 ];
+
+const LivePill = () => (
+  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-sans text-[10px] font-medium uppercase tracking-wider text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-400">
+    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+    live
+  </span>
+);
 
 const P = () => (
   <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
     <SiteHeader />
     <div className="max-w-2xl mx-auto px-6 py-16">
-      <h1 className="font-serif text-2xl mb-8 text-neutral-400 dark:text-neutral-500">Pages</h1>
-      <ul className="flex flex-col gap-2">
-        {links.map(({ label, to }) => (
-          <li key={to}>
-            <Link
-              to={to}
-              className="font-sans text-sm text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50 transition-colors"
-            >
-              {label}
-            </Link>
-          </li>
+      <h1 className="font-serif text-2xl mb-10 text-neutral-400 dark:text-neutral-500">Pages</h1>
+
+      <div className="flex flex-col gap-10">
+        {groups.map((group) => (
+          <section key={group.title}>
+            <h2 className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500 mb-3">
+              {group.title}
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {group.versions.map(({ label, to, live }) => (
+                <li key={to} className="flex items-center gap-3">
+                  <Link
+                    to={to}
+                    className="font-sans text-sm text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50 transition-colors"
+                  >
+                    {label}
+                  </Link>
+                  {live && <LivePill />}
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </div>
   </div>
 );
