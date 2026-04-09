@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Maximize2, Minimize2, Plus, X } from "lucide-react";
+import { Maximize2, Plus, X } from "lucide-react";
 import { DigTextContent, useDigTextState } from "@/components/DigText";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +51,12 @@ const DigTextReader = ({ content, mode = "embedded" }: DigTextReaderProps) => {
     return isReaderView(maybeView) ? maybeView : "digtext";
   }, [searchParams]);
   const [view, setView] = useState<ReaderView>(initialView);
-  const digTextState = useDigTextState(content);
+  const [rawContent, setRawContent] = useState(content);
+  const digTextState = useDigTextState(rawContent);
+
+  useEffect(() => {
+    setRawContent(content);
+  }, [content]);
 
   useEffect(() => {
     if (mode === "fullscreen") {
@@ -118,7 +123,7 @@ const DigTextReader = ({ content, mode = "embedded" }: DigTextReaderProps) => {
             type="button"
             aria-label="Collapse full screen"
           >
-            <Minimize2 size={16} strokeWidth={1.75} />
+            <X size={16} strokeWidth={2} />
           </button>
         ) : (
           <button onClick={openFullscreen} className={iconButtonClass} type="button" aria-label="Open full screen">
@@ -130,11 +135,14 @@ const DigTextReader = ({ content, mode = "embedded" }: DigTextReaderProps) => {
   );
 
   const body = view === "digtext" ? (
-    <DigTextContent state={digTextState} />
+    <DigTextContent state={digTextState} className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0" />
   ) : (
-    <pre className="font-mono text-[14px] leading-[1.8] text-neutral-700 whitespace-pre-wrap break-words dark:text-neutral-300">
-      {content}
-    </pre>
+    <textarea
+      value={rawContent}
+      onChange={(e) => setRawContent(e.target.value)}
+      spellCheck={false}
+      className="min-h-[320px] w-full resize-none bg-transparent font-mono text-[14px] leading-[1.8] text-neutral-700 outline-none dark:text-neutral-300"
+    />
   );
 
   return (
@@ -153,7 +161,7 @@ const DigTextReader = ({ content, mode = "embedded" }: DigTextReaderProps) => {
       </div>
       <div
         className={cn(
-          "px-6 py-8 md:px-10 md:py-10",
+          "px-6 pt-6 pb-7 md:px-10 md:pt-8 md:pb-9",
           mode === "fullscreen" && "flex-1 overflow-y-auto",
         )}
       >

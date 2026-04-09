@@ -1,10 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Home from "./pages/Home.tsx";
 import About from "./pages/About.tsx";
 import Articles from "./pages/Articles.tsx";
 import ArticlePage from "./pages/ArticlePage.tsx";
@@ -27,13 +26,14 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
+            <Route path="/" element={<About />} />
+            <Route path="/about" element={<Navigate to="/" replace />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/article/:articleId" element={<ArticlePage />} />
             <Route path="/reader" element={<Reader />} />
             <Route path="/p" element={<P />} />
             <Route path="/p/home-v1" element={<HomeV1 />} />
+            <Route path="/p/home-v2" element={<About />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
             <Route path="/p/about-v1" element={<AboutV1 />} />
             <Route path="/p/about-v1-1" element={<AboutV1_1 />} />

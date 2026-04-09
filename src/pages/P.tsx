@@ -8,7 +8,8 @@ const groups: Group[] = [
   {
     title: "Home",
     versions: [
-      { label: "Home v1", to: "/p/home-v1", live: true },
+      { label: "Home v1", to: "/p/home-v1" },
+      { label: "Home v2", to: "/p/home-v2", live: true },
     ],
   },
   {
@@ -18,11 +19,11 @@ const groups: Group[] = [
     ],
   },
   {
-    title: "About",
+    title: "About (deprecated)",
     versions: [
       { label: "About v1", to: "/p/about-v1" },
       { label: "About v1.1", to: "/p/about-v1-1" },
-      { label: "About v1.2", to: "/p/about-v1-2", live: true },
+      { label: "About v1.2", to: "/p/about-v1-2" },
     ],
   },
 ];

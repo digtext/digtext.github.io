@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Share } from "lucide-react";
 import DigTextReader from "@/components/DigTextReader";
 import SiteHeader from "@/components/SiteHeader";
 import { ABOUT_DEMO_CONTENT } from "@/content/aboutDemoContent";
@@ -31,6 +31,7 @@ Now transform the following text:
 
 const About = () => {
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -45,6 +46,29 @@ const About = () => {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleShare = async () => {
+    const data = {
+      title: "Dig text",
+      text: "Read text collapsed-first. Dig only as deep as you want.",
+      url: window.location.href,
+    };
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share(data);
+      } catch {
+        // user cancelled
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(data.url);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } catch {
+      // ignore
+    }
   };
 
   return (
@@ -238,10 +262,10 @@ const About = () => {
             {/* CTA row */}
             <div className="mt-12 flex items-center gap-3 flex-wrap">
               <Link
-                to="/"
+                to="/reader"
                 className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
-                Use it
+                Open the reader
               </Link>
               <button
                 onClick={handleCopy}
@@ -255,7 +279,7 @@ const About = () => {
                 ) : (
                   <>
                     <Copy className="h-3.5 w-3.5" />
-                    Copy the LLM prompt
+                    Copy the prompt
                   </>
                 )}
               </button>

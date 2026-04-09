@@ -4,10 +4,10 @@ import { Check, Share } from "lucide-react";
 
 const SiteHeader = () => {
   const { pathname } = useLocation();
-  const isAbout = pathname.startsWith("/about") || pathname.startsWith("/reader");
   const isArticles =
     pathname.startsWith("/articles") || pathname.startsWith("/article/");
-  const isHome = !isAbout && !isArticles;
+  const isHome =
+    pathname === "/" || pathname.startsWith("/reader") || pathname.startsWith("/about");
 
   const [shared, setShared] = useState(false);
 
@@ -83,28 +83,21 @@ const SiteHeader = () => {
           <nav className="flex items-center gap-1">
             {navItem("/", "Home", isHome)}
             {navItem("/articles", "Articles", isArticles)}
-            {navItem("/about", "About", isAbout)}
           </nav>
 
-          {isAbout ? (
-            <Link to="/" className={ctaClass}>
-              Use it →
-            </Link>
-          ) : (
-            <button onClick={handleShare} className={ctaClass}>
-              {shared ? (
-                <>
-                  <Check className="h-3.5 w-3.5" />
-                  Link copied
-                </>
-              ) : (
-                <>
-                  <Share className="h-3.5 w-3.5" />
-                  Share
-                </>
-              )}
-            </button>
-          )}
+          <button onClick={handleShare} className={ctaClass}>
+            {shared ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                Link copied
+              </>
+            ) : (
+              <>
+                <Share className="h-3.5 w-3.5" />
+                Share
+              </>
+            )}
+          </button>
         </div>
       </div>
     </header>
