@@ -84,13 +84,14 @@ const About = () => {
           </div>
 
           {/* Big headline */}
-          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.5rem,7vw,5.5rem)]">
-            Read only the{" "}
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2rem,5.7vw,4.5rem)]">
+            Read the{" "}
             <span className="italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
-              most important.
+              most important{" "}
             </span>
-            <br />
-            Dig into what{" "}
+            parts first.
+            
+            Dig only into what{" "}
             <span className="italic bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
               interests you.
             </span>
@@ -249,7 +250,7 @@ const About = () => {
 
         <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
           {/* Big headline */}
-          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(3rem,8.5vw,6.5rem)]">
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,5.85rem)]">
             It is{" "}
             <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
               ridiculous
