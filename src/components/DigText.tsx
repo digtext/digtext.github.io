@@ -95,11 +95,15 @@ interface ExpandButtonProps {
 const ExpandButton: React.FC<ExpandButtonProps> = ({ isExpanded, onClick }) => (
   <button
     onClick={onClick}
-    className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-expand-button text-expand-button hover:text-expand-button-hover hover:border-expand-button-hover transition-colors mx-0.5 align-middle cursor-pointer"
+    className={`relative -top-px inline-flex items-center justify-center w-5 h-5 rounded-full border transition-colors mx-0.5 align-middle cursor-pointer ${
+      isExpanded
+        ? "border-[hsl(var(--expand-button-hover))] bg-[hsl(var(--expand-button-hover))] text-white"
+        : "border-expand-button text-expand-button hover:text-expand-button-hover hover:border-expand-button-hover"
+    }`}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
   >
-    {isExpanded ? <X size={11} strokeWidth={2.5} /> : <Plus size={11} strokeWidth={2.5} />}
+    {isExpanded ? <X size={12} strokeWidth={2.5} className="block" /> : <Plus size={12} strokeWidth={2.5} className="block" />}
   </button>
 );
 
@@ -279,7 +283,7 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
             className="inline-flex items-center gap-1.5 rounded-full border border-expand-button px-3 py-1 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:text-expand-button-hover hover:border-expand-button-hover transition-colors"
             type="button"
           >
-            {anyExpanded ? <X size={12} /> : <Plus size={12} />}
+            {anyExpanded ? <X size={12} strokeWidth={2.5} className="block" /> : <Plus size={12} strokeWidth={2.5} className="block" />}
             {anyExpanded ? "Collapse all" : "Expand all"}
           </button>
         </div>
