@@ -6,9 +6,10 @@ import remarkGfm from "remark-gfm";
 /**
  * DigText markup format:
  * - Standard markdown (headings, bold, lists, links, code, etc.)
- * - Use >>text<< to mark expandable sections (nesting supported)
+ * - Use <<text>> to mark expandable sections (nesting supported).
+ *   The markers act like parentheses: << opens, >> closes.
  *
- * Implementation: extract every >>...<< block into a placeholder map,
+ * Implementation: extract every <<...>> block into a placeholder map,
  * leaving a "shadow" markdown string with private-use-area tokens. The
  * shadow is rendered with react-markdown; custom component overrides
  * scan their own string children for tokens and replace each with an
@@ -38,29 +39,40 @@ function extractExpandables(raw: string): ExtractResult {
     let out = "";
     let i = 0;
     while (i < text.length) {
-      if (text[i] === ">" && text[i + 1] === ">") {
-        // find matching << at this nest level
+      if (text[i] === "<" && text[i + 1] === "<") {
+        // find matching >> at this nest level
         let nest = 1;
         let j = i + 2;
-        while (j < text.length && nest > 0) {
-          if (text[j] === ">" && text[j + 1] === ">") {
+        let matched = false;
+        while (j < text.length) {
+          if (text[j] === "<" && text[j + 1] === "<") {
             nest++;
             j += 2;
-          } else if (text[j] === "<" && text[j + 1] === "<") {
+          } else if (text[j] === ">" && text[j + 1] === ">") {
             nest--;
-            if (nest === 0) break;
+            if (nest === 0) {
+              matched = true;
+              break;
+            }
             j += 2;
           } else {
             j++;
           }
+        }
+        if (!matched) {
+          // unmatched << — treat literally so stray markers don't spawn
+          // spurious expand buttons
+          out += "<<";
+          i += 2;
+          continue;
         }
         const inner = text.slice(i + 2, j);
         const innerShadow = process(inner);
         const id = nextId++;
         map.set(id, { id, shadow: innerShadow });
         out += `${TOKEN_PREFIX}${id}${TOKEN_SUFFIX}`;
-        i = j + 2; // skip closing <<
-      } else if (text[i] === "<" && text[i + 1] === "<") {
+        i = j + 2; // skip closing >>
+      } else if (text[i] === ">" && text[i + 1] === ">") {
         // stray closing — skip silently
         i += 2;
       } else {

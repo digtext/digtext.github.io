@@ -8,7 +8,7 @@ type HomeTab = "dig" | "raw";
 
 const PLACEHOLDER = `Paste your text here…
 
-Wrap any block of text between >> and << markers to make it collapsible.
+Wrap any block of text between << and >> markers to make it collapsible.
 
 When you're ready, switch to the Dig text tab above to read it collapsed-first.`;
 
