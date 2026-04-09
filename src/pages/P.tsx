@@ -20,8 +20,8 @@ const groups: Group[] = [
   {
     title: "About",
     versions: [
-      { label: "About v1", to: "/p/about-v1", live: true },
-      { label: "About v1.1", to: "/p/about-v1-1" },
+      { label: "About v1", to: "/p/about-v1" },
+      { label: "About v1.1", to: "/p/about-v1-1", live: true },
     ],
   },
 ];
