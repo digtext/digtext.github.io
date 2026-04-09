@@ -5,29 +5,27 @@ import DigTextReader from "@/components/DigTextReader";
 import SiteHeader from "@/components/SiteHeader";
 import { ABOUT_DEMO_CONTENT } from "@/content/aboutDemoContent";
 
-const PROMPT = `You are converting a piece of text into "dig text" format — a progressive, collapsed-by-default reading layout.
+const PROMPT = `Summarize the following text using what I call the Quote summary approach. Use as many original fragments as possible (with quote symbols) and stitch the quotes together with your own writing to create a comprehensive and precise summary.
 
-The syntax is simple. Wrap any block of text between << and >> markers to make it collapsible — the markers behave like parentheses: << opens, >> closes. <<Like this: this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.>> Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
+Produce the following summaries:
 
-Rules:
+1. 1 min summary ***[note for humans: This is the most important setting in this prompt. Consider changing this number.]***
+2. 3x the length of "1."
+3. 6x the length of "1."
 
-1. Include all of the original information. Nothing is cut — everything is preserved, just collapsed. The most important content stays at the top level (visible by default); supporting detail, examples, and asides go inside << >> blocks.
+Now convert the original text into "digText" format — a progressive, collapsed-by-default reading layout. The digText syntax is simple. Wrap any block of text between << and >> markers to make it collapsible. Like this: <<this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.>> Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
 
-2. Aim for three or more levels of nesting wherever the content supports it. Inside one << >> block you can open another, and another. Each indent is additional information about its parent — readers who aren't interested can skip it and the sequence still makes sense.
+1. Deconstruct the summaries you prepared in the 1st step in the "digText". The shortest summary stays at the top level (visible by default); all other summaries are nested inside << >> blocks.
+2. Roughly: the top level of dig-text should be the shortest summary you already prepared in the 1st step. 2nd level the 2nd longest summary. 3rd level the 3rd longest summary. And so on. Nest all all of the original information (not only summaries) in collapsed blocks. Nothing is cut — everything is preserved, just collapsed. Feel free to slightly restructure the original summaries so it information flows well for the dig text format.
+3. Use the progressive expansion principle. Spread collapsed blocks evenly throughout the text. Avoid clustering them at the ends of paragraphs or concentrating them in one part of the article.
+4. Use Markdown for headings, links, and any other formatting present in the original. When the source text has a title and subtitle, render the title as H1 (\`#\`) and the subtitle as italicized text.
+5. After you finish, re-read only the top-level visible text — everything outside any << >> markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
 
-3. Stay as close to the original meaning and voice as possible. Do not summarize so aggressively that nuance dies — collapse, don't crush.
-
-4. Section titles are fine. They can stay at the top level or live inside collapsed blocks.
-
-5. Avoid one- and two-line standalone paragraphs. Merge short fragments into flowing prose, then collapse the lower-priority parts.
-
-6. After you finish, re-read only the top-level visible text — everything outside any << >> markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
-
-Output only the converted text. No preamble, no explanation, no code fences. The output should be ready to paste directly into dig text.
+Output only the converted text in markdown (with Dig’s double chevron markers). The output should be ready to paste directly into dig text.
 
 Now transform the following text:
 
-<paste your text here>`;
+[paste your text here]`;
 
 const About = () => {
   const [copied, setCopied] = useState(false);
