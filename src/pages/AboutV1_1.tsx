@@ -85,7 +85,7 @@ const AboutV1_1 = () => {
 
           {/* Big headline */}
           <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.5rem,7vw,5.5rem)]">
-            Start from the{" "}
+            Read only the{" "}
             <span className="italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
               most important.
             </span>
@@ -98,9 +98,8 @@ const AboutV1_1 = () => {
 
           {/* Small sub-headline */}
           <p className="mt-8 max-w-2xl font-serif text-base md:text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
-            Dig text is a new interface for text that appears from the most
-            collapsed version and lets you dig into what interests you most
-            without losing context.
+            Dig text is a new way to read text. You see the shortest version
+            first, then dig deeper only where it matters to you.
           </p>
 
           {/* Embedded live dig text demo */}
