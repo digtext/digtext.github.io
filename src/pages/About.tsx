@@ -6,13 +6,13 @@ import SiteHeader from "@/components/SiteHeader";
 
 const PROMPT = `You are converting a piece of text into "dig text" format — a progressive, collapsed-by-default reading layout.
 
-The syntax is simple. Wrap any block of text between >> and << markers to make it collapsible. >>Like this: this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.<< Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
+The syntax is simple. Wrap any block of text between << and >> markers to make it collapsible — the markers behave like parentheses: << opens, >> closes. <<Like this: this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.>> Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
 
 Rules:
 
-1. Include all of the original information. Nothing is cut — everything is preserved, just collapsed. The most important content stays at the top level (visible by default); supporting detail, examples, and asides go inside >> << blocks.
+1. Include all of the original information. Nothing is cut — everything is preserved, just collapsed. The most important content stays at the top level (visible by default); supporting detail, examples, and asides go inside << >> blocks.
 
-2. Aim for three or more levels of nesting wherever the content supports it. Inside one >> << block you can open another, and another. Each indent is additional information about its parent — readers who aren't interested can skip it and the sequence still makes sense.
+2. Aim for three or more levels of nesting wherever the content supports it. Inside one << >> block you can open another, and another. Each indent is additional information about its parent — readers who aren't interested can skip it and the sequence still makes sense.
 
 3. Stay as close to the original meaning and voice as possible. Do not summarize so aggressively that nuance dies — collapse, don't crush.
 
@@ -20,7 +20,7 @@ Rules:
 
 5. Avoid one- and two-line standalone paragraphs. Merge short fragments into flowing prose, then collapse the lower-priority parts.
 
-6. After you finish, re-read only the top-level visible text — everything outside any >> << markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
+6. After you finish, re-read only the top-level visible text — everything outside any << >> markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
 
 Output only the converted text. No preamble, no explanation, no code fences. The output should be ready to paste directly into dig text.
 
@@ -28,8 +28,8 @@ Now transform the following text:
 
 <paste your text here>`;
 
-// Demo content written in dig text format (>> opens, << closes)
-const DEMO_CONTENT = `Dig text enables readers to expand the parts of text they find valuable or interesting. >>Nesting has no limit >>every layer is a choice the reader makes, and they don't have to read everything to understand the context of what comes after. When you're done, collapse it all back using the "collapse all" button in the top right.<<<< Try dig text yourself. Anything you wrap between double chevrons becomes collapsible. >>Switch to the Raw text view above to play with it and see exactly how this is written. >>This is an addition to Markdown, so you can bring any Markdown file with double chevrons and read dig text on our homepage.<<<< Use our LLM prompt below to automatically transform any text into dig text.`;
+// Demo content written in dig text format (<< opens, >> closes)
+const DEMO_CONTENT = `Dig text enables readers to expand the parts of text they find valuable or interesting. <<Nesting has no limit <<every layer is a choice the reader makes, and they don't have to read everything to understand the context of what comes after. When you're done, collapse it all back using the "collapse all" button in the top right.>>>> Try dig text yourself. Anything you wrap between double chevrons becomes collapsible. <<Switch to the Raw text view above to play with it and see exactly how this is written. <<This is an addition to Markdown, so you can bring any Markdown file with double chevrons and read dig text on our homepage.>>>> Use our LLM prompt below to automatically transform any text into dig text.`;
 
 const About = () => {
   const [copied, setCopied] = useState(false);
