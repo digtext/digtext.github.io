@@ -84,7 +84,7 @@ const About = () => {
           </div>
 
           {/* Big headline */}
-          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,5.85rem)]">
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,5.17rem)]">
             Read the{" "}
             <span className="italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
               most important{" "}
@@ -98,7 +98,7 @@ const About = () => {
           </h1>
 
           {/* Small sub-headline */}
-          <p className="mt-8 max-w-2xl font-serif text-base md:text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
+          <p className="mt-8 max-w-2xl font-serif text-base md:text-[1.07rem] leading-relaxed text-neutral-600 dark:text-neutral-300">
             Dig text is a new way to read text. You see the shortest version
             first, then dig deeper only where it matters to you.
           </p>
@@ -250,7 +250,7 @@ const About = () => {
 
         <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
           {/* Big headline */}
-          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,5.85rem)]">
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,5.17rem)]">
             It is{" "}
             <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
               ridiculous
@@ -267,7 +267,7 @@ const About = () => {
           </h1>
 
           {/* Sub-headline */}
-          <p className="mt-12 max-w-2xl font-serif text-xl md:text-2xl leading-snug text-neutral-600 dark:text-neutral-300">
+          <p className="mt-12 max-w-2xl font-serif text-xl md:text-[1.425rem] leading-snug text-neutral-600 dark:text-neutral-300">
             <span className="font-semibold text-neutral-900 dark:text-neutral-50">Dig text</span>{" "}
             flips it. Text arrives{" "}
             <span className="italic text-rose-500">collapsed</span>, with most
