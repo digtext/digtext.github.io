@@ -54,7 +54,7 @@ const AboutV1_1 = () => {
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
       <SiteHeader />
 
-      {/* ── HERO ── */}
+      {/* ── SECTION 1 — NEW HERO (gradient bg from old s1 + content from old example) ── */}
       <section className="relative overflow-hidden">
         {/* Gradient orbs */}
         <div
@@ -84,61 +84,7 @@ const AboutV1_1 = () => {
           </div>
 
           {/* Big headline */}
-          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(3rem,8.5vw,6.5rem)]">
-            It is{" "}
-            <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
-              ridiculous
-            </em>
-            <br />
-            that we read text
-            <br />
-            in its{" "}
-            <em className="not-italic bg-gradient-to-r from-amber-400 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
-              most expanded
-            </em>
-            <br />
-            form by default.
-          </h1>
-
-          {/* Sub-headline */}
-          <p className="mt-12 max-w-2xl font-serif text-xl md:text-2xl leading-snug text-neutral-600 dark:text-neutral-300">
-            <span className="font-semibold text-neutral-900 dark:text-neutral-50">Dig text</span>{" "}
-            flips it. Text arrives{" "}
-            <span className="italic text-rose-500">collapsed</span>, with most
-            important things first. You{" "}
-            <span className="italic text-violet-600 dark:text-violet-400">dig</span> only as deep
-            as you want.
-          </p>
-
-          {/* CTA row */}
-          <div className="mt-12 flex items-center gap-3 flex-wrap">
-            <button
-              onClick={() => scrollTo("example")}
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
-            >
-              See example
-            </button>
-            <button
-              onClick={() => scrollTo("prompt")}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 font-sans text-sm text-neutral-700 hover:border-neutral-500 hover:text-neutral-900 transition-colors dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-50"
-            >
-              Get the LLM prompt
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── EXAMPLE ── */}
-      <section
-        id="example"
-        className="border-t border-neutral-100 scroll-mt-[65px] dark:border-neutral-800"
-      >
-        <div className="max-w-4xl mx-auto px-6 py-24">
-          <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
-            Example
-          </span>
-
-          <h2 className="mt-6 font-serif text-[clamp(2rem,5vw,3.75rem)] leading-tight tracking-tight">
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.5rem,7vw,5.5rem)]">
             Start from the{" "}
             <span className="italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
               most important.
@@ -148,7 +94,14 @@ const AboutV1_1 = () => {
             <span className="italic bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
               interests you.
             </span>
-          </h2>
+          </h1>
+
+          {/* Small sub-headline */}
+          <p className="mt-8 max-w-2xl font-serif text-base md:text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
+            Dig text is a new interface for text that appears from the most
+            collapsed version and lets you dig into what interests you most
+            without losing context.
+          </p>
 
           {/* Embedded live dig text demo */}
           <div className="mt-10 rounded-2xl border border-neutral-200 bg-neutral-50/50 overflow-hidden dark:bg-neutral-900/50 dark:border-neutral-800">
@@ -272,13 +225,80 @@ const AboutV1_1 = () => {
           <p className="mt-8 font-serif text-sm italic text-neutral-400 dark:text-neutral-500">
             Then read what you wrote — collapsed first.
           </p>
+        </div>
+      </section>
 
-          <div className="mt-6">
-            <button
-              onClick={() => scrollTo("example")}
-              className="font-sans text-sm text-neutral-400 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
+      {/* ── SECTION 3 — MOVED OLD HERO (same gradient bg, no pill) ── */}
+      <section className="relative overflow-hidden border-t border-neutral-100 dark:border-neutral-800">
+        {/* Gradient orbs */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -right-24 h-[600px] w-[600px] rounded-full opacity-40 blur-[120px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(251,191,36,0.5) 0%, rgba(244,63,94,0.35) 40%, rgba(139,92,246,0.3) 70%, transparent 80%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full opacity-25 blur-[100px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(244,63,94,0.2) 60%, transparent 80%)",
+          }}
+        />
+
+        <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
+          {/* Big headline */}
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(3rem,8.5vw,6.5rem)]">
+            It is{" "}
+            <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
+              ridiculous
+            </em>
+            <br />
+            that we read text
+            <br />
+            in its{" "}
+            <em className="not-italic bg-gradient-to-r from-amber-400 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
+              most expanded
+            </em>
+            <br />
+            form by default.
+          </h1>
+
+          {/* Sub-headline */}
+          <p className="mt-12 max-w-2xl font-serif text-xl md:text-2xl leading-snug text-neutral-600 dark:text-neutral-300">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-50">Dig text</span>{" "}
+            flips it. Text arrives{" "}
+            <span className="italic text-rose-500">collapsed</span>, with most
+            important things first. You{" "}
+            <span className="italic text-violet-600 dark:text-violet-400">dig</span> only as deep
+            as you want.
+          </p>
+
+          {/* CTA row */}
+          <div className="mt-12 flex items-center gap-3 flex-wrap">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              ↑ Back to example
+              Use it
+            </Link>
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 font-sans text-sm text-neutral-700 hover:border-neutral-500 hover:text-neutral-900 transition-colors dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-50"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy the LLM prompt
+                </>
+              )}
             </button>
           </div>
         </div>
