@@ -4,7 +4,7 @@ import { Check, Share } from "lucide-react";
 
 const SiteHeader = () => {
   const { pathname } = useLocation();
-  const isAbout = pathname.startsWith("/about");
+  const isAbout = pathname.startsWith("/about") || pathname.startsWith("/reader");
   const isArticles =
     pathname.startsWith("/articles") || pathname.startsWith("/article/");
   const isHome = !isAbout && !isArticles;

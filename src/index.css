@@ -107,3 +107,20 @@
     font-family: var(--font-serif);
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(reader-page-top),
+  ::view-transition-new(reader-page-top),
+  ::view-transition-old(reader-page-top-action),
+  ::view-transition-new(reader-page-top-action),
+  ::view-transition-old(reader-page-rest),
+  ::view-transition-new(reader-page-rest) {
+    animation-duration: 180ms;
+    animation-timing-function: ease;
+  }
+
+  ::view-transition-group(reader-shell) {
+    animation-duration: 240ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}

@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { cn } from "@/lib/utils";
 
 /**
  * DigText markup format:
@@ -21,9 +22,20 @@ const TOKEN_PREFIX = "\uE000EXP";
 const TOKEN_SUFFIX = "\uE001";
 const TOKEN_RE = /\uE000EXP(\d+)\uE001/g;
 
-interface Expandable {
+export interface Expandable {
   id: number;
   shadow: string;
+}
+
+export interface DigTextState {
+  shadow: string;
+  expandablesMap: Map<number, Expandable>;
+  expandedIds: Set<number>;
+  hasExpandables: boolean;
+  anyExpanded: boolean;
+  toggle: (id: number) => void;
+  expandAll: () => void;
+  collapseAll: () => void;
 }
 
 interface ExtractResult {
@@ -253,9 +265,11 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
 interface DigTextProps {
   content: string;
   className?: string;
+  contentClassName?: string;
+  showExpandAllButton?: boolean;
 }
 
-const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
+export const useDigTextState = (content: string): DigTextState => {
   const { shadow, map } = useMemo(() => extractExpandables(content), [content]);
   const allIds = useMemo(() => Array.from(map.keys()), [map]);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -272,11 +286,74 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
   const collapseAll = useCallback(() => setExpandedIds(new Set()), []);
   const expandAll = useCallback(() => setExpandedIds(new Set(allIds)), [allIds]);
 
-  const anyExpanded = expandedIds.size > 0;
+  return {
+    shadow,
+    expandablesMap: map,
+    expandedIds,
+    hasExpandables: allIds.length > 0,
+    anyExpanded: expandedIds.size > 0,
+    toggle,
+    expandAll,
+    collapseAll,
+  };
+};
+
+interface DigTextContentProps {
+  state: DigTextState;
+  className?: string;
+}
+
+export const DigTextContent: React.FC<DigTextContentProps> = ({ state, className = "" }) => {
+  const { shadow, expandedIds, toggle, expandablesMap } = state;
+
+  return (
+    <div
+      className={cn(
+        "text-lg leading-[1.85] font-serif",
+        "[&_h1]:text-3xl [&_h1]:font-serif [&_h1]:font-semibold [&_h1]:mt-8 [&_h1]:mb-4",
+        "[&_h2]:text-2xl [&_h2]:font-serif [&_h2]:font-semibold [&_h2]:mt-7 [&_h2]:mb-3",
+        "[&_h3]:text-xl [&_h3]:font-serif [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2",
+        "[&_h4]:text-lg [&_h4]:font-serif [&_h4]:font-semibold [&_h4]:mt-5 [&_h4]:mb-2",
+        "[&_p]:my-4",
+        "[&_strong]:font-semibold",
+        "[&_em]:italic",
+        "[&_a]:text-expand-button [&_a:hover]:text-expand-button-hover [&_a]:underline",
+        "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4",
+        "[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4",
+        "[&_li]:my-1",
+        "[&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-4",
+        "[&_code]:font-mono [&_code]:text-sm [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded",
+        "[&_pre]:bg-muted [&_pre]:p-4 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:my-4",
+        "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+        "[&_hr]:my-8 [&_hr]:border-border",
+        "[&_table]:w-full [&_table]:my-4 [&_table]:border-collapse",
+        "[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold",
+        "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2",
+        className,
+      )}
+    >
+      <ShadowMarkdown
+        shadow={shadow}
+        expandedIds={expandedIds}
+        toggle={toggle}
+        expandablesMap={expandablesMap}
+      />
+    </div>
+  );
+};
+
+const DigText: React.FC<DigTextProps> = ({
+  content,
+  className = "",
+  contentClassName = "",
+  showExpandAllButton = true,
+}) => {
+  const state = useDigTextState(content);
+  const { hasExpandables, anyExpanded, expandAll, collapseAll } = state;
 
   return (
     <div className={className}>
-      {allIds.length > 0 && (
+      {showExpandAllButton && hasExpandables && (
         <div className="flex justify-end mb-4">
           <button
             onClick={anyExpanded ? collapseAll : expandAll}
@@ -288,38 +365,7 @@ const DigText: React.FC<DigTextProps> = ({ content, className = "" }) => {
           </button>
         </div>
       )}
-      <div
-        className={[
-          "text-lg leading-[1.85] font-serif",
-          // Inline markdown styling without the typography plugin
-          "[&_h1]:text-3xl [&_h1]:font-serif [&_h1]:font-semibold [&_h1]:mt-8 [&_h1]:mb-4",
-          "[&_h2]:text-2xl [&_h2]:font-serif [&_h2]:font-semibold [&_h2]:mt-7 [&_h2]:mb-3",
-          "[&_h3]:text-xl [&_h3]:font-serif [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2",
-          "[&_h4]:text-lg [&_h4]:font-serif [&_h4]:font-semibold [&_h4]:mt-5 [&_h4]:mb-2",
-          "[&_p]:my-4",
-          "[&_strong]:font-semibold",
-          "[&_em]:italic",
-          "[&_a]:text-expand-button [&_a:hover]:text-expand-button-hover [&_a]:underline",
-          "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4",
-          "[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4",
-          "[&_li]:my-1",
-          "[&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-4",
-          "[&_code]:font-mono [&_code]:text-sm [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded",
-          "[&_pre]:bg-muted [&_pre]:p-4 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:my-4",
-          "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-          "[&_hr]:my-8 [&_hr]:border-border",
-          "[&_table]:w-full [&_table]:my-4 [&_table]:border-collapse",
-          "[&_th]:border [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold",
-          "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2",
-        ].join(" ")}
-      >
-        <ShadowMarkdown
-          shadow={shadow}
-          expandedIds={expandedIds}
-          toggle={toggle}
-          expandablesMap={map}
-        />
-      </div>
+      <DigTextContent state={state} className={contentClassName} />
     </div>
   );
 };
