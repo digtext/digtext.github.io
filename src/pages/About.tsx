@@ -84,7 +84,7 @@ const About = () => {
           </div>
 
           {/* Big headline */}
-          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2rem,5.7vw,4.5rem)]">
+          <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,5.85rem)]">
             Read the{" "}
             <span className="italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
               most important{" "}
