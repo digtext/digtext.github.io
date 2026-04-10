@@ -38,6 +38,8 @@ export interface DigTextState {
   collapseAll: () => void;
 }
 
+export type DigTextRenderMode = "inline" | "indented";
+
 interface ExtractResult {
   shadow: string;
   map: Map<number, Expandable>;
@@ -125,6 +127,7 @@ interface ExpandSegmentProps {
   expandedIds: Set<number>;
   toggle: (id: number) => void;
   expandablesMap: Map<number, Expandable>;
+  renderMode: DigTextRenderMode;
 }
 
 const ExpandSegment: React.FC<ExpandSegmentProps> = ({
@@ -133,8 +136,30 @@ const ExpandSegment: React.FC<ExpandSegmentProps> = ({
   expandedIds,
   toggle,
   expandablesMap,
+  renderMode,
 }) => {
   const isExpanded = expandedIds.has(id);
+
+  if (renderMode === "indented") {
+    return (
+      <span className="align-baseline">
+        <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
+        {isExpanded && (
+          <span className="mt-3 ml-6 block border-l border-neutral-200/80 pl-4 dark:border-neutral-800/80">
+            <ShadowMarkdown
+              shadow={inner}
+              expandedIds={expandedIds}
+              toggle={toggle}
+              expandablesMap={expandablesMap}
+              inline
+              renderMode={renderMode}
+            />
+          </span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <span>
       <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
@@ -146,6 +171,7 @@ const ExpandSegment: React.FC<ExpandSegmentProps> = ({
             toggle={toggle}
             expandablesMap={expandablesMap}
             inline
+            renderMode={renderMode}
           />
         </span>
       )}
@@ -161,6 +187,7 @@ interface ShadowMarkdownProps {
   /** When true, render in an inline context: paragraphs collapse to spans
    *  so the content can sit inside a parent <p> without breaking flow. */
   inline?: boolean;
+  renderMode: DigTextRenderMode;
 }
 
 const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
@@ -169,6 +196,7 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
   toggle,
   expandablesMap,
   inline = false,
+  renderMode,
 }) => {
   const replaceTokens = useCallback(
     (children: React.ReactNode): React.ReactNode => {
@@ -191,6 +219,7 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
                 expandedIds={expandedIds}
                 toggle={toggle}
                 expandablesMap={expandablesMap}
+                renderMode={renderMode}
               />,
             );
           }
@@ -200,7 +229,7 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
         return parts.length > 0 ? parts : child;
       });
     },
-    [expandedIds, toggle, expandablesMap],
+    [expandedIds, toggle, expandablesMap, renderMode],
   );
 
   const components: Components = useMemo(() => {
@@ -208,10 +237,23 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
     // live inside a parent <p> without producing invalid (or visually broken)
     // HTML. Multiple paragraphs in an inline context are joined with a space.
     const inlineP: Components["p"] = ({ node: _n, children }) => (
-      <span>{replaceTokens(children)}</span>
+      <span
+        className={cn(
+          renderMode === "indented" && "my-3 block first:mt-0 last:mb-0",
+        )}
+      >
+        {replaceTokens(children)}
+      </span>
     );
     const inlineH: Components["h1"] = ({ node: _n, children }) => (
-      <span className="font-semibold">{replaceTokens(children)}</span>
+      <span
+        className={cn(
+          "font-semibold",
+          renderMode === "indented" && "mt-4 mb-2 block first:mt-0",
+        )}
+      >
+        {replaceTokens(children)}
+      </span>
     );
 
     return {
@@ -237,7 +279,16 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
         ? inlineH
         : ({ node: _n, children, ...props }) => <h6 {...props}>{replaceTokens(children)}</h6>,
       blockquote: inline
-        ? ({ node: _n, children }) => <span>{replaceTokens(children)}</span>
+        ? ({ node: _n, children }) => (
+            <span
+              className={cn(
+                renderMode === "indented" &&
+                  "my-3 block border-l-4 border-border pl-4 italic text-muted-foreground",
+              )}
+            >
+              {replaceTokens(children)}
+            </span>
+          )
         : ({ node: _n, children, ...props }) => (
             <blockquote {...props}>{replaceTokens(children)}</blockquote>
           ),
@@ -253,7 +304,7 @@ const ShadowMarkdown: React.FC<ShadowMarkdownProps> = ({
       td: ({ node: _n, children, ...props }) => <td {...props}>{replaceTokens(children)}</td>,
       th: ({ node: _n, children, ...props }) => <th {...props}>{replaceTokens(children)}</th>,
     };
-  }, [replaceTokens, inline]);
+  }, [replaceTokens, inline, renderMode]);
 
   return (
     <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
@@ -301,9 +352,14 @@ export const useDigTextState = (content: string): DigTextState => {
 interface DigTextContentProps {
   state: DigTextState;
   className?: string;
+  renderMode?: DigTextRenderMode;
 }
 
-export const DigTextContent: React.FC<DigTextContentProps> = ({ state, className = "" }) => {
+export const DigTextContent: React.FC<DigTextContentProps> = ({
+  state,
+  className = "",
+  renderMode = "inline",
+}) => {
   const { shadow, expandedIds, toggle, expandablesMap } = state;
 
   return (
@@ -337,6 +393,7 @@ export const DigTextContent: React.FC<DigTextContentProps> = ({ state, className
         expandedIds={expandedIds}
         toggle={toggle}
         expandablesMap={expandablesMap}
+        renderMode={renderMode}
       />
     </div>
   );
