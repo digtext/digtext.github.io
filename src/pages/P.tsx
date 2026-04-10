@@ -10,6 +10,8 @@ const groups: Group[] = [
     versions: [
       { label: "Home v1", to: "/p/home-v1" },
       { label: "Home v2", to: "/p/home-v2", live: true },
+      { label: "Home v2.1 (bullet)", to: "/p/home-v2-1" },
+      { label: "Home v2.2 (preview)", to: "/p/home-v2-2" },
     ],
   },
   {
