@@ -24,7 +24,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter basename="/digtext">
           <Routes>
             <Route path="/" element={<About />} />
             <Route path="/about" element={<Navigate to="/" replace />} />
