@@ -12,6 +12,7 @@ const groups: Group[] = [
       { label: "Home v2", to: "/p/home-v2", live: true },
       { label: "Home v2.1 (bullet)", to: "/p/home-v2-1" },
       { label: "Home v2.2 (preview)", to: "/p/home-v2-2" },
+      { label: "Home v2.3 (lines)", to: "/p/home-v2-3" },
     ],
   },
   {

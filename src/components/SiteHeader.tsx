@@ -8,6 +8,7 @@ const SiteHeader = () => {
     pathname.startsWith("/articles") || pathname.startsWith("/article/");
   const isHome =
     pathname === "/" || pathname.startsWith("/reader") || pathname.startsWith("/about");
+  const isPages = pathname === "/p" || pathname.startsWith("/p/");
 
   const [shared, setShared] = useState(false);
 
@@ -83,6 +84,7 @@ const SiteHeader = () => {
           <nav className="flex items-center gap-1">
             {navItem("/", "Home", isHome)}
             {navItem("/articles", "Articles", isArticles)}
+            {navItem("/p", "Pages", isPages)}
           </nav>
 
           <button onClick={handleShare} className={ctaClass}>
