@@ -74,16 +74,17 @@ function collectExpandableIds(lines: EditableLine[]): number[] {
   return ids;
 }
 
-const INDENT_STEP_PX = 24;
+const INDENT_STEP_PX = 36;
 const TOGGLE_WIDTH_PX = 20;
 const GUIDE_WIDTH_PX = 1.5;
+const GUIDE_LINE_NUDGE_PX = 0; // gray indent bars only (+ = right)
 
 function getTextInset(indent: number): number {
   return indent * INDENT_STEP_PX + TOGGLE_WIDTH_PX;
 }
 
 function getGuideOffset(level: number): number {
-  return TOGGLE_WIDTH_PX + (level - 0.5) * INDENT_STEP_PX;
+  return TOGGLE_WIDTH_PX + (level - 0.5) * INDENT_STEP_PX + GUIDE_LINE_NUDGE_PX;
 }
 
 function getChevronOffset(indent: number): number {
