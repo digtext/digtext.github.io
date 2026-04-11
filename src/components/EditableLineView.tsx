@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export interface EditableLine {
   id: number;
   text: string;
-  indent: number; // in units (each unit = 2 spaces)
+  indent: number;
 }
 
 let _nextId = 0;
@@ -17,7 +17,7 @@ function genId() {
 
 /** Parse indented / bulleted text into a flat line array. */
 export function parseToEditableLines(raw: string): EditableLine[] {
-  return raw
+  const parsed = raw
     .split("\n")
     .map((line) => {
       const m = line.match(/^(\s*)(?:[-*+•]\s+)?(.*)/);
@@ -28,6 +28,19 @@ export function parseToEditableLines(raw: string): EditableLine[] {
       return { id: genId(), indent: Math.floor(spaces.length / 2), text };
     })
     .filter((l): l is EditableLine => l !== null);
+
+  // Normalize: detect the smallest indent step and compress
+  const indents = parsed.map((l) => l.indent).filter((i) => i > 0);
+  if (indents.length > 0) {
+    const step = Math.min(...indents);
+    if (step > 1) {
+      for (const line of parsed) {
+        line.indent = Math.round(line.indent / step);
+      }
+    }
+  }
+
+  return parsed;
 }
 
 /** Convert line array back to indented string. */
@@ -61,57 +74,99 @@ function collectExpandableIds(lines: EditableLine[]): number[] {
   return ids;
 }
 
-// ── Editable span (memo'd to avoid cursor jumps) ──────────────────────
+const INDENT_STEP_PX = 24;
+const TOGGLE_WIDTH_PX = 20;
+const GUIDE_WIDTH_PX = 1.5;
 
-interface EditableSpanProps {
-  text: string;
-  isActive: boolean;
-  onInput: (text: string) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
-  onPaste: (e: React.ClipboardEvent<HTMLDivElement>) => void;
-  onActivate: () => void;
-  elRef: (el: HTMLDivElement | null) => void;
+function getTextInset(indent: number): number {
+  return indent * INDENT_STEP_PX + TOGGLE_WIDTH_PX;
 }
 
-const EditableSpan = React.memo<EditableSpanProps>(
-  ({ text, isActive, onInput, onKeyDown, onPaste, onActivate, elRef }) => {
-    const ref = useRef<HTMLDivElement>(null);
+function getGuideOffset(level: number): number {
+  return TOGGLE_WIDTH_PX + (level - 0.5) * INDENT_STEP_PX;
+}
 
-    useEffect(() => {
-      elRef(ref.current);
-      return () => elRef(null);
-    }, [elRef]);
+function getChevronOffset(indent: number): number {
+  return getTextInset(indent) - TOGGLE_WIDTH_PX;
+}
 
-    // Only update DOM when text changed externally (not from typing)
-    useEffect(() => {
-      if (ref.current && ref.current.textContent !== text) {
-        ref.current.textContent = text;
-      }
-    }, [text]);
+// ── Selection helpers ────────────────────────────────────────────────
 
-    return (
-      <div
-        ref={ref}
-        contentEditable={isActive}
-        suppressContentEditableWarning
-        onInput={() => onInput(ref.current?.textContent || "")}
-        onKeyDown={onKeyDown}
-        onPaste={onPaste}
-        onClick={() => {
-          if (!isActive && window.getSelection()?.toString() === "") {
-            onActivate();
-          }
-        }}
-        className={cn(
-          "flex-1 font-serif text-lg leading-[1.85] min-w-0 cursor-text select-text",
-          isActive && "outline-none",
-        )}
-        style={{ wordBreak: "break-word" }}
-      />
-    );
-  },
-);
-EditableSpan.displayName = "EditableSpan";
+/** Get the line id from a DOM node by walking up to find [data-line-id] */
+function getLineIdFromNode(node: Node | null): number | null {
+  let el = node instanceof HTMLElement ? node : node?.parentElement;
+  while (el) {
+    const id = el.getAttribute("data-line-id");
+    if (id !== null) return Number(id);
+    el = el.parentElement;
+  }
+  return null;
+}
+
+/** Get cursor offset within the line text element */
+function getOffsetInLine(node: Node, offset: number, lineEl: HTMLElement): number {
+  if (node === lineEl) {
+    let textOffset = 0;
+    for (let i = 0; i < offset && i < lineEl.childNodes.length; i++) {
+      textOffset += (lineEl.childNodes[i].textContent || "").length;
+    }
+    return textOffset;
+  }
+  if (node.nodeType === Node.TEXT_NODE && node.parentNode === lineEl) {
+    let total = 0;
+    let sibling = lineEl.firstChild;
+    while (sibling && sibling !== node) {
+      total += (sibling.textContent || "").length;
+      sibling = sibling.nextSibling;
+    }
+    return total + offset;
+  }
+  const walker = document.createTreeWalker(lineEl, NodeFilter.SHOW_TEXT);
+  let total = 0;
+  let current = walker.nextNode();
+  while (current) {
+    if (current === node) return total + offset;
+    total += (current.textContent || "").length;
+    current = walker.nextNode();
+  }
+  return Math.min(offset, (lineEl.textContent || "").length);
+}
+
+// ── LineText — manages text imperatively to avoid React/contentEditable conflicts
+
+const LineText = React.memo<{
+  text: string;
+  lineId: number;
+  elRef: (el: HTMLDivElement | null) => void;
+  className?: string;
+  style?: React.CSSProperties;
+}>(({ text, lineId, elRef, className, style }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    elRef(ref.current);
+    return () => elRef(null);
+  }, [elRef]);
+
+  useEffect(() => {
+    if (ref.current && ref.current.textContent !== text) {
+      ref.current.textContent = text;
+    }
+  }, [text]);
+
+  return (
+    <div
+      ref={ref}
+      data-line-id={lineId}
+      className={cn(
+        "flex-1 min-w-0 cursor-text select-text font-serif text-lg leading-[1.85] outline-none",
+        className,
+      )}
+      style={{ wordBreak: "break-word", ...style }}
+    />
+  );
+});
+LineText.displayName = "LineText";
 
 // ── Main component ────────────────────────────────────────────────────
 
@@ -138,8 +193,8 @@ export const EditableLineView = React.forwardRef<
 >(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
   const focusTarget = useRef<{ id: number; cursor: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const els = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const expandableIds = useMemo(() => collectExpandableIds(lines), [lines]);
@@ -147,7 +202,7 @@ export const EditableLineView = React.forwardRef<
     () => lines.some((line) => line.text.trim().length > 0),
     [lines],
   );
-  const showEmptyState = !hasLineContent && activeId === null;
+  const showEmptyState = !hasLineContent && lines.length <= 1 && !lines[0]?.text;
 
   React.useImperativeHandle(
     fwdRef,
@@ -170,7 +225,7 @@ export const EditableLineView = React.forwardRef<
     [expandableIds, collapsed, onCollapseChange],
   );
 
-  // Restore focus after state changes
+  // Restore focus/cursor after programmatic state changes
   useEffect(() => {
     if (!focusTarget.current) return;
     const { id, cursor } = focusTarget.current;
@@ -192,15 +247,10 @@ export const EditableLineView = React.forwardRef<
     }
   });
 
-  // Stable ref for current lines (avoids stale closures)
   const linesRef = useRef(lines);
   linesRef.current = lines;
-
-  const getCursor = (el: HTMLDivElement) => {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return 0;
-    return sel.getRangeAt(0).startOffset;
-  };
+  const collapsedRef = useRef(collapsed);
+  collapsedRef.current = collapsed;
 
   const setElRef = useCallback(
     (id: number) => (el: HTMLDivElement | null) => {
@@ -210,38 +260,253 @@ export const EditableLineView = React.forwardRef<
     [],
   );
 
+  // ── Helpers for the active line ──
+
+  const getActiveInfo = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel?.focusNode) return null;
+    const lineId = getLineIdFromNode(sel.focusNode);
+    if (lineId === null) return null;
+    const el = els.current.get(lineId);
+    if (!el) return null;
+    const cur = linesRef.current;
+    const idx = cur.findIndex((l) => l.id === lineId);
+    if (idx === -1) return null;
+    const cursor = getOffsetInLine(sel.focusNode, sel.focusOffset, el);
+    return { lineId, el, idx, cursor, line: cur[idx] };
+  }, []);
+
+  const getCrossLineSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    const anchorLineId = getLineIdFromNode(sel.anchorNode);
+    const focusLineId = getLineIdFromNode(sel.focusNode);
+    if (anchorLineId === null || focusLineId === null) return null;
+    if (anchorLineId === focusLineId) return null;
+    const anchorEl = els.current.get(anchorLineId);
+    const focusEl = els.current.get(focusLineId);
+    if (!anchorEl || !focusEl) return null;
+    return {
+      anchorLineId,
+      anchorOffset: getOffsetInLine(sel.anchorNode!, sel.anchorOffset, anchorEl),
+      focusLineId,
+      focusOffset: getOffsetInLine(sel.focusNode!, sel.focusOffset, focusEl),
+    };
+  }, []);
+
+  const normalizeSelection = useCallback(
+    (s: { anchorLineId: number; anchorOffset: number; focusLineId: number; focusOffset: number }) => {
+      const cur = linesRef.current;
+      const ai = cur.findIndex((l) => l.id === s.anchorLineId);
+      const fi = cur.findIndex((l) => l.id === s.focusLineId);
+      if (ai === -1 || fi === -1) return null;
+      if (ai < fi || (ai === fi && s.anchorOffset <= s.focusOffset)) {
+        return { startLineIdx: ai, startOffset: s.anchorOffset, endLineIdx: fi, endOffset: s.focusOffset };
+      }
+      return { startLineIdx: fi, startOffset: s.focusOffset, endLineIdx: ai, endOffset: s.anchorOffset };
+    },
+    [],
+  );
+
+  const deleteSelection = useCallback(
+    (crossSel: { anchorLineId: number; anchorOffset: number; focusLineId: number; focusOffset: number }) => {
+      const cur = linesRef.current;
+      const norm = normalizeSelection(crossSel);
+      if (!norm) return null;
+      const { startLineIdx, startOffset, endLineIdx, endOffset } = norm;
+      const startLine = cur[startLineIdx];
+      const endLine = cur[endLineIdx];
+      const next = [...cur];
+      next[startLineIdx] = { ...startLine, text: startLine.text.slice(0, startOffset) + endLine.text.slice(endOffset) };
+      if (endLineIdx > startLineIdx) next.splice(startLineIdx + 1, endLineIdx - startLineIdx);
+      onLinesChange(next);
+      return { lineId: startLine.id, cursor: startOffset };
+    },
+    [normalizeSelection, onLinesChange],
+  );
+
   const createInitialLine = useCallback(
     (text = "") => {
       const newId = genId();
       setAllSelected(false);
-      setActiveId(newId);
       onLinesChange([{ id: newId, text, indent: 0 }]);
       focusTarget.current = { id: newId, cursor: text.length };
     },
     [onLinesChange],
   );
 
-  const handleInput = useCallback(
-    (id: number, text: string) => {
+  const splitActiveLine = useCallback(() => {
+    try {
+      const info = getActiveInfo();
+      if (!info) return;
+
+      const sel = window.getSelection();
+      const currentText = linesRef.current[info.idx]?.text ?? info.el.textContent ?? "";
+      let splitCursor = info.cursor;
+      let nextText = currentText;
+
+      if (sel && !sel.isCollapsed && sel.anchorNode && sel.focusNode) {
+        const sameLineSelection =
+          info.el.contains(sel.anchorNode) && info.el.contains(sel.focusNode);
+
+        if (sameLineSelection) {
+          const anchorOffset = getOffsetInLine(
+            sel.anchorNode,
+            sel.anchorOffset,
+            info.el,
+          );
+          const focusOffset = getOffsetInLine(
+            sel.focusNode,
+            sel.focusOffset,
+            info.el,
+          );
+          const start = Math.min(anchorOffset, focusOffset);
+          const end = Math.max(anchorOffset, focusOffset);
+          splitCursor = start;
+          nextText = currentText.slice(0, start) + currentText.slice(end);
+        }
+      }
+
+      const before = nextText.slice(0, splitCursor);
+      const after = nextText.slice(splitCursor);
+      const newId = genId();
       const cur = linesRef.current;
-      const idx = cur.findIndex((l) => l.id === id);
-      if (idx === -1) return;
       const next = [...cur];
-      next[idx] = { ...next[idx], text };
+      next[info.idx] = { ...info.line, text: before };
+      next.splice(info.idx + 1, 0, { id: newId, text: after, indent: info.line.indent });
       onLinesChange(next);
+      focusTarget.current = { id: newId, cursor: 0 };
+    } catch {
+      // Keep Enter from taking down the whole editor if the browser selection is in an odd state.
+    }
+  }, [getActiveInfo, onLinesChange]);
+
+  // ── Input: sync DOM text → state ──
+
+  const handleInput = useCallback(() => {
+    const info = getActiveInfo();
+    if (!info) return;
+    const text = info.el.textContent || "";
+    const cur = linesRef.current;
+    if (cur[info.idx].text === text) return;
+    const next = [...cur];
+    next[info.idx] = { ...next[info.idx], text };
+    onLinesChange(next);
+  }, [onLinesChange, getActiveInfo]);
+
+  // ── BeforeInput: intercept structural mutations ──
+
+  const handleBeforeInput = useCallback(
+    (e: React.FormEvent<HTMLDivElement>) => {
+      const nativeEvent = e.nativeEvent as InputEvent;
+      const inputType = nativeEvent.inputType;
+      if (!inputType) return;
+
+      if (inputType === "insertParagraph" || inputType === "insertLineBreak") {
+        e.preventDefault();
+        return;
+      }
+
+      const sel = window.getSelection();
+      if (!sel) return;
+
+      // Cross-line selection: intercept ALL mutations
+      if (!sel.isCollapsed) {
+        const anchorId = getLineIdFromNode(sel.anchorNode);
+        const focusId = getLineIdFromNode(sel.focusNode);
+        if (anchorId !== null && focusId !== null && anchorId !== focusId) {
+          e.preventDefault();
+          const anchorEl = els.current.get(anchorId);
+          const focusEl = els.current.get(focusId);
+          if (!anchorEl || !focusEl) return;
+          const crossSel = {
+            anchorLineId: anchorId,
+            anchorOffset: getOffsetInLine(sel.anchorNode!, sel.anchorOffset, anchorEl),
+            focusLineId: focusId,
+            focusOffset: getOffsetInLine(sel.focusNode!, sel.focusOffset, focusEl),
+          };
+
+          if (inputType.startsWith("delete")) {
+            const result = deleteSelection(crossSel);
+            if (result) focusTarget.current = { id: result.lineId, cursor: result.cursor };
+          } else if (inputType === "insertText" && nativeEvent.data) {
+            const result = deleteSelection(crossSel);
+            if (result) {
+              const cur = linesRef.current;
+              const afterIdx = cur.findIndex((l) => l.id === result.lineId);
+              if (afterIdx !== -1) {
+                const theLine = cur[afterIdx];
+                const newText = theLine.text.slice(0, result.cursor) + nativeEvent.data + theLine.text.slice(result.cursor);
+                const next = [...cur];
+                next[afterIdx] = { ...theLine, text: newText };
+                onLinesChange(next);
+                focusTarget.current = { id: result.lineId, cursor: result.cursor + nativeEvent.data.length };
+              }
+            }
+          }
+          return;
+        }
+      }
+
+      // Backspace at start of line
+      if (inputType === "deleteContentBackward" && sel.isCollapsed) {
+        const info = getActiveInfo();
+        if (!info) return;
+        // Re-read cursor from the actual el, since getActiveInfo might be stale
+        const cursor = getOffsetInLine(sel.focusNode!, sel.focusOffset, info.el);
+        if (cursor === 0) {
+          e.preventDefault();
+          const cur = linesRef.current;
+          if (info.line.indent > 0) {
+            const next = [...cur];
+            next[info.idx] = { ...info.line, indent: info.line.indent - 1 };
+            onLinesChange(next);
+            focusTarget.current = { id: info.lineId, cursor: 0 };
+          } else if (info.idx > 0) {
+            const prev = cur[info.idx - 1];
+            const next = [...cur];
+            next[info.idx - 1] = { ...prev, text: prev.text + info.line.text };
+            next.splice(info.idx, 1);
+            onLinesChange(next);
+            focusTarget.current = { id: prev.id, cursor: prev.text.length };
+          }
+          return;
+        }
+      }
+
+      // Delete at end of line
+      if (inputType === "deleteContentForward" && sel.isCollapsed) {
+        const info = getActiveInfo();
+        if (!info) return;
+        const cursor = getOffsetInLine(sel.focusNode!, sel.focusOffset, info.el);
+        const textLen = (info.el.textContent || "").length;
+        if (cursor >= textLen) {
+          e.preventDefault();
+          const cur = linesRef.current;
+          // Find next visible line
+          const collapseSet = collapsedRef.current;
+          for (let j = info.idx + 1; j < cur.length; j++) {
+            if (isVisible(cur, j, collapseSet)) {
+              const nextLine = cur[j];
+              const next = [...cur];
+              next[info.idx] = { ...info.line, text: info.line.text + nextLine.text };
+              next.splice(j, 1);
+              onLinesChange(next);
+              focusTarget.current = { id: info.lineId, cursor: textLen };
+              return;
+            }
+          }
+        }
+      }
     },
-    [onLinesChange],
+    [getActiveInfo, deleteSelection, onLinesChange],
   );
 
-  const handleKeyDown = useCallback(
-    (id: number, e: React.KeyboardEvent<HTMLDivElement>) => {
-      const cur = linesRef.current;
-      const idx = cur.findIndex((l) => l.id === id);
-      if (idx === -1) return;
-      const line = cur[idx];
-      const el = els.current.get(id);
-      const cursor = el ? getCursor(el) : 0;
+  // ── KeyDown: Tab, undo/redo, select-all, copy/cut ──
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      // Undo/Redo
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) onRedo?.();
@@ -249,270 +514,198 @@ export const EditableLineView = React.forwardRef<
         return;
       }
 
-      // Cmd+A: select all lines
+      // Cmd+A
       if ((e.metaKey || e.ctrlKey) && e.key === "a") {
         e.preventDefault();
+        const container = containerRef.current;
+        if (container) {
+          const sel = window.getSelection();
+          if (sel) {
+            const range = document.createRange();
+            range.selectNodeContents(container);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+        }
         setAllSelected(true);
         return;
       }
+
+      const cur = linesRef.current;
 
       if (allSelected && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c") {
         e.preventDefault();
         void navigator.clipboard.writeText(editableLinesToString(cur));
         return;
       }
-
       if (allSelected && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "x") {
         e.preventDefault();
         void navigator.clipboard.writeText(editableLinesToString(cur));
         createInitialLine();
         return;
       }
-
       if (allSelected && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
+        setAllSelected(false);
         return;
       }
-
-      // When all selected: Backspace/Delete clears everything
       if (allSelected && (e.key === "Backspace" || e.key === "Delete")) {
         e.preventDefault();
         createInitialLine();
         return;
       }
-
-      // When all selected: any printable key replaces all with that character
       if (allSelected && e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         setAllSelected(false);
         const newId = genId();
-        setActiveId(newId);
         onLinesChange([{ id: newId, text: e.key, indent: 0 }]);
         focusTarget.current = { id: newId, cursor: 1 };
         return;
       }
-
-      // Any other key clears the selection
       if (allSelected) {
         setAllSelected(false);
       }
 
+      if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        splitActiveLine();
+        return;
+      }
+
+      // Tab
       if (e.key === "Tab") {
         e.preventDefault();
+        const info = getActiveInfo();
+        if (!info) return;
         const next = [...cur];
         if (e.shiftKey) {
-          if (line.indent > 0) {
-            next[idx] = { ...line, indent: line.indent - 1 };
-            setActiveId(id);
+          if (info.line.indent > 0) {
+            next[info.idx] = { ...info.line, indent: info.line.indent - 1 };
             onLinesChange(next);
-            focusTarget.current = { id, cursor };
+            focusTarget.current = { id: info.lineId, cursor: info.cursor };
           }
         } else {
-          const maxIndent = idx > 0 ? cur[idx - 1].indent + 1 : 0;
-          if (line.indent < maxIndent) {
-            next[idx] = { ...line, indent: line.indent + 1 };
-            setActiveId(id);
+          const maxIndent = info.idx > 0 ? cur[info.idx - 1].indent + 1 : 0;
+          if (info.line.indent < maxIndent) {
+            next[info.idx] = { ...info.line, indent: info.line.indent + 1 };
             onLinesChange(next);
-            focusTarget.current = { id, cursor };
+            focusTarget.current = { id: info.lineId, cursor: info.cursor };
           }
         }
         return;
-      }
-
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const text = el?.textContent || "";
-        const before = text.slice(0, cursor);
-        const after = text.slice(cursor);
-        const newId = genId();
-        const next = [...cur];
-        next[idx] = { ...line, text: before };
-        next.splice(idx + 1, 0, { id: newId, text: after, indent: line.indent });
-        setActiveId(newId);
-        onLinesChange(next);
-        focusTarget.current = { id: newId, cursor: 0 };
-        return;
-      }
-
-      if (e.key === "Backspace" && cursor === 0) {
-        if (line.indent > 0) {
-          e.preventDefault();
-          const next = [...cur];
-          next[idx] = { ...line, indent: line.indent - 1 };
-          setActiveId(id);
-          onLinesChange(next);
-          focusTarget.current = { id, cursor: 0 };
-          return;
-        }
-        if (idx > 0) {
-          e.preventDefault();
-          const prev = cur[idx - 1];
-          const next = [...cur];
-          next[idx - 1] = { ...prev, text: prev.text + line.text };
-          next.splice(idx, 1);
-          setActiveId(prev.id);
-          onLinesChange(next);
-          focusTarget.current = { id: prev.id, cursor: prev.text.length };
-          return;
-        }
-      }
-
-      if (e.key === "ArrowUp") {
-        for (let j = idx - 1; j >= 0; j--) {
-          if (isVisible(cur, j, collapsed)) {
-            e.preventDefault();
-            setActiveId(cur[j].id);
-            const target = els.current.get(cur[j].id);
-            if (target) {
-              target.focus();
-              try {
-                const sel = window.getSelection();
-                const node = target.firstChild || target;
-                const pos = Math.min(cursor, (node.textContent || "").length);
-                const range = document.createRange();
-                range.setStart(node, pos);
-                range.collapse(true);
-                sel?.removeAllRanges();
-                sel?.addRange(range);
-              } catch {
-                /* ignore */
-              }
-            }
-            return;
-          }
-        }
-      }
-
-      if (e.key === "ArrowDown") {
-        for (let j = idx + 1; j < cur.length; j++) {
-          if (isVisible(cur, j, collapsed)) {
-            e.preventDefault();
-            setActiveId(cur[j].id);
-            const target = els.current.get(cur[j].id);
-            if (target) {
-              target.focus();
-              try {
-                const sel = window.getSelection();
-                const node = target.firstChild || target;
-                const pos = Math.min(cursor, (node.textContent || "").length);
-                const range = document.createRange();
-                range.setStart(node, pos);
-                range.collapse(true);
-                sel?.removeAllRanges();
-                sel?.addRange(range);
-              } catch {
-                /* ignore */
-              }
-            }
-            return;
-          }
-        }
       }
     },
-    [onLinesChange, collapsed, allSelected, onUndo, onRedo, createInitialLine],
+    [onLinesChange, allSelected, onUndo, onRedo, createInitialLine, getActiveInfo, splitActiveLine],
   );
 
+  // ── Paste ──
+
   const handlePaste = useCallback(
-    (id: number, e: React.ClipboardEvent<HTMLDivElement>) => {
+    (e: React.ClipboardEvent<HTMLDivElement>) => {
       const text = e.clipboardData.getData("text/plain");
+
+      // Cross-line selection paste
+      const crossSel = getCrossLineSelection();
+      if (crossSel) {
+        e.preventDefault();
+        const result = deleteSelection(crossSel);
+        if (!result) return;
+        const cur = linesRef.current;
+        const pIdx = cur.findIndex((l) => l.id === result.lineId);
+        if (pIdx === -1) return;
+
+        if (!text.includes("\n")) {
+          const theLine = cur[pIdx];
+          const newText = theLine.text.slice(0, result.cursor) + text + theLine.text.slice(result.cursor);
+          const next = [...cur];
+          next[pIdx] = { ...theLine, text: newText };
+          onLinesChange(next);
+          focusTarget.current = { id: result.lineId, cursor: result.cursor + text.length };
+        } else {
+          const pasted = parseToEditableLines(text);
+          if (pasted.length === 0) return;
+          const theLine = cur[pIdx];
+          const before = theLine.text.slice(0, result.cursor);
+          const after = theLine.text.slice(result.cursor);
+          const minP = Math.min(...pasted.map((l) => l.indent));
+          const adj = pasted.map((l) => ({ ...l, indent: l.indent - minP + theLine.indent }));
+          adj[0].text = before + adj[0].text;
+          adj[adj.length - 1].text += after;
+          const last = adj[adj.length - 1];
+          const next = [...cur];
+          next.splice(pIdx, 1, ...adj);
+          onLinesChange(next);
+          focusTarget.current = { id: last.id, cursor: last.text.length - after.length };
+        }
+        return;
+      }
+
       if (allSelected) {
         e.preventDefault();
         const pasted = parseToEditableLines(text);
-        if (pasted.length === 0) {
-          createInitialLine();
-          return;
-        }
+        if (pasted.length === 0) { createInitialLine(); return; }
         setAllSelected(false);
-        setActiveId(pasted[pasted.length - 1].id);
         onLinesChange(pasted);
         const last = pasted[pasted.length - 1];
         focusTarget.current = { id: last.id, cursor: last.text.length };
         return;
       }
 
-      if (!text.includes("\n")) return; // let browser handle single-line
+      if (!text.includes("\n")) return; // let browser handle single-line paste
 
       e.preventDefault();
+      const info = getActiveInfo();
+      if (!info) return;
       const cur = linesRef.current;
-      const idx = cur.findIndex((l) => l.id === id);
-      if (idx === -1) return;
-
-      const el = els.current.get(id);
-      const cursor = el ? getCursor(el) : 0;
-      const currentText = el?.textContent || "";
-      const before = currentText.slice(0, cursor);
-      const after = currentText.slice(cursor);
+      const currentText = info.el.textContent || "";
+      const before = currentText.slice(0, info.cursor);
+      const after = currentText.slice(info.cursor);
 
       const pasted = parseToEditableLines(text);
       if (pasted.length === 0) return;
 
-      // Adjust indent relative to current line
-      const minPasted = Math.min(...pasted.map((l) => l.indent));
-      const baseIndent = cur[idx].indent;
-      const adjusted = pasted.map((l) => ({
-        ...l,
-        indent: l.indent - minPasted + baseIndent,
-      }));
-
-      adjusted[0].text = before + adjusted[0].text;
-      adjusted[adjusted.length - 1].text += after;
-
-      const last = adjusted[adjusted.length - 1];
+      const minP = Math.min(...pasted.map((l) => l.indent));
+      const adj = pasted.map((l) => ({ ...l, indent: l.indent - minP + info.line.indent }));
+      adj[0].text = before + adj[0].text;
+      adj[adj.length - 1].text += after;
+      const last = adj[adj.length - 1];
       const next = [...cur];
-      next.splice(idx, 1, ...adjusted);
-      setActiveId(last.id);
+      next.splice(info.idx, 1, ...adj);
       onLinesChange(next);
-
-      focusTarget.current = {
-        id: last.id,
-        cursor: last.text.length - after.length,
-      };
+      focusTarget.current = { id: last.id, cursor: last.text.length - after.length };
     },
-    [onLinesChange, allSelected, createInitialLine],
+    [onLinesChange, allSelected, createInitialLine, getCrossLineSelection, deleteSelection, getActiveInfo],
   );
 
-  const toggleCollapse = useCallback((id: number) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-    // Notify parent after state update
-    setTimeout(() => onCollapseChange?.(), 0);
-  }, [onCollapseChange]);
+  const toggleCollapse = useCallback(
+    (id: number) => {
+      setCollapsed((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      setTimeout(() => onCollapseChange?.(), 0);
+    },
+    [onCollapseChange],
+  );
+
+  // ── Render ──
 
   return (
-    <div
-      className={cn("flex flex-col", className)}
-      onMouseDown={() => {
-        if (allSelected) setAllSelected(false);
-        setActiveId(null);
-      }}
-    >
+    <div className={cn("flex flex-col", className)}>
       {showEmptyState && (
         <div
           className="min-h-[200px] flex items-center justify-center"
           onClick={() => createInitialLine()}
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") return;
-            if (e.key === "Enter") {
-              e.preventDefault();
-              createInitialLine();
-              return;
-            }
-            if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
-              e.preventDefault();
-              createInitialLine(e.key);
-            }
+            if (e.key === "Enter") { e.preventDefault(); createInitialLine(); return; }
+            if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) { e.preventDefault(); createInitialLine(e.key); }
           }}
           onPaste={(e) => {
             e.preventDefault();
             const pasted = parseToEditableLines(e.clipboardData.getData("text/plain"));
-            if (pasted.length === 0) {
-              createInitialLine();
-              return;
-            }
-            setActiveId(pasted[pasted.length - 1].id);
+            if (pasted.length === 0) { createInitialLine(); return; }
             onLinesChange(pasted);
             const last = pasted[pasted.length - 1];
             focusTarget.current = { id: last.id, cursor: last.text.length };
@@ -526,71 +719,90 @@ export const EditableLineView = React.forwardRef<
         </div>
       )}
 
-      {!showEmptyState && lines.map((line, i) => {
-        if (!isVisible(lines, i, collapsed)) return null;
-        const expandable = hasChildren(lines, i);
-        const isCollapsed = collapsed.has(line.id);
+      {!showEmptyState && (
+        <div
+          ref={containerRef}
+          contentEditable
+          suppressContentEditableWarning
+          className="outline-none"
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+          onBeforeInput={handleBeforeInput}
+          onPaste={handlePaste}
+          onMouseDown={() => { if (allSelected) setAllSelected(false); }}
+        >
+          {lines.map((line, i) => {
+            if (!isVisible(lines, i, collapsed)) return null;
+            const expandable = hasChildren(lines, i);
+            const isCollapsed = collapsed.has(line.id);
+            const textInset = getTextInset(line.indent);
 
-        return (
-          <div key={line.id} className={cn("flex items-stretch", allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}>
-            {/* Indent spacers with vertical lines */}
-            {Array.from({ length: line.indent }).map((_, level) => (
-              <span key={level} className="flex-none flex w-6">
-                <span className="flex-1" />
-                <span className="w-[1.5px] bg-neutral-200 dark:bg-neutral-700" />
-                <span className="w-1" />
-              </span>
-            ))}
-
-            {/* Chevron or spacer */}
-            {expandable ? (
-              <button
-                onClick={() => toggleCollapse(line.id)}
-                className={cn(
-                  "flex-none inline-flex items-center justify-center w-5 transition-colors self-start pt-[0.55em]",
-                  isCollapsed
-                    ? "text-[#007AFF]"
-                    : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
-                )}
-                type="button"
-                tabIndex={-1}
+            return (
+              <div
+                key={line.id}
+                className={cn("relative", allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
               >
-                <ChevronRight
-                  size={14}
-                  strokeWidth={2.5}
-                  className={cn(
-                    "block transition-transform duration-150",
-                    !isCollapsed && "rotate-90",
-                  )}
-                />
-              </button>
-            ) : (
-              <span className="flex-none w-5" />
-            )}
+                {/* Keep the gutter out of the editable flow so Safari can select across lines natively. */}
+                <div
+                  contentEditable={false}
+                  className="pointer-events-none absolute inset-y-0 left-0 z-[2] select-none"
+                  style={{ width: `${textInset}px`, userSelect: "none" }}
+                >
+                  {Array.from({ length: line.indent }).map((_, level) => (
+                    <span
+                      key={level}
+                      className="absolute inset-y-0 block bg-neutral-200 dark:bg-neutral-700"
+                      style={{
+                        left: `${getGuideOffset(level + 1)}px`,
+                        width: `${GUIDE_WIDTH_PX}px`,
+                        transform: "translateX(-50%)",
+                      }}
+                    />
+                  ))}
 
-            {/* Editable text */}
-            <EditableSpan
-              text={line.text}
-              isActive={activeId === line.id}
-              onInput={(t) => handleInput(line.id, t)}
-              onKeyDown={(e) => handleKeyDown(line.id, e)}
-              onPaste={(e) => handlePaste(line.id, e)}
-              onActivate={() => {
-                setActiveId(line.id);
-                focusTarget.current = { id: line.id, cursor: line.text.length };
-              }}
-              elRef={setElRef(line.id)}
-            />
+                  {expandable ? (
+                    <button
+                      contentEditable={false}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleCollapse(line.id);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className={cn(
+                        "pointer-events-auto absolute top-0 inline-flex items-center justify-end pt-[0.55em] pr-[2px] transition-colors",
+                        isCollapsed
+                          ? "text-[#007AFF]"
+                          : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
+                      )}
+                      style={{
+                        left: `${getChevronOffset(line.indent)}px`,
+                        width: `${TOGGLE_WIDTH_PX}px`,
+                      }}
+                      type="button"
+                      tabIndex={-1}
+                    >
+                      <ChevronRight
+                        size={12}
+                        strokeWidth={2.5}
+                        className={cn("block transition-transform duration-150", !isCollapsed && "rotate-90")}
+                      />
+                    </button>
+                  ) : null}
+                </div>
 
-            {/* Collapsed indicator */}
-            {expandable && isCollapsed && (
-              <span className="flex-none font-sans text-sm text-neutral-400 dark:text-neutral-500 ml-1 self-start pt-[0.55em] select-none">
-                …
-              </span>
-            )}
-          </div>
-        );
-      })}
+                <div className="relative z-[1] flex items-start" style={{ paddingLeft: `${textInset}px` }}>
+                  {/* Editable text — inherits contentEditable from container */}
+                  <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 });
