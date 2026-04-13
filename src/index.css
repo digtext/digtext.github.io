@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -42,6 +42,7 @@
 
     --font-serif: 'Newsreader', Georgia, serif;
     --font-sans: 'Inter', system-ui, sans-serif;
+    --font-input-mono: 'Roboto Mono', 'SFMono-Regular', Consolas, monospace;
 
     --sidebar-background: 240 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;

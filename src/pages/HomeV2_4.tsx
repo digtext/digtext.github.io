@@ -976,7 +976,8 @@ export const HomeV2_4Page = ({
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-md border border-transparent bg-transparent px-0 py-0 font-mono text-[14px] leading-[1.8] text-neutral-700 dark:text-neutral-300"
+                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-md border border-transparent bg-transparent px-0 py-0 text-[14px] leading-[1.8] text-neutral-700 dark:text-neutral-300"
+                      style={{ fontFamily: "var(--font-input-mono)" }}
                     >
                       <div className="min-h-[320px] px-0 py-0">
                         {inputText.length > 0 ? (
@@ -1027,7 +1028,8 @@ export const HomeV2_4Page = ({
                     onScroll={syncTextareaMirrorScroll}
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
-                    className="relative min-h-[320px] w-full resize-y bg-transparent font-mono text-[14px] leading-[1.8] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    className="relative min-h-[320px] w-full resize-y bg-transparent text-[14px] leading-[1.8] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    style={{ fontFamily: "var(--font-input-mono)" }}
                   />
                   </div>
                   <p className="mt-3 font-sans text-[12px] leading-relaxed text-neutral-400 dark:text-neutral-500">
