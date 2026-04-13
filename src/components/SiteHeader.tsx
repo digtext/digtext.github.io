@@ -7,8 +7,8 @@ const SiteHeader = () => {
   const isArticles =
     pathname.startsWith("/articles") || pathname.startsWith("/article/");
   const isHome =
-    pathname === "/" || pathname.startsWith("/reader") || pathname.startsWith("/about");
-  const isPages = pathname === "/p" || pathname.startsWith("/p/");
+    pathname === "/" || pathname.startsWith("/reader");
+  const isPages = pathname === "/p";
 
   const [shared, setShared] = useState(false);
 

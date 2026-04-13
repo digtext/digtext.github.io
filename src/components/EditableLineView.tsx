@@ -232,12 +232,14 @@ interface EditableLineViewProps {
   variant?: "lines" | "bullets";
   /** When true, content is not editable but collapse/expand still works. */
   readOnly?: boolean;
+  readOnlyTextClassName?: string;
+  readOnlyTextStyle?: React.CSSProperties;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyTextClassName = "", readOnlyTextStyle }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
   const focusTarget = useRef<{ id: number; cursor: number } | null>(null);
@@ -934,8 +936,11 @@ export const EditableLineView = React.forwardRef<
                 <div className="relative z-[1] flex items-start" style={{ paddingLeft: `${textInset}px` }}>
                   {readOnly ? (
                     <div
-                      className="flex-1 min-w-0 font-serif text-lg leading-[1.85] [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800"
-                      style={{ wordBreak: "break-word" }}
+                      className={cn(
+                        "flex-1 min-w-0 font-serif text-lg leading-[1.85] [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800",
+                        readOnlyTextClassName,
+                      )}
+                      style={{ wordBreak: "break-word", ...readOnlyTextStyle }}
                     >
                       <ReactMarkdown components={mdComponents}>{line.text}</ReactMarkdown>
                     </div>

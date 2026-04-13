@@ -920,7 +920,7 @@ export const HomeV2_4Page = ({
                   className={pillButtonClass(mode === "input")}
                   type="button"
                 >
-                  Input
+                  Input text
                 </button>
               </div>
 
@@ -1043,6 +1043,8 @@ export const HomeV2_4Page = ({
                   onLinesChange={handleLinesChange}
                   onCollapseChange={() => forceUpdate((n) => n + 1)}
                   readOnly
+                  readOnlyTextClassName="text-[16px] leading-[1.8]"
+                  readOnlyTextStyle={{ fontFamily: "var(--font-serif)" }}
                 />
               )}
             </div>

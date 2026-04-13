@@ -9,18 +9,18 @@ const groups: Group[] = [
     title: "Home",
     versions: [
       { label: "Home v1", to: "/p/home-v1" },
-      { label: "Home v2", to: "/p/home-v2", live: true },
+      { label: "Home v2", to: "/", live: true },
       { label: "Home v2.1 (bullet)", to: "/p/home-v2-1" },
       { label: "Home v2.2 (preview)", to: "/p/home-v2-2" },
       { label: "Home v2.3 (no input)", to: "/p/home-v2-3" },
       { label: "Home v2.4 (not text-area)", to: "/p/home-v2-4" },
-      { label: "Home v2.4 (text-area)", to: "/p/home-v2-4-text-area", live: true },
+      { label: "Home v2.4 (text-area)", to: "/p/home-v2-4-text-area" },
     ],
   },
   {
     title: "Articles",
     versions: [
-      { label: "Articles v1", to: "/p/articles-v1", live: true },
+      { label: "Articles v1", to: "/articles", live: true },
     ],
   },
   {

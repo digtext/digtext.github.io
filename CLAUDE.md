@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This is the canonical project guide for AI coding agents in this repository.
+`Codex.md` may exist as a thin compatibility pointer, but `CLAUDE.md` is the single maintained source of truth.
 
 ## Commands
 
@@ -8,47 +9,107 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Start dev server on port 8080
 npm run build        # Production build
 npm run lint         # ESLint check
-npm run test         # Run Vitest (single run)
+npm run test         # Run Vitest once
 npm run test:watch   # Run Vitest in watch mode
-npm run preview      # Preview production build
+npm run preview      # Preview the production build
 ```
 
-## Architecture
+## Product Model
 
-**Dig.txt** is a progressive/adaptive reading app built with React + TypeScript + Vite. The core idea: articles are written with expandable inline sections, letting readers choose their depth of engagement.
+Dig.txt is a progressive reading app built with React, TypeScript, and Vite.
+There are two main authoring and reading systems in the repo:
 
-### Core Feature: DigText Component
+- `src/components/DigText.tsx` renders the inline `>>hidden<<` dig text format.
+- `src/components/EditableLineView.tsx` powers the bullet / line-based reader-editor used in the `/p` prototypes.
 
-`src/components/DigText.tsx` is the heart of the app. It implements a custom markup format:
-- `>>text<<` marks an expandable section (nesting supported: `>>outer >>inner<< outer<<`)
-- `parseDigText()` recursively parses the markup into a `Segment` tree (`visible` | `expandable`)
-- `SegmentRenderer` renders the tree; expandable segments show a `+` toggle button inline
-- Expanding reveals the hidden text highlighted with `bg-expanded-bg`
-- "Expand all / Collapse all" controls at the top
+The app is intentionally split between stable product pages and experimental prototype pages.
 
-**Important**: `globalId` is a module-level counter reset at the top of each `DigText` render — this is intentional for stable segment IDs within a single render.
+## Routes
 
-### Routing & Pages
+Routes live in `src/App.tsx`.
 
-Defined in `src/App.tsx`:
-- `/` → `pages/Home.tsx` — article library listing (most articles show "Coming soon")
-- `/article/china-gay-rights` → `pages/Index.tsx` — article reader with sample content
-- `*` → `pages/NotFound.tsx`
+- `/` is the live Home page connected to the public main nav.
+- `/about` is the older About / prompt page.
+- `/articles` is the article library.
+- `/article/:articleId` is the article reader.
+- `/reader` is the fullscreen DigText reader demo.
+- `/p` is the prototype index.
 
-### Styling
+### Prototype Routing Rule
 
-- **Tailwind CSS** with class-based dark mode (`dark:` prefix)
-- **Theme variables** in `src/index.css`: `--expanded-bg`, `--expand-button`, `--expand-button-hover` control the interactive elements
-- **Fonts**: Newsreader (serif, article body) + Inter (sans, UI)
-- **shadcn-ui** components live in `src/components/ui/` — 48 pre-built Radix UI components
+For each prototype family, only one version should be treated as live.
+The live version is the one connected to the real website and the main nav, not just the newest prototype in `/p`.
 
-### Path Alias
+In practice:
 
-`@/` maps to `src/` throughout the codebase (configured in both `vite.config.ts` and `tsconfig.json`).
+- the live Home page is the component wired to `/`
+- the live Articles page is the component wired to `/articles`
+- versioned `/p/...` routes are archive / experiment routes, even if they render the same component
 
-### Adding New Articles
+Current example:
 
-1. Create a new page in `src/pages/` using the `DigText` component
-2. Add a route in `src/App.tsx`
-3. Update the article list in `src/pages/Home.tsx`
-4. Write article content using `>>...<<` markup for expandable sections
+- Home live route: `/`
+- Home prototype alias: `/p/home-v2`
+- Archived Home experiments: versioned routes such as `/p/home-v2-1`, `/p/home-v2-4`, `/p/home-v2-4-text-area`
+- Articles live route: `/articles`
+
+When switching a page live:
+
+- update the real public route first
+- make sure the main nav points to that page
+- only then update the live pill in `/p`
+
+Do not point the live pill at a versioned `/p/...` URL if the public site is using a normal route like `/` or `/articles`.
+
+## Current Home Prototype
+
+The current live Home prototype is the textarea version.
+
+- `src/pages/HomeV2_4.tsx` contains the shared Home v2.4 shell and logic.
+- `src/pages/HomeV2_4_TextArea.tsx` is the textarea wrapper variant.
+- `/p/home-v2` should point to the live textarea version.
+
+The textarea work is documented in `input-process.md`.
+That file is the best short history of the decisions around:
+
+- textarea instead of `contentEditable`
+- tab-based internal indentation
+- pasted-list normalization
+- mirror-layer rendering for hanging indent and selection visuals
+
+## Dig / Editor Notes
+
+### `DigText`
+
+`src/components/DigText.tsx` is still the core inline dig-text parser.
+
+- `>>text<<` marks an expandable section.
+- Nesting is supported.
+- The parser produces a segment tree and the renderer handles expand / collapse.
+- `globalId` is intentionally reset per render for stable IDs within one render pass.
+
+### `EditableLineView`
+
+`EditableLineView` is used both as an editor and as a read-only collapsed reader.
+When changing it, be careful not to break both modes at once.
+
+- The editor behavior is tuned around keyboard-first editing and Safari compatibility.
+- The read-only mode is what powers the Dig tab in the Home textarea prototype.
+
+## Styling
+
+- Tailwind CSS with class-based dark mode.
+- Theme variables live in `src/index.css`.
+- Main fonts currently include Newsreader, Inter, Source Serif 4, and Roboto Mono.
+
+## Path Alias
+
+`@/` maps to `src/` in both `vite.config.ts` and `tsconfig.json`.
+
+## Working Rules For This Repo
+
+- Live pill means "currently live on the public website / main nav", not "latest prototype".
+- For Home, the live `/p` entry should map to `/`, and for Articles it should map to `/articles`.
+- Prefer updating the public live route instead of inventing a new "live" versioned URL.
+- If you change the Home textarea input behavior, update `input-process.md`.
+- Keep repo guidance synchronized here in `CLAUDE.md`; avoid duplicating long instructions in multiple files.

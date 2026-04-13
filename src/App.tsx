@@ -31,14 +31,14 @@ const App = () => (
         <Sonner />
         <BrowserRouter basename="/digtext">
           <Routes>
-            <Route path="/" element={<About />} />
-            <Route path="/about" element={<Navigate to="/" replace />} />
+            <Route path="/" element={<HomeV2_4_TextArea />} />
+            <Route path="/about" element={<About />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/article/:articleId" element={<ArticlePage />} />
             <Route path="/reader" element={<Reader />} />
             <Route path="/p" element={<P />} />
             <Route path="/p/home-v1" element={<HomeV1 />} />
-            <Route path="/p/home-v2" element={<About />} />
+            <Route path="/p/home-v2" element={<HomeV2_4_TextArea />} />
             <Route path="/p/home-v2-1" element={<HomeV2_1 />} />
             <Route path="/p/home-v2-2" element={<HomeV2_2 />} />
             <Route path="/p/home-v2-3" element={<HomeV2_3 />} />
