@@ -230,6 +230,7 @@ const getVisualLineData = (line: string): VisualLineData => {
       paddingLeftCh: indentCh + BULLET_WIDTH_CH,
       textIndentCh: -BULLET_WIDTH_CH,
       hiddenPrefixLength: indentMatch.length,
+      bulletDisplay: bulletMatch[1] === "*" ? "•" : bulletMatch[1],
     };
   }
 
@@ -238,6 +239,7 @@ const getVisualLineData = (line: string): VisualLineData => {
     paddingLeftCh: indentCh,
     textIndentCh: 0,
     hiddenPrefixLength: indentMatch.length,
+    bulletDisplay: null,
   };
 };
 
@@ -357,6 +359,7 @@ interface VisualLineData {
   paddingLeftCh: number;
   textIndentCh: number;
   hiddenPrefixLength: number;
+  bulletDisplay: string | null;
 }
 
 interface HomeV2_4PageProps {
@@ -789,6 +792,17 @@ export const HomeV2_4Page = ({
     textareaMirrorRef.current.scrollLeft = textareaRef.current.scrollLeft;
   }, []);
 
+  const renderMirrorSegment = useCallback((text: string, bulletDisplay: string | null) => {
+    if (!text) return null;
+    if (!bulletDisplay || !text.startsWith("* ")) return text;
+
+    return (
+      <>
+        {bulletDisplay}{" "}{text.slice(2)}
+      </>
+    );
+  }, []);
+
   const textareaMirrorLines = useMemo(() => {
     const rawLines = inputText.split("\n");
     const lineStarts = getLineStarts(rawLines);
@@ -979,14 +993,14 @@ export const HomeV2_4Page = ({
                               >
                                 {visual.selectedText ? (
                                   <>
-                                    {visual.beforeText}
+                                    {renderMirrorSegment(visual.beforeText, visual.bulletDisplay)}
                                     <span className="bg-rose-200/70 dark:bg-rose-500/30">
-                                      {visual.selectedText}
+                                      {renderMirrorSegment(visual.selectedText, visual.bulletDisplay)}
                                     </span>
-                                    {visual.afterText}
+                                    {renderMirrorSegment(visual.afterText, visual.bulletDisplay)}
                                   </>
                                 ) : (
-                                  visual.text || " "
+                                  renderMirrorSegment(visual.text, visual.bulletDisplay) || " "
                                 )}
                               </div>
                             );
