@@ -63,17 +63,18 @@ const pillButtonClass = (active = false) =>
       : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
   );
 
-const HomeV2_3 = () => {
+const HomeV2_4 = () => {
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState<"digtext" | "input">("digtext");
   const [lines, setLines] = useState<EditableLine[]>(() =>
     parseToEditableLines(DEMO_CONTENT),
   );
   const editorRef = useRef<EditableLineViewHandle>(null);
+  const digTextRef = useRef<EditableLineViewHandle>(null);
   const linesRef = useRef(lines);
   const pastRef = useRef<EditableLine[][]>([]);
   const futureRef = useRef<EditableLine[][]>([]);
   const applyingHistoryRef = useRef(false);
-  // Force re-render when collapse state changes inside the editor (and on mount)
   const [, forceUpdate] = useState(0);
   useEffect(() => { forceUpdate((n) => n + 1); }, []);
   useEffect(() => {
@@ -118,7 +119,6 @@ const HomeV2_3 = () => {
       futureRef.current = [];
     }
     setLines(newLines);
-    // Trigger toolbar re-render for expand/collapse state
     forceUpdate((n) => n + 1);
   }, [areLinesEqual, cloneLines]);
 
@@ -146,14 +146,6 @@ const HomeV2_3 = () => {
     });
   }, [cloneLines]);
 
-  const hasContent = lines.length > 0 && lines.some((l) => l.text.trim());
-  const handle = editorRef.current;
-  const hasExpandables = handle?.hasExpandables ?? false;
-  const anyExpanded = handle?.anyExpanded ?? false;
-
-  const actionLabel = anyExpanded ? "Collapse all" : "Expand all";
-  const ActionIcon = anyExpanded ? X : Plus;
-
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
       <SiteHeader />
@@ -179,17 +171,17 @@ const HomeV2_3 = () => {
 
         <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
           {/* Eyebrow */}
-            <div className="mb-10 flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 dark:border-neutral-800">
-                <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500 dark:text-neutral-400">
-                  a new interface for text
-                </span>
-              </div>
-              <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-violet-700 dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300">
-                home v2.3 no input
+          <div className="mb-10 flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 dark:border-neutral-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+              <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500 dark:text-neutral-400">
+                a new interface for text
               </span>
             </div>
+            <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-violet-700 dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300">
+              home v2.4 simple
+            </span>
+          </div>
 
           {/* Big headline */}
           <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,4.17rem)]">
@@ -217,47 +209,74 @@ const HomeV2_3 = () => {
           <div className="mt-10 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/50">
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200/70 bg-white/70 px-4 py-2.5 dark:border-neutral-800 dark:bg-neutral-900/70">
-              <div className="flex items-center gap-2 ml-auto">
-                {hasContent && hasExpandables && (
-                  <div className={shellClass}>
-                    <button
-                      onClick={() => {
-                        if (anyExpanded) {
-                          handle?.collapseAll();
-                        } else {
-                          handle?.expandAll();
-                        }
-                      }}
-                      className={cn(
-                        pillButtonClass(false),
-                        "inline-flex items-center gap-1.5",
-                      )}
-                      type="button"
-                    >
-                      <ActionIcon
-                        size={14}
-                        strokeWidth={2.25}
-                        className="block"
-                      />
-                      {actionLabel}
-                    </button>
-                  </div>
-                )}
-
+              <div className={shellClass}>
+                <button
+                  onClick={() => setMode("digtext")}
+                  className={pillButtonClass(mode === "digtext")}
+                  type="button"
+                >
+                  Dig text
+                </button>
+                <button
+                  onClick={() => setMode("input")}
+                  className={pillButtonClass(mode === "input")}
+                  type="button"
+                >
+                  Input
+                </button>
               </div>
+
+              {mode === "digtext" && (
+                <div className="flex items-center gap-2 ml-auto">
+                  {(digTextRef.current?.hasExpandables ?? false) && (
+                    <div className={shellClass}>
+                      <button
+                        onClick={() => {
+                          const h = digTextRef.current;
+                          if (!h) return;
+                          h.anyExpanded ? h.collapseAll() : h.expandAll();
+                        }}
+                        className={cn(
+                          pillButtonClass(false),
+                          "inline-flex items-center gap-1.5",
+                        )}
+                        type="button"
+                      >
+                        {(digTextRef.current?.anyExpanded ?? false) ? (
+                          <X size={14} strokeWidth={2.25} className="block" />
+                        ) : (
+                          <Plus size={14} strokeWidth={2.25} className="block" />
+                        )}
+                        {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Content */}
             <div className="px-6 pt-6 pb-7 md:px-10 md:pt-8 md:pb-9">
-              <EditableLineView
-                ref={editorRef}
-                lines={lines}
-                onLinesChange={handleLinesChange}
-                onCollapseChange={() => forceUpdate((n) => n + 1)}
-                onUndo={handleUndo}
-                onRedo={handleRedo}
-                emptyStateMessage="Paste or just write here"
-              />
+              {mode === "input" ? (
+                <EditableLineView
+                  ref={editorRef}
+                  lines={lines}
+                  onLinesChange={handleLinesChange}
+                  onCollapseChange={() => forceUpdate((n) => n + 1)}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
+                  variant="bullets"
+                  emptyStateMessage="Paste indented text or a bulleted list here"
+                />
+              ) : (
+                <EditableLineView
+                  ref={digTextRef}
+                  lines={lines}
+                  onLinesChange={handleLinesChange}
+                  onCollapseChange={() => forceUpdate((n) => n + 1)}
+                  readOnly
+                />
+              )}
             </div>
           </div>
 
@@ -423,4 +442,4 @@ const HomeV2_3 = () => {
   );
 };
 
-export default HomeV2_3;
+export default HomeV2_4;

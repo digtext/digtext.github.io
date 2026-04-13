@@ -17,6 +17,7 @@ import HomeV1 from "./pages/HomeV1.tsx";
 import HomeV2_1 from "./pages/HomeV2_1.tsx";
 import HomeV2_2 from "./pages/HomeV2_2.tsx";
 import HomeV2_3 from "./pages/HomeV2_3.tsx";
+import HomeV2_4 from "./pages/HomeV2_4.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/p/home-v2-1" element={<HomeV2_1 />} />
             <Route path="/p/home-v2-2" element={<HomeV2_2 />} />
             <Route path="/p/home-v2-3" element={<HomeV2_3 />} />
+            <Route path="/p/home-v2-4" element={<HomeV2_4 />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
             <Route path="/p/about-v1" element={<AboutV1 />} />
             <Route path="/p/about-v1-1" element={<AboutV1_1 />} />

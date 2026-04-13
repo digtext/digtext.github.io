@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +46,7 @@ export function parseToEditableLines(raw: string): EditableLine[] {
 
 /** Convert line array back to indented string. */
 export function editableLinesToString(lines: EditableLine[]): string {
-  return lines.map((l) => "  ".repeat(l.indent) + l.text).join("\n");
+  return lines.map((l) => "  ".repeat(l.indent) + "- " + l.text).join("\n");
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -89,6 +90,47 @@ function getGuideOffset(level: number): number {
 
 function getChevronOffset(indent: number): number {
   return getTextInset(indent) - TOGGLE_WIDTH_PX;
+}
+
+/** Compute a new line array after moving a line block up or down. */
+function computeMoveBlock(
+  lines: EditableLine[],
+  idx: number,
+  direction: "up" | "down",
+): EditableLine[] | null {
+  const line = lines[idx];
+  let blockEnd = idx + 1;
+  while (blockEnd < lines.length && lines[blockEnd].indent > line.indent) {
+    blockEnd++;
+  }
+  if (direction === "up") {
+    if (idx === 0) return null;
+    if (lines[idx - 1].indent < line.indent) return null;
+    let prevStart = idx - 1;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (lines[i].indent === line.indent) { prevStart = i; break; }
+      if (lines[i].indent < line.indent) return null;
+    }
+    return [
+      ...lines.slice(0, prevStart),
+      ...lines.slice(idx, blockEnd),
+      ...lines.slice(prevStart, idx),
+      ...lines.slice(blockEnd),
+    ];
+  } else {
+    if (blockEnd >= lines.length) return null;
+    if (lines[blockEnd].indent !== line.indent) return null;
+    let nextEnd = blockEnd + 1;
+    while (nextEnd < lines.length && lines[nextEnd].indent > lines[blockEnd].indent) {
+      nextEnd++;
+    }
+    return [
+      ...lines.slice(0, idx),
+      ...lines.slice(blockEnd, nextEnd),
+      ...lines.slice(idx, blockEnd),
+      ...lines.slice(nextEnd),
+    ];
+  }
 }
 
 // ── Selection helpers ────────────────────────────────────────────────
@@ -186,24 +228,28 @@ interface EditableLineViewProps {
   onRedo?: () => void;
   className?: string;
   emptyStateMessage?: string;
+  /** "lines" = chevrons + indent guides (default). "bullets" = dash prefix, no guides. */
+  variant?: "lines" | "bullets";
+  /** When true, content is not editable but collapse/expand still works. */
+  readOnly?: boolean;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
   const focusTarget = useRef<{ id: number; cursor: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const els = useRef<Map<number, HTMLDivElement>>(new Map());
+  const enterHandledRef = useRef(false);
 
   const expandableIds = useMemo(() => collectExpandableIds(lines), [lines]);
   const hasLineContent = useMemo(
     () => lines.some((line) => line.text.trim().length > 0),
     [lines],
   );
-  const showEmptyState = !hasLineContent && lines.length <= 1 && !lines[0]?.text;
 
   React.useImperativeHandle(
     fwdRef,
@@ -370,6 +416,17 @@ export const EditableLineView = React.forwardRef<
 
       const before = nextText.slice(0, splitCursor);
       const after = nextText.slice(splitCursor);
+
+      // Obsidian-style: Enter on empty line → dedent instead of creating new line
+      if (!before && !after && info.line.indent > 0) {
+        const cur = linesRef.current;
+        const next = [...cur];
+        next[info.idx] = { ...info.line, indent: info.line.indent - 1 };
+        onLinesChange(next);
+        focusTarget.current = { id: info.lineId, cursor: 0 };
+        return;
+      }
+
       const newId = genId();
       const cur = linesRef.current;
       const next = [...cur];
@@ -390,6 +447,19 @@ export const EditableLineView = React.forwardRef<
     const text = info.el.textContent || "";
     const cur = linesRef.current;
     if (cur[info.idx].text === text) return;
+
+    // Bullet trigger: typing "- ", "* ", "+ ", "> " at start of empty line → indent
+    if (/^[-*+•>] $/.test(text) && info.idx > 0) {
+      const maxIndent = cur[info.idx - 1].indent + 1;
+      if (cur[info.idx].indent < maxIndent) {
+        const next = [...cur];
+        next[info.idx] = { ...next[info.idx], text: "", indent: cur[info.idx].indent + 1 };
+        onLinesChange(next);
+        focusTarget.current = { id: info.lineId, cursor: 0 };
+        return;
+      }
+    }
+
     const next = [...cur];
     next[info.idx] = { ...next[info.idx], text };
     onLinesChange(next);
@@ -405,6 +475,11 @@ export const EditableLineView = React.forwardRef<
 
       if (inputType === "insertParagraph" || inputType === "insertLineBreak") {
         e.preventDefault();
+        // Fallback: if keydown didn't handle Enter (e.g. Safari quirk), split here
+        if (!enterHandledRef.current) {
+          splitActiveLine();
+        }
+        enterHandledRef.current = false;
         return;
       }
 
@@ -431,18 +506,19 @@ export const EditableLineView = React.forwardRef<
             const result = deleteSelection(crossSel);
             if (result) focusTarget.current = { id: result.lineId, cursor: result.cursor };
           } else if (inputType === "insertText" && nativeEvent.data) {
-            const result = deleteSelection(crossSel);
-            if (result) {
+            // Compute the merged line directly instead of reading stale linesRef
+            const norm = normalizeSelection(crossSel);
+            if (norm) {
               const cur = linesRef.current;
-              const afterIdx = cur.findIndex((l) => l.id === result.lineId);
-              if (afterIdx !== -1) {
-                const theLine = cur[afterIdx];
-                const newText = theLine.text.slice(0, result.cursor) + nativeEvent.data + theLine.text.slice(result.cursor);
-                const next = [...cur];
-                next[afterIdx] = { ...theLine, text: newText };
-                onLinesChange(next);
-                focusTarget.current = { id: result.lineId, cursor: result.cursor + nativeEvent.data.length };
-              }
+              const { startLineIdx, startOffset, endLineIdx, endOffset } = norm;
+              const startLine = cur[startLineIdx];
+              const endLine = cur[endLineIdx];
+              const mergedText = startLine.text.slice(0, startOffset) + nativeEvent.data + endLine.text.slice(endOffset);
+              const next = [...cur];
+              next[startLineIdx] = { ...startLine, text: mergedText };
+              if (endLineIdx > startLineIdx) next.splice(startLineIdx + 1, endLineIdx - startLineIdx);
+              onLinesChange(next);
+              focusTarget.current = { id: startLine.id, cursor: startOffset + nativeEvent.data.length };
             }
           }
           return;
@@ -500,7 +576,7 @@ export const EditableLineView = React.forwardRef<
         }
       }
     },
-    [getActiveInfo, deleteSelection, onLinesChange],
+    [getActiveInfo, deleteSelection, onLinesChange, splitActiveLine],
   );
 
   // ── KeyDown: Tab, undo/redo, select-all, copy/cut ──
@@ -512,6 +588,20 @@ export const EditableLineView = React.forwardRef<
         e.preventDefault();
         if (e.shiftKey) onRedo?.();
         else onUndo?.();
+        return;
+      }
+
+      // Move line block up/down
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        const info = getActiveInfo();
+        if (!info) return;
+        const cur = linesRef.current;
+        const moved = computeMoveBlock(cur, info.idx, e.key === "ArrowUp" ? "up" : "down");
+        if (moved) {
+          onLinesChange(moved);
+          focusTarget.current = { id: info.lineId, cursor: info.cursor };
+        }
         return;
       }
 
@@ -549,7 +639,7 @@ export const EditableLineView = React.forwardRef<
         setAllSelected(false);
         return;
       }
-      if (allSelected && (e.key === "Backspace" || e.key === "Delete")) {
+      if (allSelected && (e.key === "Backspace" || e.key === "Delete" || e.key === "Enter")) {
         e.preventDefault();
         createInitialLine();
         return;
@@ -568,6 +658,32 @@ export const EditableLineView = React.forwardRef<
 
       if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
+        enterHandledRef.current = true;
+        queueMicrotask(() => { enterHandledRef.current = false; });
+        // Cross-line selection: delete selection, then split resulting line
+        try {
+          const crossSel = getCrossLineSelection();
+          if (crossSel) {
+            const norm = normalizeSelection(crossSel);
+            if (norm) {
+              const cur = linesRef.current;
+              const { startLineIdx, startOffset, endLineIdx, endOffset } = norm;
+              const startLine = cur[startLineIdx];
+              const endLine = cur[endLineIdx];
+              const before = startLine.text.slice(0, startOffset);
+              const after = endLine.text.slice(endOffset);
+              const newId = genId();
+              const next = [...cur];
+              next.splice(startLineIdx, endLineIdx - startLineIdx + 1,
+                { ...startLine, text: before },
+                { id: newId, text: after, indent: startLine.indent },
+              );
+              onLinesChange(next);
+              focusTarget.current = { id: newId, cursor: 0 };
+            }
+            return;
+          }
+        } catch { /* cross-line edge case — fall through to splitActiveLine */ }
         splitActiveLine();
         return;
       }
@@ -595,7 +711,7 @@ export const EditableLineView = React.forwardRef<
         return;
       }
     },
-    [onLinesChange, allSelected, onUndo, onRedo, createInitialLine, getActiveInfo, splitActiveLine],
+    [onLinesChange, allSelected, onUndo, onRedo, createInitialLine, getActiveInfo, splitActiveLine, getCrossLineSelection, normalizeSelection],
   );
 
   // ── Paste ──
@@ -692,118 +808,145 @@ export const EditableLineView = React.forwardRef<
 
   // ── Render ──
 
-  return (
-    <div className={cn("flex flex-col", className)}>
-      {showEmptyState && (
-        <div
-          className="min-h-[200px] flex items-center justify-center"
-          onClick={() => createInitialLine()}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") return;
-            if (e.key === "Enter") { e.preventDefault(); createInitialLine(); return; }
-            if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) { e.preventDefault(); createInitialLine(e.key); }
-          }}
-          onPaste={(e) => {
-            e.preventDefault();
-            const pasted = parseToEditableLines(e.clipboardData.getData("text/plain"));
-            if (pasted.length === 0) { createInitialLine(); return; }
-            onLinesChange(pasted);
-            const last = pasted[pasted.length - 1];
-            focusTarget.current = { id: last.id, cursor: last.text.length };
-          }}
-          role="button"
-          tabIndex={0}
+  const showPlaceholder = !readOnly && !hasLineContent && lines.length <= 1;
+  const isBullets = variant === "bullets";
+
+  // Markdown components for read-only mode: unwrap <p>, style links
+  const mdComponents = useMemo(
+    () => ({
+      p: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+      a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 transition-colors"
         >
+          {children}
+        </a>
+      ),
+    }),
+    [],
+  );
+
+  return (
+    <div className={cn("flex flex-col relative", className)}>
+      {showPlaceholder && (
+        <div className="pointer-events-none absolute inset-0 z-[3] flex min-h-[200px] items-center justify-center">
           <p className="font-serif text-lg text-neutral-400 dark:text-neutral-500">
             {emptyStateMessage ?? "Click to start typing"}
           </p>
         </div>
       )}
-
-      {!showEmptyState && (
-        <div
-          ref={containerRef}
-          contentEditable
-          suppressContentEditableWarning
-          className="outline-none"
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          onBeforeInput={handleBeforeInput}
-          onPaste={handlePaste}
-          onMouseDown={() => { if (allSelected) setAllSelected(false); }}
-        >
+      <div
+        ref={containerRef}
+        contentEditable={!readOnly}
+        suppressContentEditableWarning
+        className={cn("outline-none", showPlaceholder && "min-h-[200px]")}
+        {...(!readOnly && {
+          onInput: handleInput,
+          onKeyDown: handleKeyDown,
+          onBeforeInput: handleBeforeInput,
+          onPaste: handlePaste,
+          onMouseDown: () => { if (allSelected) setAllSelected(false); },
+        })}
+      >
           {lines.map((line, i) => {
-            if (!isVisible(lines, i, collapsed)) return null;
-            const expandable = hasChildren(lines, i);
+            // In bullets mode all lines are visible; in lines mode respect collapse
+            if (!isBullets && !isVisible(lines, i, collapsed)) return null;
+            const expandable = !isBullets && hasChildren(lines, i);
             const isCollapsed = collapsed.has(line.id);
             const textInset = getTextInset(line.indent);
 
             return (
               <div
                 key={line.id}
-                className={cn("relative", allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
+                className={cn("relative", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
               >
-                {/* Keep the gutter out of the editable flow so Safari can select across lines natively. */}
+                {/* Gutter */}
                 <div
                   contentEditable={false}
                   className="pointer-events-none absolute inset-y-0 left-0 z-[2] select-none"
                   style={{ width: `${textInset}px`, userSelect: "none" }}
                 >
-                  {Array.from({ length: line.indent }).map((_, level) => (
+                  {isBullets ? (
+                    /* Bullet marker */
                     <span
-                      key={level}
-                      className="absolute inset-y-0 block bg-neutral-200 dark:bg-neutral-700"
-                      style={{
-                        left: `${getGuideOffset(level + 1)}px`,
-                        width: `${GUIDE_WIDTH_PX}px`,
-                        transform: "translateX(-50%)",
-                      }}
-                    />
-                  ))}
-
-                  {expandable ? (
-                    <button
-                      contentEditable={false}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleCollapse(line.id);
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      className={cn(
-                        "pointer-events-auto absolute top-0 inline-flex items-center justify-end pt-[0.55em] pr-[2px] transition-colors",
-                        isCollapsed
-                          ? "text-[#007AFF]"
-                          : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
-                      )}
+                      className="absolute top-0 inline-flex items-center justify-end pt-[0.55em] pr-[2px] font-serif text-neutral-800 dark:text-neutral-200"
                       style={{
                         left: `${getChevronOffset(line.indent)}px`,
                         width: `${TOGGLE_WIDTH_PX}px`,
                       }}
-                      type="button"
-                      tabIndex={-1}
                     >
-                      <ChevronRight
-                        size={12}
-                        strokeWidth={2.5}
-                        className={cn("block transition-transform duration-150", !isCollapsed && "rotate-90")}
-                      />
-                    </button>
-                  ) : null}
+                      •
+                    </span>
+                  ) : (
+                    <>
+                      {/* Indent guide lines */}
+                      {Array.from({ length: line.indent }).map((_, level) => (
+                        <span
+                          key={level}
+                          className="absolute inset-y-0 block bg-neutral-200 dark:bg-neutral-700"
+                          style={{
+                            left: `${getGuideOffset(level + 1)}px`,
+                            width: `${GUIDE_WIDTH_PX}px`,
+                            transform: "translateX(-50%)",
+                          }}
+                        />
+                      ))}
+
+                      {expandable ? (
+                        <button
+                          contentEditable={false}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleCollapse(line.id);
+                          }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          className={cn(
+                            "pointer-events-auto absolute top-0 inline-flex items-center justify-end pt-[0.55em] pr-[2px] transition-colors",
+                            isCollapsed
+                              ? "text-[#007AFF]"
+                              : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
+                          )}
+                          style={{
+                            left: `${getChevronOffset(line.indent)}px`,
+                            width: `${TOGGLE_WIDTH_PX}px`,
+                          }}
+                          type="button"
+                          tabIndex={-1}
+                        >
+                          <ChevronRight
+                            size={12}
+                            strokeWidth={2.5}
+                            className={cn("block transition-transform duration-150", !isCollapsed && "rotate-90")}
+                          />
+                        </button>
+                      ) : null}
+                    </>
+                  )}
                 </div>
 
                 <div className="relative z-[1] flex items-start" style={{ paddingLeft: `${textInset}px` }}>
-                  {/* Editable text — inherits contentEditable from container */}
-                  <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                  {readOnly ? (
+                    <div
+                      className="flex-1 min-w-0 font-serif text-lg leading-[1.85] [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800"
+                      style={{ wordBreak: "break-word" }}
+                    >
+                      <ReactMarkdown components={mdComponents}>{line.text}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-      )}
     </div>
   );
 });
