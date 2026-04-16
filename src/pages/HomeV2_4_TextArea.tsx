@@ -2,7 +2,7 @@ import { HomeV2_4Page } from "./HomeV2_4";
 
 const HomeV2_4_TextArea = () => (
   <HomeV2_4Page
-    variantLabel="home v2.4 text-area"
+    variantLabel="home v2.5 text-area"
     inputMode="textarea"
   />
 );
