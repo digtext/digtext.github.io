@@ -49,7 +49,7 @@ In practice:
 Current example:
 
 - Home live route: `/`
-- Live Home row in `/p`: `Home v2.5 (markdown)` and it should point to `/`
+- Live Home row in `/p`: `Home v2.6 (markdown)` and it should point to `/`
 - Archived Home v2 route: `/p/home-v2`
 - Archived Home experiments: versioned routes such as `/p/home-v2-1`, `/p/home-v2-4`, `/p/home-v2-5-text-area`
 - Articles live route: `/articles`
@@ -66,9 +66,9 @@ Do not point the live pill at a versioned `/p/...` URL if the public site is usi
 
 The current live Home prototype is the markdown variant based on the textarea shell.
 
-- `src/pages/HomeV2_4.tsx` contains the shared Home v2.x shell and logic.
-- `src/pages/HomeV2_5_Markdown.tsx` is the current live wrapper variant.
-- `src/pages/HomeV2_4_TextArea.tsx` is the archived textarea wrapper variant.
+- `src/pages/HomeV2_4.tsx` is the standalone Home v2.4 snapshot.
+- `src/pages/HomeV2_5_TextArea.tsx` is the standalone archived textarea snapshot.
+- `src/pages/HomeV2_6_Markdown.tsx` is the current live standalone markdown snapshot.
 - `/p/home-v2` should continue to point to the older archived Home v2 page.
 
 The textarea work is documented in `input-process.md`.
@@ -111,9 +111,13 @@ When changing it, be careful not to break both modes at once.
 ## Working Rules For This Repo
 
 - Live pill means "currently live on the public website / main nav", not "latest prototype".
-- For Home, the live `/p` entry should currently be `Home v2.5 (markdown)` mapped to `/`.
+- For Home, the live `/p` entry should currently be `Home v2.6 (markdown)` mapped to `/`.
 - `Home v2` is an archived prototype route and should stay on `/p/home-v2` unless explicitly promoted again.
 - For Articles, the live `/p` entry should map to `/articles`.
 - Prefer updating the public live route instead of inventing a new "live" versioned URL.
+- For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV2_6_Markdown.tsx`.
+- Avoid changing shared or archived Home files unless the change is intentionally meant to affect multiple versions.
+- Home versions `v2.4`, `v2.5`, and `v2.6` are standalone files; do not reintroduce a shared Home wrapper for them.
+- When creating a new Home version, duplicate the current live Home file into a new standalone page file first, then edit the new file.
 - If you change the Home textarea input behavior, update `input-process.md`.
 - Keep repo guidance synchronized here in `CLAUDE.md`; avoid duplicating long instructions in multiple files.

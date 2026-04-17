@@ -1088,7 +1088,10 @@ export const HomeV2_4Page = ({
             A new paradigm of using text
           </span>
 
-          <h2 className="mt-6 font-serif text-[clamp(2rem,5vw,3.75rem)] leading-tight tracking-tight">
+          <h2
+            className="mt-6 font-sans tracking-[-0.05em] text-[clamp(2.05rem,5.75vw,3.24rem)]"
+            style={{ lineHeight: 1 }}
+          >
             Use this prompt to convert
             <br />
             any text into{" "}
@@ -1235,6 +1238,11 @@ export const HomeV2_4Page = ({
   );
 };
 
-const HomeV2_4 = () => <HomeV2_4Page />;
+const HomeV2_6_Markdown = () => (
+  <HomeV2_4Page
+    inputMode="textarea"
+    heroFontClassName="font-sans"
+  />
+);
 
-export default HomeV2_4;
+export default HomeV2_6_Markdown;

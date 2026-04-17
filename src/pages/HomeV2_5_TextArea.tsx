@@ -1235,6 +1235,6 @@ export const HomeV2_4Page = ({
   );
 };
 
-const HomeV2_4 = () => <HomeV2_4Page />;
+const HomeV2_5_TextArea = () => <HomeV2_4Page inputMode="textarea" />;
 
-export default HomeV2_4;
+export default HomeV2_5_TextArea;
