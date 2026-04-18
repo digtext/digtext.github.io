@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChevronRight } from "lucide-react";
+import {
+  extractParenthesisExpandables,
+  InlineDigMarkdown,
+} from "@/components/InlineDigMarkdown";
 import { cn } from "@/lib/utils";
 
 // ── Data ──────────────────────────────────────────────────────────────
@@ -232,6 +237,8 @@ interface EditableLineViewProps {
   variant?: "lines" | "bullets";
   /** When true, content is not editable but collapse/expand still works. */
   readOnly?: boolean;
+  /** Enables inline dig rendering inside a read-only line. */
+  readOnlyInlineDigSyntax?: "parentheses";
   readOnlyTextClassName?: string;
   readOnlyTextStyle?: React.CSSProperties;
 }
@@ -239,8 +246,9 @@ interface EditableLineViewProps {
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyTextClassName = "", readOnlyTextStyle }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const [expandedInlineDigIds, setExpandedInlineDigIds] = useState<Set<string>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
   const focusTarget = useRef<{ id: number; cursor: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -248,30 +256,95 @@ export const EditableLineView = React.forwardRef<
   const enterHandledRef = useRef(false);
 
   const expandableIds = useMemo(() => collectExpandableIds(lines), [lines]);
+  const inlineDigEntries = useMemo(() => {
+    if (!readOnly || readOnlyInlineDigSyntax !== "parentheses") {
+      return new Map<number, ReturnType<typeof extractParenthesisExpandables>>();
+    }
+
+    return new Map(
+      lines.map((line) => [line.id, extractParenthesisExpandables(line.text)]),
+    );
+  }, [lines, readOnly, readOnlyInlineDigSyntax]);
+  const allInlineDigKeys = useMemo(() => {
+    const ids: string[] = [];
+
+    inlineDigEntries.forEach((entry, lineId) => {
+      entry.map.forEach((_value, id) => {
+        ids.push(`${lineId}:${id}`);
+      });
+    });
+
+    return ids;
+  }, [inlineDigEntries]);
+  const allInlineDigKeySet = useMemo(
+    () => new Set(allInlineDigKeys),
+    [allInlineDigKeys],
+  );
+  const expandedInlineDigIdsByLine = useMemo(() => {
+    const next = new Map<number, Set<number>>();
+
+    expandedInlineDigIds.forEach((key) => {
+      const separatorIndex = key.indexOf(":");
+      if (separatorIndex === -1) return;
+
+      const lineId = Number(key.slice(0, separatorIndex));
+      const inlineId = Number(key.slice(separatorIndex + 1));
+      if (!Number.isFinite(lineId) || !Number.isFinite(inlineId)) return;
+
+      const lineExpandedIds = next.get(lineId) ?? new Set<number>();
+      lineExpandedIds.add(inlineId);
+      next.set(lineId, lineExpandedIds);
+    });
+
+    return next;
+  }, [expandedInlineDigIds]);
   const hasLineContent = useMemo(
     () => lines.some((line) => line.text.trim().length > 0),
     [lines],
   );
+
+  useEffect(() => {
+    setExpandedInlineDigIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+
+      prev.forEach((id) => {
+        if (allInlineDigKeySet.has(id)) {
+          next.add(id);
+          return;
+        }
+
+        changed = true;
+      });
+
+      return changed ? next : prev;
+    });
+  }, [allInlineDigKeySet]);
 
   React.useImperativeHandle(
     fwdRef,
     () => ({
       expandAll: () => {
         setCollapsed(new Set());
+        setExpandedInlineDigIds(new Set(allInlineDigKeys));
         setTimeout(() => onCollapseChange?.(), 0);
       },
       collapseAll: () => {
         setCollapsed(new Set(expandableIds));
+        setExpandedInlineDigIds(new Set());
         setTimeout(() => onCollapseChange?.(), 0);
       },
       get hasExpandables() {
-        return expandableIds.length > 0;
+        return expandableIds.length > 0 || allInlineDigKeys.length > 0;
       },
       get anyExpanded() {
-        return expandableIds.some((id) => !collapsed.has(id));
+        return (
+          expandableIds.some((id) => !collapsed.has(id)) ||
+          expandedInlineDigIds.size > 0
+        );
       },
     }),
-    [expandableIds, collapsed, onCollapseChange],
+    [allInlineDigKeys, collapsed, expandableIds, expandedInlineDigIds, onCollapseChange],
   );
 
   // Restore focus/cursor after programmatic state changes
@@ -807,6 +880,16 @@ export const EditableLineView = React.forwardRef<
     },
     [onCollapseChange],
   );
+  const toggleInlineDig = useCallback((lineId: number, inlineId: number) => {
+    const key = `${lineId}:${inlineId}`;
+
+    setExpandedInlineDigIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   // ── Render ──
 
@@ -830,6 +913,22 @@ export const EditableLineView = React.forwardRef<
     }),
     [],
   );
+  const readOnlyMarkdownClassName =
+    "flex-1 min-w-0 font-serif text-lg leading-[1.85] " +
+    "[&_h1]:mt-4 [&_h1]:mb-2 [&_h1]:text-[1.55em] [&_h1]:font-semibold " +
+    "[&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-[1.35em] [&_h2]:font-semibold " +
+    "[&_h3]:mt-3 [&_h3]:mb-1.5 [&_h3]:text-[1.18em] [&_h3]:font-semibold " +
+    "[&_h4]:mt-3 [&_h4]:mb-1.5 [&_h4]:font-semibold " +
+    "[&_strong]:font-semibold [&_em]:italic " +
+    "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-violet-600 dark:[&_a]:text-violet-400 [&_a:hover]:text-violet-800 dark:[&_a:hover]:text-violet-300 " +
+    "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 " +
+    "[&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-neutral-200 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-neutral-500 dark:[&_blockquote]:border-neutral-800 dark:[&_blockquote]:text-neutral-400 " +
+    "[&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800 " +
+    "[&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-neutral-100 [&_pre]:p-4 dark:[&_pre]:bg-neutral-800 " +
+    "[&_pre_code]:bg-transparent [&_pre_code]:p-0 " +
+    "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse " +
+    "[&_th]:border [&_th]:border-neutral-200 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold dark:[&_th]:border-neutral-800 " +
+    "[&_td]:border [&_td]:border-neutral-200 [&_td]:px-3 [&_td]:py-2 dark:[&_td]:border-neutral-800";
 
   return (
     <div className={cn("flex flex-col relative", className)}>
@@ -859,6 +958,9 @@ export const EditableLineView = React.forwardRef<
             const expandable = !isBullets && hasChildren(lines, i);
             const isCollapsed = collapsed.has(line.id);
             const textInset = getTextInset(line.indent);
+            const inlineDigEntry = inlineDigEntries.get(line.id);
+            const inlineDigExpandedIds =
+              expandedInlineDigIdsByLine.get(line.id) ?? new Set<number>();
 
             return (
               <div
@@ -937,12 +1039,28 @@ export const EditableLineView = React.forwardRef<
                   {readOnly ? (
                     <div
                       className={cn(
-                        "flex-1 min-w-0 font-serif text-lg leading-[1.85] [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800",
+                        readOnlyMarkdownClassName,
                         readOnlyTextClassName,
                       )}
                       style={{ wordBreak: "break-word", ...readOnlyTextStyle }}
                     >
-                      <ReactMarkdown components={mdComponents}>{line.text}</ReactMarkdown>
+                      {readOnlyInlineDigSyntax === "parentheses" && inlineDigEntry ? (
+                        <InlineDigMarkdown
+                          shadow={inlineDigEntry.shadow}
+                          expandablesMap={inlineDigEntry.map}
+                          expandedIds={inlineDigExpandedIds}
+                          toggle={(inlineId) => toggleInlineDig(line.id, inlineId)}
+                          unwrapParagraphs
+                          linkClassName="underline underline-offset-2 text-violet-600 transition-colors hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300"
+                        />
+                      ) : (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={mdComponents}
+                        >
+                          {line.text}
+                        </ReactMarkdown>
+                      )}
                     </div>
                   ) : (
                     <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />

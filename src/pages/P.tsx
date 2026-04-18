@@ -15,7 +15,8 @@ const groups: Group[] = [
       { label: "Home v2.3 (no input)", to: "/p/home-v2-3" },
       { label: "Home v2.4 (not text-area)", to: "/p/home-v2-4" },
       { label: "Home v2.5 (text-area)", to: "/p/home-v2-5-text-area" },
-      { label: "Home v2.6 (markdown)", to: "/", live: true },
+      { label: "Home v2.6 (markdown)", to: "/p/home-v2-6-markdown" },
+      { label: "Home v2.7 (md w plus)", to: "/", live: true },
     ],
   },
   {

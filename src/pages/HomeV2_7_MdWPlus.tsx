@@ -1241,11 +1241,11 @@ export const HomeV2_4Page = ({
   );
 };
 
-const HomeV2_6_Markdown = () => (
+const HomeV2_7_MdWPlus = () => (
   <HomeV2_4Page
     inputMode="textarea"
     heroFontClassName="font-sans"
   />
 );
 
-export default HomeV2_6_Markdown;
+export default HomeV2_7_MdWPlus;
