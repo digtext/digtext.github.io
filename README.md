@@ -2,7 +2,7 @@
 
 A progressive reading interface where articles start short and readers expand only the parts that interest them.
 
-**Live site**: https://pawsys.github.io/digtext/
+**Live site**: https://dig.pawel.world/
 
 ## How it works
 
