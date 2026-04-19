@@ -32,7 +32,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/digtext">
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<HomeV2_7_MdWPlus />} />
             <Route path="/about" element={<About />} />

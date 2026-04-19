@@ -6,7 +6,7 @@
     <script>
       // Redirect all 404s to index.html for SPA client-side routing
       // GitHub Pages serves this file for any path that doesn't match a real file
-      var pathSegmentsToKeep = 1; // keep '/digtext' prefix
+      var pathSegmentsToKeep = 0;
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
