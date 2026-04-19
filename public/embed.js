@@ -4,7 +4,7 @@
  *
  * Usage:
  *   <div data-digtext>This has <<hidden details>> in it.</div>
- *   <script src="https://dig.pawel.world/embed.js"></script>
+ *   <script src="https://digtext.github.io/embed.js"></script>
  *
  * Customization (CSS variables on the [data-digtext] element or :root):
  *   --digtext-highlight    – expanded text background (auto-detected from bg)
@@ -16,7 +16,7 @@
   if (window.__digtext_loaded) return;
   window.__digtext_loaded = true;
 
-  var SITE_URL = "https://dig.pawel.world/";
+  var SITE_URL = "https://digtext.github.io/";
 
   // ── SVG icons (matching Lucide Plus / X, strokeWidth 2.5) ──────────
 
