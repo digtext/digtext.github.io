@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronRight } from "lucide-react";
+import {
+  DigChevronIcon,
+  digChevronButtonClass,
+} from "@/components/DigIcons";
 import {
   extractParenthesisExpandables,
   InlineDigMarkdown,
@@ -1012,10 +1015,11 @@ export const EditableLineView = React.forwardRef<
                             e.stopPropagation();
                           }}
                           className={cn(
-                            "pointer-events-auto absolute top-0 inline-flex items-center justify-end pt-[0.55em] pr-[2px] transition-colors",
+                            digChevronButtonClass,
+                            "pointer-events-auto absolute top-[0.25em]",
                             isCollapsed
-                              ? "text-[#007AFF]"
-                              : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
+                              ? "text-[#0088FE]"
+                              : "text-neutral-400 hover:text-[#0074D8] dark:text-neutral-500",
                           )}
                           style={{
                             left: `${getChevronOffset(line.indent)}px`,
@@ -1024,10 +1028,8 @@ export const EditableLineView = React.forwardRef<
                           type="button"
                           tabIndex={-1}
                         >
-                          <ChevronRight
-                            size={12}
-                            strokeWidth={2.5}
-                            className={cn("block transition-transform duration-150", !isCollapsed && "rotate-90")}
+                          <DigChevronIcon
+                            className={cn("transition-transform duration-150", !isCollapsed && "rotate-90")}
                           />
                         </button>
                       ) : null}

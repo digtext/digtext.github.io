@@ -1,7 +1,11 @@
 import React, { useCallback, useMemo } from "react";
-import { Plus, X } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  DigCloseIcon,
+  DigPlusIcon,
+  digIconButtonClass,
+} from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
 const TOKEN_PREFIX = "\uE000DIG";
@@ -133,18 +137,16 @@ const ExpandButton = ({ isExpanded, onClick }: ExpandButtonProps) => (
   <button
     onClick={onClick}
     className={cn(
-      "relative -top-px mx-0.5 inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border align-middle transition-colors",
-      isExpanded
-        ? "border-[hsl(var(--expand-button-hover))] bg-[hsl(var(--expand-button-hover))] text-white"
-        : "border-expand-button text-expand-button hover:border-expand-button-hover hover:bg-[hsl(var(--expand-button)/0.08)] hover:text-expand-button-hover",
+      digIconButtonClass,
+      "relative -top-px mx-0.5 cursor-pointer",
     )}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
   >
     {isExpanded ? (
-      <X size={12} strokeWidth={2.5} className="block" />
+      <DigCloseIcon />
     ) : (
-      <Plus size={12} strokeWidth={2.5} className="block" />
+      <DigPlusIcon />
     )}
   </button>
 );
@@ -195,7 +197,7 @@ const InlineExpandSegment = ({
     <span>
       <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
       {isExpanded && (
-        <span className="rounded bg-expanded-bg px-1 py-0.5 transition-all">
+        <span className="underline decoration-[#C7DEFD] decoration-[1px] underline-offset-[2px] transition-colors">
           <InlineDigMarkdown
             shadow={inner}
             expandablesMap={expandablesMap}

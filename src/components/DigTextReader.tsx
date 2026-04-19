@@ -228,7 +228,6 @@ const DigTextReader = ({
     runViewTransition(() => navigate(fullscreenDestination));
 
   const actionLabel = digTextState.anyExpanded ? "Collapse all" : "Expand all";
-  const ActionIcon = digTextState.anyExpanded ? X : Plus;
 
   const topBar = (
     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -254,14 +253,18 @@ const DigTextReader = ({
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        {view === "digtext" && digTextState.hasExpandables && (
+        {view === "digtext" && (
           <div className={shellClass}>
             <button
               onClick={digTextState.anyExpanded ? digTextState.collapseAll : digTextState.expandAll}
               className={cn(pillButtonClass(false), "inline-flex items-center gap-1.5")}
               type="button"
             >
-              <ActionIcon size={14} strokeWidth={2.25} className="block" />
+              {digTextState.anyExpanded ? (
+                <X size={14} strokeWidth={2.25} className="block" />
+              ) : (
+                <Plus size={14} strokeWidth={2.25} className="block" />
+              )}
               {actionLabel}
             </button>
           </div>

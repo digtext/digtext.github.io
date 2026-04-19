@@ -1,5 +1,9 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Plus, X } from "lucide-react";
+import {
+  DigCloseIcon,
+  DigPlusIcon,
+  digIconButtonClass,
+} from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,7 +42,7 @@ export function parseBullets(raw: string): BulletNode[] {
     if (!line.trim()) continue;
 
     // Match bullet line: optional indent + bullet char (-, *, +, •) + space + text
-    const match = line.match(/^(\s*)[\-\*\+\•]\s+(.*)/);
+    const match = line.match(/^(\s*)[-*+•]\s+(.*)/);
     if (!match) {
       // Continuation line — append to last node's text
       if (stack.length > 0) {
@@ -149,18 +153,16 @@ const BulletItem: React.FC<BulletItemProps> = ({
           <button
             onClick={() => toggle(node.id)}
             className={cn(
-              "mt-[0.35em] flex-none inline-flex items-center justify-center w-5 h-5 rounded-full border transition-colors cursor-pointer",
-              isExpanded
-                ? "border-[hsl(var(--expand-button-hover))] text-[hsl(var(--expand-button-hover))]"
-                : "border-expand-button text-expand-button hover:text-expand-button-hover hover:border-expand-button-hover",
+              digIconButtonClass,
+              "mt-[0.35em] cursor-pointer",
             )}
             aria-label={isExpanded ? "Collapse" : "Expand"}
             type="button"
           >
             {isExpanded ? (
-              <X size={12} strokeWidth={2.5} className="block" />
+              <DigCloseIcon />
             ) : (
-              <Plus size={12} strokeWidth={2.5} className="block" />
+              <DigPlusIcon />
             )}
           </button>
         ) : (

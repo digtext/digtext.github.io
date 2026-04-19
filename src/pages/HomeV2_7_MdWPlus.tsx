@@ -945,33 +945,31 @@ export const HomeV2_4Page = ({
 
               {mode === "digtext" && (
                 <div className="flex items-center gap-2 ml-auto">
-                  {(digTextRef.current?.hasExpandables ?? false) && (
-                    <div className={shellClass}>
-                      <button
-                        onClick={() => {
-                          const h = digTextRef.current;
-                          if (!h) return;
-                          if (h.anyExpanded) {
-                            h.collapseAll();
-                          } else {
-                            h.expandAll();
-                          }
-                        }}
-                        className={cn(
-                          pillButtonClass(false),
-                          "inline-flex items-center gap-1.5",
-                        )}
-                        type="button"
-                      >
-                        {(digTextRef.current?.anyExpanded ?? false) ? (
-                          <X size={14} strokeWidth={2.25} className="block" />
-                        ) : (
-                          <Plus size={14} strokeWidth={2.25} className="block" />
-                        )}
-                        {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
-                      </button>
-                    </div>
-                  )}
+                  <div className={shellClass}>
+                    <button
+                      onClick={() => {
+                        const h = digTextRef.current;
+                        if (!h) return;
+                        if (h.anyExpanded) {
+                          h.collapseAll();
+                        } else {
+                          h.expandAll();
+                        }
+                      }}
+                      className={cn(
+                        pillButtonClass(false),
+                        "inline-flex items-center gap-1.5",
+                      )}
+                      type="button"
+                    >
+                      {(digTextRef.current?.anyExpanded ?? false) ? (
+                        <X size={14} strokeWidth={2.25} className="block" />
+                      ) : (
+                        <Plus size={14} strokeWidth={2.25} className="block" />
+                      )}
+                      {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
