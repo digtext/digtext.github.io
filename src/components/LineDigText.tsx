@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  DigChevronIcon,
-  digChevronButtonClass,
+  DigCloseIcon,
+  DigPlusIcon,
+  digIconButtonClass,
 } from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
@@ -147,21 +148,13 @@ const LineItem: React.FC<LineItemProps> = ({
           <button
             onClick={() => toggle(node.id)}
             className={cn(
-              digChevronButtonClass,
+              digIconButtonClass,
               "relative -top-px",
-              isExpanded
-                ? "text-neutral-400 hover:text-[#0074D8] dark:text-neutral-500"
-                : "text-[#0088FE]",
             )}
             aria-label={isExpanded ? "Collapse" : "Expand"}
             type="button"
           >
-            <DigChevronIcon
-              className={cn(
-                "transition-transform duration-150",
-                isExpanded && "rotate-90",
-              )}
-            />
+            {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
           </button>
         )}
         <span

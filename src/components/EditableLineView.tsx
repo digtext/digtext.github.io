@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  DigChevronIcon,
-  digChevronButtonClass,
+  DigCloseIcon,
+  DigPlusIcon,
+  digIconButtonClass,
 } from "@/components/DigIcons";
 import {
   extractParenthesisExpandables,
@@ -1015,11 +1016,8 @@ export const EditableLineView = React.forwardRef<
                             e.stopPropagation();
                           }}
                           className={cn(
-                            digChevronButtonClass,
-                            "pointer-events-auto absolute top-[0.25em]",
-                            isCollapsed
-                              ? "text-[#0088FE]"
-                              : "text-neutral-400 hover:text-[#0074D8] dark:text-neutral-500",
+                            digIconButtonClass,
+                            "pointer-events-auto absolute top-[0.3em]",
                           )}
                           style={{
                             left: `${getChevronOffset(line.indent)}px`,
@@ -1028,9 +1026,7 @@ export const EditableLineView = React.forwardRef<
                           type="button"
                           tabIndex={-1}
                         >
-                          <DigChevronIcon
-                            className={cn("transition-transform duration-150", !isCollapsed && "rotate-90")}
-                          />
+                          {isCollapsed ? <DigPlusIcon /> : <DigCloseIcon />}
                         </button>
                       ) : null}
                     </>
