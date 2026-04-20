@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  DigCloseIcon,
-  DigPlusIcon,
-  digIconButtonClass,
+  DigChevronIcon,
+  DigEllipsisIcon,
+  digChevronButtonClass,
+  lineDigIconButtonClass,
 } from "@/components/DigIcons";
 import {
   extractParenthesisExpandables,
@@ -219,6 +220,39 @@ const LineText = React.memo<{
   );
 });
 LineText.displayName = "LineText";
+
+interface LineEndDigButtonProps {
+  onToggle: () => void;
+  className?: string;
+}
+
+const LineEndDigButton = ({
+  onToggle,
+  className,
+}: LineEndDigButtonProps) => (
+  <button
+    contentEditable={false}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onToggle();
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
+    className={cn(
+      lineDigIconButtonClass,
+      "relative -top-[0.18em] ml-px cursor-pointer",
+      className,
+    )}
+    type="button"
+    tabIndex={-1}
+    aria-label="Expand line"
+  >
+    <DigEllipsisIcon />
+  </button>
+);
 
 // ── Main component ────────────────────────────────────────────────────
 
@@ -994,7 +1028,7 @@ export const EditableLineView = React.forwardRef<
                       {Array.from({ length: line.indent }).map((_, level) => (
                         <span
                           key={level}
-                          className="absolute inset-y-0 block bg-neutral-200 dark:bg-neutral-700"
+                          className="absolute inset-y-0 block bg-[#CEC9F2] dark:bg-[#7E76C9]"
                           style={{
                             left: `${getGuideOffset(level + 1)}px`,
                             width: `${GUIDE_WIDTH_PX}px`,
@@ -1016,8 +1050,8 @@ export const EditableLineView = React.forwardRef<
                             e.stopPropagation();
                           }}
                           className={cn(
-                            digIconButtonClass,
-                            "pointer-events-auto absolute top-[0.3em]",
+                            digChevronButtonClass,
+                            "pointer-events-auto absolute top-[0.05em]",
                           )}
                           style={{
                             left: `${getChevronOffset(line.indent)}px`,
@@ -1026,7 +1060,9 @@ export const EditableLineView = React.forwardRef<
                           type="button"
                           tabIndex={-1}
                         >
-                          {isCollapsed ? <DigPlusIcon /> : <DigCloseIcon />}
+                          <DigChevronIcon
+                            className={cn("transition-transform duration-150", !isCollapsed && "rotate-90")}
+                          />
                         </button>
                       ) : null}
                     </>
@@ -1059,9 +1095,22 @@ export const EditableLineView = React.forwardRef<
                           {line.text}
                         </ReactMarkdown>
                       )}
+                      {expandable && isCollapsed ? (
+                        <LineEndDigButton
+                          onToggle={() => toggleCollapse(line.id)}
+                        />
+                      ) : null}
                     </div>
                   ) : (
-                    <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                    <>
+                      <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                      {expandable && isCollapsed ? (
+                        <LineEndDigButton
+                          onToggle={() => toggleCollapse(line.id)}
+                          className="mt-[0.42em]"
+                        />
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>

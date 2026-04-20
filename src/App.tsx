@@ -22,6 +22,7 @@ import HomeV2_4_TextArea from "./pages/HomeV2_4_TextArea.tsx";
 import HomeV2_5_TextArea from "./pages/HomeV2_5_TextArea.tsx";
 import HomeV2_6_Markdown from "./pages/HomeV2_6_Markdown.tsx";
 import HomeV2_7_MdWPlus from "./pages/HomeV2_7_MdWPlus.tsx";
+import HomeV2_8_Minimal from "./pages/HomeV2_8_Minimal.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
 
 const queryClient = new QueryClient();
@@ -34,7 +35,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<HomeV2_7_MdWPlus />} />
+            <Route path="/" element={<HomeV2_8_Minimal />} />
             <Route path="/about" element={<About />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/article/:articleId" element={<ArticlePage />} />
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/p/home-v2-5-text-area" element={<HomeV2_5_TextArea />} />
             <Route path="/p/home-v2-6-markdown" element={<HomeV2_6_Markdown />} />
             <Route path="/p/home-v2-7-md-w-plus" element={<HomeV2_7_MdWPlus />} />
+            <Route path="/p/home-v2-8-minimal" element={<HomeV2_8_Minimal />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
             <Route path="/p/about-v1" element={<AboutV1 />} />
             <Route path="/p/about-v1-1" element={<AboutV1_1 />} />

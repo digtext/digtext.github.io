@@ -1,8 +1,9 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  DigCloseIcon,
-  DigPlusIcon,
-  digIconButtonClass,
+  DigChevronIcon,
+  DigEllipsisIcon,
+  digChevronButtonClass,
+  lineDigIconButtonClass,
 } from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
@@ -143,18 +144,23 @@ const LineItem: React.FC<LineItemProps> = ({
 
   return (
     <li className="list-none">
-      <div className="flex items-baseline gap-1">
+      <div className="flex items-baseline gap-px">
         {hasChildren && (
           <button
             onClick={() => toggle(node.id)}
             className={cn(
-              digIconButtonClass,
-              "relative -top-px",
+              digChevronButtonClass,
+              "relative -top-[0.3em]",
             )}
             aria-label={isExpanded ? "Collapse" : "Expand"}
             type="button"
           >
-            {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
+            <DigChevronIcon
+              className={cn(
+                "transition-transform duration-150",
+                isExpanded && "rotate-90",
+              )}
+            />
           </button>
         )}
         <span
@@ -170,10 +176,23 @@ const LineItem: React.FC<LineItemProps> = ({
             …
           </span>
         )}
+        {hasChildren && !isExpanded && (
+          <button
+            onClick={() => toggle(node.id)}
+            className={cn(
+              lineDigIconButtonClass,
+              "relative -top-[0.18em] ml-px cursor-pointer",
+            )}
+            aria-label="Expand"
+            type="button"
+          >
+            <DigEllipsisIcon />
+          </button>
+        )}
       </div>
 
       {hasChildren && isExpanded && (
-        <ul className="ml-[7px] mt-0.5 border-l-[1.5px] border-neutral-200 dark:border-neutral-700 pl-5 flex flex-col gap-0.5">
+        <ul className="ml-[7px] mt-0.5 border-l-[1.5px] border-[#CEC9F2] pl-5 flex flex-col gap-0.5 dark:border-[#7E76C9]">
           {node.children.map((child) => (
             <LineItem
               key={child.id}

@@ -79,6 +79,12 @@ That file is the best short history of the decisions around:
 - pasted-list normalization
 - mirror-layer rendering for hanging indent and selection visuals
 
+The live Home markdown prototype keeps that textarea input model.
+
+- line-to-line dig text still comes from indentation
+- inline dig text in the live Home preview now uses `((hidden text))` markers
+- markdown in the Dig preview is supported within each line without changing the textarea editing behavior
+
 ## Dig / Editor Notes
 
 ### `DigText`

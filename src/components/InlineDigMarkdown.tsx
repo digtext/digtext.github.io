@@ -138,7 +138,7 @@ const ExpandButton = ({ isExpanded, onClick }: ExpandButtonProps) => (
     onClick={onClick}
     className={cn(
       digIconButtonClass,
-      "relative -top-px mx-0.5 cursor-pointer",
+      "relative -top-[0.18em] mx-px cursor-pointer",
     )}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
@@ -177,7 +177,7 @@ const InlineExpandSegment = ({
       <span className="align-baseline">
         <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
         {isExpanded && (
-          <span className="mt-3 ml-6 block border-l border-neutral-200/80 pl-4 dark:border-neutral-800/80">
+          <span className="mt-3 ml-6 block border-l border-[#CEC9F2] pl-4 dark:border-[#7E76C9]">
             <InlineDigMarkdown
               shadow={inner}
               expandablesMap={expandablesMap}
@@ -197,7 +197,7 @@ const InlineExpandSegment = ({
     <span>
       <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
       {isExpanded && (
-        <span className="underline decoration-[#C7DEFD] decoration-[1px] underline-offset-[2px] transition-colors">
+        <span className="underline decoration-[#CEC9F2] decoration-[1px] underline-offset-[2px] transition-colors dark:decoration-[#8E86D8]">
           <InlineDigMarkdown
             shadow={inner}
             expandablesMap={expandablesMap}
