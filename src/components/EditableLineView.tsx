@@ -253,7 +253,7 @@ const LineEndDigButton = ({
     }}
     className={cn(
       isExpanded ? digCloseButtonClass : lineDigIconButtonClass,
-      "relative -top-[0.18em] ml-px cursor-pointer",
+      "relative -top-[0.18em] ml-0 cursor-pointer",
       className,
     )}
     type="button"

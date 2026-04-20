@@ -143,7 +143,7 @@ const ExpandButton = ({ isExpanded, onClick, collapsedIcon = "ellipsis" }: Expan
     onClick={onClick}
     className={cn(
       isExpanded ? digCloseButtonClass : digIconButtonClass,
-      "relative -top-[0.18em] mx-px cursor-pointer",
+      "relative -top-[0.18em] ml-[-0.25em] mr-0 cursor-pointer",
     )}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
