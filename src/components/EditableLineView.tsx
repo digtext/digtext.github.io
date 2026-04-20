@@ -253,7 +253,7 @@ const LineEndDigButton = ({
     }}
     className={cn(
       isExpanded ? digCloseButtonClass : lineDigIconButtonClass,
-      "relative -top-[0.18em] ml-0 cursor-pointer",
+      "relative -top-[0.18em] ml-[0.2em] cursor-pointer",
       className,
     )}
     type="button"
@@ -1015,7 +1015,7 @@ export const EditableLineView = React.forwardRef<
             return (
               <div
                 key={line.id}
-                className={cn("relative", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
+                className={cn("relative group/row", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
               >
                 {/* Gutter */}
                 <div
@@ -1063,7 +1063,7 @@ export const EditableLineView = React.forwardRef<
                           }}
                           className={cn(
                             digChevronButtonClass,
-                            "pointer-events-auto absolute top-[0.05em]",
+                            "pointer-events-auto absolute top-[0.05em] group-hover/row:text-[#6155F5] dark:group-hover/row:text-[#DCD8FF]",
                           )}
                           style={{
                             left: `${getChevronOffset(line.indent)}px`,
