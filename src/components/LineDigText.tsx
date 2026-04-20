@@ -1,8 +1,10 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
   DigChevronIcon,
-  DigEllipsisIcon,
+  DigCloseIcon,
+  DigPlusIcon,
   digChevronButtonClass,
+  digCloseButtonClass,
   lineDigIconButtonClass,
 } from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
@@ -176,17 +178,17 @@ const LineItem: React.FC<LineItemProps> = ({
             …
           </span>
         )}
-        {hasChildren && !isExpanded && (
+        {hasChildren && (
           <button
             onClick={() => toggle(node.id)}
             className={cn(
-              lineDigIconButtonClass,
+              isExpanded ? digCloseButtonClass : lineDigIconButtonClass,
               "relative -top-[0.18em] ml-px cursor-pointer",
             )}
-            aria-label="Expand"
+            aria-label={isExpanded ? "Collapse" : "Expand"}
             type="button"
           >
-            <DigEllipsisIcon />
+            {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
           </button>
         )}
       </div>

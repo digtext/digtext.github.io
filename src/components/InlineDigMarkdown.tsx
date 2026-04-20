@@ -3,7 +3,8 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   DigCloseIcon,
-  DigPlusIcon,
+  DigEllipsisIcon,
+  digCloseButtonClass,
   digIconButtonClass,
 } from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
@@ -137,17 +138,13 @@ const ExpandButton = ({ isExpanded, onClick }: ExpandButtonProps) => (
   <button
     onClick={onClick}
     className={cn(
-      digIconButtonClass,
+      isExpanded ? digCloseButtonClass : digIconButtonClass,
       "relative -top-[0.18em] mx-px cursor-pointer",
     )}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
   >
-    {isExpanded ? (
-      <DigCloseIcon />
-    ) : (
-      <DigPlusIcon />
-    )}
+    {isExpanded ? <DigCloseIcon /> : <DigEllipsisIcon />}
   </button>
 );
 

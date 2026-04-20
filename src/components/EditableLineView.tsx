@@ -3,8 +3,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   DigChevronIcon,
-  DigEllipsisIcon,
+  DigCloseIcon,
+  DigPlusIcon,
   digChevronButtonClass,
+  digCloseButtonClass,
   lineDigIconButtonClass,
 } from "@/components/DigIcons";
 import {
@@ -223,11 +225,13 @@ LineText.displayName = "LineText";
 
 interface LineEndDigButtonProps {
   onToggle: () => void;
+  isExpanded: boolean;
   className?: string;
 }
 
 const LineEndDigButton = ({
   onToggle,
+  isExpanded,
   className,
 }: LineEndDigButtonProps) => (
   <button
@@ -242,15 +246,15 @@ const LineEndDigButton = ({
       e.stopPropagation();
     }}
     className={cn(
-      lineDigIconButtonClass,
+      isExpanded ? digCloseButtonClass : lineDigIconButtonClass,
       "relative -top-[0.18em] ml-px cursor-pointer",
       className,
     )}
     type="button"
     tabIndex={-1}
-    aria-label="Expand line"
+    aria-label={isExpanded ? "Collapse line" : "Expand line"}
   >
-    <DigEllipsisIcon />
+    {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
   </button>
 );
 
@@ -1095,18 +1099,20 @@ export const EditableLineView = React.forwardRef<
                           {line.text}
                         </ReactMarkdown>
                       )}
-                      {expandable && isCollapsed ? (
+                      {expandable ? (
                         <LineEndDigButton
                           onToggle={() => toggleCollapse(line.id)}
+                          isExpanded={!isCollapsed}
                         />
                       ) : null}
                     </div>
                   ) : (
                     <>
                       <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
-                      {expandable && isCollapsed ? (
+                      {expandable ? (
                         <LineEndDigButton
                           onToggle={() => toggleCollapse(line.id)}
+                          isExpanded={!isCollapsed}
                           className="mt-[0.42em]"
                         />
                       ) : null}

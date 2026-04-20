@@ -8,7 +8,10 @@ export const digIconButtonClass =
   "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#6155F5] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#B8B0FF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
 
 export const digChevronButtonClass =
-  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full text-[#6155F5] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#B8B0FF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
+  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full text-transparent transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-transparent dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
+
+export const digCloseButtonClass =
+  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-500 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-400";
 
 export const lineDigIconButtonClass =
   "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#6155F5] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#B8B0FF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
