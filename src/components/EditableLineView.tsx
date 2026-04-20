@@ -4,12 +4,14 @@ import remarkGfm from "remark-gfm";
 import {
   DigChevronIcon,
   DigCloseIcon,
+  DigEnterIcon,
   DigPlusIcon,
   digChevronButtonClass,
   digCloseButtonClass,
   lineDigIconButtonClass,
 } from "@/components/DigIcons";
 import {
+  type InlineDigCollapsedIcon,
   extractParenthesisExpandables,
   InlineDigMarkdown,
 } from "@/components/InlineDigMarkdown";
@@ -223,15 +225,19 @@ const LineText = React.memo<{
 });
 LineText.displayName = "LineText";
 
+export type LineDigCollapsedIcon = "plus" | "enter";
+
 interface LineEndDigButtonProps {
   onToggle: () => void;
   isExpanded: boolean;
+  collapsedIcon?: LineDigCollapsedIcon;
   className?: string;
 }
 
 const LineEndDigButton = ({
   onToggle,
   isExpanded,
+  collapsedIcon = "plus",
   className,
 }: LineEndDigButtonProps) => (
   <button
@@ -254,7 +260,7 @@ const LineEndDigButton = ({
     tabIndex={-1}
     aria-label={isExpanded ? "Collapse line" : "Expand line"}
   >
-    {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
+    {isExpanded ? <DigCloseIcon /> : collapsedIcon === "enter" ? <DigEnterIcon /> : <DigPlusIcon />}
   </button>
 );
 
@@ -283,12 +289,14 @@ interface EditableLineViewProps {
   readOnlyInlineDigSyntax?: "parentheses";
   readOnlyTextClassName?: string;
   readOnlyTextStyle?: React.CSSProperties;
+  lineDigCollapsedIcon?: LineDigCollapsedIcon;
+  inlineDigCollapsedIcon?: InlineDigCollapsedIcon;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, lineDigCollapsedIcon, inlineDigCollapsedIcon }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [expandedInlineDigIds, setExpandedInlineDigIds] = useState<Set<string>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
@@ -1090,6 +1098,7 @@ export const EditableLineView = React.forwardRef<
                           toggle={(inlineId) => toggleInlineDig(line.id, inlineId)}
                           unwrapParagraphs
                           linkClassName="underline underline-offset-2 text-violet-600 transition-colors hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300"
+                          collapsedIcon={inlineDigCollapsedIcon}
                         />
                       ) : (
                         <ReactMarkdown
@@ -1103,6 +1112,7 @@ export const EditableLineView = React.forwardRef<
                         <LineEndDigButton
                           onToggle={() => toggleCollapse(line.id)}
                           isExpanded={!isCollapsed}
+                          collapsedIcon={lineDigCollapsedIcon}
                         />
                       ) : null}
                     </div>
@@ -1113,6 +1123,7 @@ export const EditableLineView = React.forwardRef<
                         <LineEndDigButton
                           onToggle={() => toggleCollapse(line.id)}
                           isExpanded={!isCollapsed}
+                          collapsedIcon={lineDigCollapsedIcon}
                           className="mt-[0.42em]"
                         />
                       ) : null}
