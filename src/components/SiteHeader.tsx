@@ -1,42 +1,22 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Check, Share } from "lucide-react";
+import type { MouseEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Maximize2 } from "lucide-react";
 
-const SiteHeader = () => {
+interface SiteHeaderProps {
+  onOpenComposer?: () => void;
+}
+
+const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const isArticles =
     pathname.startsWith("/articles") || pathname.startsWith("/article/");
   const isHome =
     pathname === "/" || pathname.startsWith("/reader");
   const isPages = pathname === "/p";
 
-  const [shared, setShared] = useState(false);
-
-  const handleShare = async () => {
-    const data = {
-      title: "Dig text",
-      text: "Read text collapsed-first. Dig only as deep as you want.",
-      url: window.location.href,
-    };
-    if (typeof navigator !== "undefined" && "share" in navigator) {
-      try {
-        await navigator.share(data);
-      } catch {
-        /* user cancelled */
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(data.url);
-      setShared(true);
-      setTimeout(() => setShared(false), 2000);
-    } catch {
-      /* ignore */
-    }
-  };
-
   const linkBase =
-    "px-3 py-1.5 rounded-full font-sans text-sm transition-all";
+    "whitespace-nowrap px-1.5 py-1.5 rounded-full font-sans text-[12px] transition-all sm:px-3 sm:text-sm";
   const inactive =
     "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:bg-neutral-800";
   const active =
@@ -52,14 +32,43 @@ const SiteHeader = () => {
     );
 
   const ctaClass =
-    "ml-1 inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-1.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200";
+    "ml-1 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-neutral-900 px-2.5 py-1.5 font-sans text-[12px] text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 sm:px-4 sm:text-sm";
+
+  const scrollToHomeSection = (id: string) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${id}`);
+  };
+
+  const handleSectionClick =
+    (id: "prompt" | "embed") =>
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      if (pathname !== "/") return;
+      event.preventDefault();
+      scrollToHomeSection(id);
+    };
+
+  const handleOpenComposer = () => {
+    if (onOpenComposer) {
+      onOpenComposer();
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem("digtext:open-composer", "1");
+    } catch {
+      /* ignore */
+    }
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-100 dark:bg-neutral-950/80 dark:border-neutral-800">
-      <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+      <div className="max-w-4xl mx-auto px-3 py-4 flex items-center justify-between gap-4 sm:px-6">
         <Link
           to="/"
-          className="flex items-center gap-2 text-neutral-900 dark:text-neutral-50"
+          className="flex shrink-0 items-center gap-2 text-neutral-900 dark:text-neutral-50"
         >
           <svg
             aria-hidden
@@ -75,30 +84,35 @@ const SiteHeader = () => {
             <path fillRule="evenodd" clipRule="evenodd" d="M1.2771 7.50259C1.2771 4.06462 4.06413 1.27759 7.5021 1.27759C10.94 1.27759 13.7271 4.06462 13.7271 7.50259C13.7271 10.9405 10.94 13.7276 7.5021 13.7276C4.06413 13.7276 1.2771 10.9405 1.2771 7.50259ZM7.5021 2.22759C4.5888 2.22759 2.2271 4.58929 2.2271 7.50259C2.2271 10.4159 4.5888 12.7776 7.5021 12.7776C10.4154 12.7776 12.7771 10.4159 12.7771 7.50259C12.7771 4.58929 10.4154 2.22759 7.5021 2.22759Z" />
             <path d="M6.77218 10.1736C6.60522 10.1736 6.48627 10.1339 6.41531 10.0546C6.34435 9.97112 6.32348 9.87303 6.3527 9.76034L7.68001 4.87686C7.7134 4.76833 7.79061 4.67651 7.91166 4.60138C8.0327 4.52207 8.1767 4.48242 8.34366 4.48242C8.51479 4.4866 8.63374 4.52834 8.70053 4.60764C8.76731 4.68694 8.78401 4.78086 8.75061 4.88938L7.42957 9.77912C7.39618 9.88764 7.32105 9.98155 7.20418 10.0609C7.08731 10.1402 6.94331 10.1777 6.77218 10.1736ZM4.65601 7.3186C4.69774 7.16416 4.77496 7.04312 4.88766 6.95547C5.00453 6.86781 5.12557 6.82399 5.25079 6.82399H10.1969C10.3221 6.82399 10.4139 6.86781 10.4724 6.95547C10.5308 7.04312 10.5391 7.16416 10.4974 7.3186C10.4515 7.47303 10.3617 7.59199 10.2282 7.67547C10.0946 7.75894 9.95896 7.80068 9.82122 7.80068H5.04418C4.88974 7.80068 4.77496 7.75894 4.69983 7.67547C4.6247 7.59199 4.61009 7.47303 4.65601 7.3186Z" />
           </svg>
-          <span className="font-serif italic text-xl leading-none">
+          <span className="hidden font-serif italic text-xl leading-none min-[420px]:inline">
             Dig text
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <nav className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          <nav className="flex items-center gap-0 sm:gap-1">
             {navItem("/", "Home", isHome)}
+            <Link
+              to="/#prompt"
+              onClick={handleSectionClick("prompt")}
+              className={`${linkBase} ${inactive}`}
+            >
+              Prompt
+            </Link>
+            <Link
+              to="/#embed"
+              onClick={handleSectionClick("embed")}
+              className={`${linkBase} ${inactive}`}
+            >
+              Embed
+            </Link>
             {navItem("/articles", "Articles", isArticles)}
             {navItem("/p", "Pages", isPages)}
           </nav>
 
-          <button onClick={handleShare} className={ctaClass}>
-            {shared ? (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                Link copied
-              </>
-            ) : (
-              <>
-                <Share className="h-3.5 w-3.5" />
-                Share
-              </>
-            )}
+          <button type="button" onClick={handleOpenComposer} className={ctaClass}>
+            Open dig
+            <Maximize2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

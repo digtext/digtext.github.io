@@ -121,7 +121,35 @@
   }
 
   ::view-transition-group(reader-shell) {
-    animation-duration: 240ms;
+    animation-duration: 220ms;
     animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  ::view-transition-old(reader-shell) {
+    animation: reader-shell-content-out 90ms ease-out both;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-new(reader-shell) {
+    animation: reader-shell-content-in 150ms ease-out 55ms both;
+    mix-blend-mode: normal;
+  }
+}
+
+@keyframes reader-shell-content-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.08;
+  }
+}
+
+@keyframes reader-shell-content-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

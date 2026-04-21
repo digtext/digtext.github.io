@@ -9,8 +9,8 @@ import {
   type ClipboardEvent,
   type KeyboardEvent,
 } from "react";
-import { Link } from "react-router-dom";
-import { Check, Copy, Plus, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Check, Copy, Maximize2, Plus, X } from "lucide-react";
 import {
   EditableLine,
   EditableLineView,
@@ -72,6 +72,7 @@ const INDENT_TOKEN = "\t";
 const VISUAL_INDENT_UNIT = "    ";
 const TEXTAREA_HISTORY_BATCH_MS = 900;
 const BULLET_WIDTH_CH = 2;
+const COMPOSER_STORAGE_KEY = "digtext:home-composer";
 
 const shellClass =
   "inline-flex items-center rounded-[18px] border border-neutral-200 bg-white p-0.5 dark:border-neutral-800 dark:bg-neutral-900";
@@ -83,6 +84,15 @@ const pillButtonClass = (active = false) =>
       ? "bg-neutral-900 text-white dark:bg-neutral-50 dark:text-neutral-900"
       : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
   );
+
+const iconButtonClass =
+  "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50";
+
+const readerWindowShadowClass =
+  "shadow-[0_1px_0_rgba(0,0,0,.02),0_8px_24px_-12px_rgba(0,0,0,.08)]";
+
+const shortcutKeyClass =
+  "rounded border border-neutral-200 px-1 py-[1px] font-mono text-[10px] text-neutral-500 dark:border-neutral-800 dark:text-neutral-400";
 
 const getIndentWidth = (line: string) =>
   (line.match(/^[\t ]*/) ?? [""])[0].replace(/\t/g, VISUAL_INDENT_UNIT).length;
@@ -310,6 +320,36 @@ const normalizePastedListText = (text: string) => {
 
 const INITIAL_TEXT = normalizePastedListText(DEMO_CONTENT);
 
+const getStoredComposerText = () => {
+  if (typeof window === "undefined") return INITIAL_TEXT;
+
+  try {
+    const stored = window.localStorage.getItem(COMPOSER_STORAGE_KEY);
+    if (!stored) return INITIAL_TEXT;
+
+    const parsed = JSON.parse(stored) as { inputText?: unknown };
+    return typeof parsed.inputText === "string" ? parsed.inputText : INITIAL_TEXT;
+  } catch {
+    return INITIAL_TEXT;
+  }
+};
+
+const getStoredComposerMode = () => {
+  if (typeof window === "undefined") return "digtext";
+
+  try {
+    const stored = window.localStorage.getItem(COMPOSER_STORAGE_KEY);
+    if (!stored) return "digtext";
+
+    const parsed = JSON.parse(stored) as { mode?: unknown };
+    return parsed.mode === "input" || parsed.mode === "digtext"
+      ? parsed.mode
+      : "digtext";
+  } catch {
+    return "digtext";
+  }
+};
+
 const isWordChar = (value: string) => /[A-Za-z0-9]/.test(value);
 
 const getDiffRange = (previous: string, next: string) => {
@@ -379,19 +419,22 @@ export const HomeV2_4Page = ({
   heroFontClassName = "font-serif",
   heroHeadingClassName = "tracking-[-0.05em] text-[clamp(2.05rem,5.75vw,3.24rem)]",
   heroHeadingStyle = { lineHeight: 1 },
-  topHeroHeadingClassName = "mt-8 tracking-tight text-[clamp(2.4rem,6.2vw,3.6rem)] leading-[1.02]",
+  topHeroHeadingClassName = "mt-3 tracking-tight text-[clamp(2.4rem,6.2vw,3.6rem)] leading-[1.02]",
   topHeroHeadingStyle = {},
 }: HomeV2_4PageProps) => {
   const [copied, setCopied] = useState(false);
-  const [mode, setMode] = useState<"digtext" | "input">("digtext");
+  const [mode, setMode] = useState<"digtext" | "input">(
+    () => getStoredComposerMode() as "digtext" | "input",
+  );
+  const [composerFullscreenOpen, setComposerFullscreenOpen] = useState(false);
   const [heroDemoOpen, setHeroDemoOpen] = useState(false);
-  const [inputText, setInputText] = useState(INITIAL_TEXT);
+  const [inputText, setInputText] = useState(() => getStoredComposerText());
   const [textareaSelection, setTextareaSelection] = useState<TextAreaSelection>({
     start: 0,
     end: 0,
   });
   const [lines, setLines] = useState<EditableLine[]>(() =>
-    parseToEditableLines(INITIAL_TEXT),
+    parseToEditableLines(getStoredComposerText()),
   );
   const editorRef = useRef<EditableLineViewHandle>(null);
   const digTextRef = useRef<EditableLineViewHandle>(null);
@@ -400,7 +443,7 @@ export const HomeV2_4Page = ({
   const isTextareaSelectingRef = useRef(false);
   const pendingSelectionRef = useRef<TextAreaSelection | null>(null);
   const textAreaCurrentRef = useRef<TextAreaHistoryEntry>({
-    value: INITIAL_TEXT,
+    value: inputText,
     selection: { start: 0, end: 0 },
   });
   const textAreaPastRef = useRef<TextAreaHistoryEntry[]>([]);
@@ -411,10 +454,22 @@ export const HomeV2_4Page = ({
   const futureRef = useRef<EditableLine[][]>([]);
   const applyingHistoryRef = useRef(false);
   const [, forceUpdate] = useState(0);
+  const location = useLocation();
   useEffect(() => { forceUpdate((n) => n + 1); }, []);
   useEffect(() => {
     linesRef.current = lines;
   }, [lines]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        COMPOSER_STORAGE_KEY,
+        JSON.stringify({ inputText, mode }),
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [inputText, mode]);
 
   const cloneLines = useCallback(
     (value: EditableLine[]) => value.map((line) => ({ ...line })),
@@ -447,6 +502,56 @@ export const HomeV2_4Page = ({
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const setComposerFullscreen = useCallback((open: boolean) => {
+    const doc = document as Document & {
+      startViewTransition?: (callback: () => void) => void;
+    };
+
+    if (typeof doc.startViewTransition === "function") {
+      doc.startViewTransition(() => {
+        setComposerFullscreenOpen(open);
+      });
+      return;
+    }
+
+    setComposerFullscreenOpen(open);
+  }, []);
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    window.setTimeout(() => scrollTo(id), 0);
+  }, [location.hash]);
+
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("digtext:open-composer") !== "1") {
+        return;
+      }
+      window.sessionStorage.removeItem("digtext:open-composer");
+      setComposerFullscreen(true);
+    } catch {
+      /* ignore */
+    }
+  }, [setComposerFullscreen]);
+
+  useEffect(() => {
+    if (!composerFullscreenOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setComposerFullscreen(false);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [composerFullscreenOpen, setComposerFullscreen]);
 
   const handleLinesChange = useCallback((newLines: EditableLine[]) => {
     if (!applyingHistoryRef.current && !areLinesEqual(linesRef.current, newLines)) {
@@ -574,6 +679,22 @@ export const HomeV2_4Page = ({
       commitTextareaEntry({ value: nextValue, selection });
     },
     [commitTextareaEntry, pushTextareaHistory],
+  );
+
+  const setTextareaValue = useCallback(
+    (value: string) => {
+      if (value === textAreaCurrentRef.current.value) return;
+
+      applyTextareaUpdate(
+        value,
+        { start: 0, end: 0 },
+        {
+          history: "push",
+          batchKind: null,
+        },
+      );
+    },
+    [applyTextareaUpdate],
   );
 
   const handleTextareaChange = useCallback(
@@ -856,101 +977,139 @@ export const HomeV2_4Page = ({
     });
   }, [inputText, textareaSelection]);
 
+  const wordCount = useMemo(() => {
+    const trimmed = inputText.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+  }, [inputText]);
+
+  const lineDigSectionCount = useMemo(
+    () =>
+      lines.filter((line, index) => {
+        const nextLine = lines[index + 1];
+        return nextLine ? nextLine.indent > line.indent : false;
+      }).length,
+    [lines],
+  );
+
+  const inlineDigSectionCount = useMemo(
+    () => inputText.match(/\(\(/g)?.length ?? 0,
+    [inputText],
+  );
+
+  const digSectionCount = lineDigSectionCount + inlineDigSectionCount;
+
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
-      <SiteHeader />
+      <SiteHeader onOpenComposer={() => setComposerFullscreen(true)} />
 
       {/* ── HERO ── */}
       <section className="relative overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-24 -right-24 h-[600px] w-[600px] rounded-full opacity-40 blur-[120px]"
+          className="pointer-events-none absolute -right-40 -top-[220px] h-[560px] w-[560px] rounded-full opacity-[.35] blur-[90px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(251,191,36,0.5) 0%, rgba(244,63,94,0.35) 40%, rgba(139,92,246,0.3) 70%, transparent 80%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full opacity-25 blur-[100px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(244,63,94,0.2) 60%, transparent 80%)",
+              "radial-gradient(circle, rgba(251,191,36,.35) 0%, rgba(244,114,182,.18) 45%, transparent 75%)",
           }}
         />
 
-        <div className="relative max-w-3xl mx-auto px-6 pt-16 pb-16">
-          {/* Eyebrow */}
-          <div className="mb-8 flex items-center gap-3">
-            <span
-              aria-hidden
-              className="h-px w-10 bg-neutral-400 dark:bg-neutral-600"
-            />
-            <span className="font-sans text-[10px] tracking-[0.22em] uppercase text-neutral-500 dark:text-neutral-400">
-              a new interface for text
-            </span>
-          </div>
-
-          {/* Big headline */}
-          <h1
-            className={cn(topHeroHeadingClassName)}
-            style={{
-              ...topHeroHeadingStyle,
-              fontFamily: "'IBM Plex Serif', Georgia, serif",
-              textWrap: "balance",
-            }}
-          >
-            Read the shortest version first.
-            <br />
-            <span className="text-neutral-500 dark:text-neutral-400">
-              Dig{" "}
-              <span className="relative inline-block align-baseline">
-                <span className="italic">deeper</span>
-                <button
-                  type="button"
-                  aria-label={heroDemoOpen ? "Collapse" : "Expand"}
-                  onClick={() => setHeroDemoOpen((v) => !v)}
-                  className={cn(
-                    "align-middle ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full border transition-colors",
-                    heroDemoOpen
-                      ? "bg-neutral-900 border-neutral-900 text-white dark:bg-neutral-50 dark:border-neutral-50 dark:text-neutral-900"
-                      : "border-neutral-400 text-neutral-500 hover:text-neutral-900 hover:border-neutral-700 dark:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:border-neutral-400",
-                  )}
-                >
-                  {heroDemoOpen ? (
-                    <X size={12} strokeWidth={2.5} />
-                  ) : (
-                    <Plus size={12} strokeWidth={2.5} />
-                  )}
-                </button>
+        <div className="relative mx-auto max-w-4xl px-6 pt-16 pb-16">
+          <div className="max-w-3xl">
+            {/* Eyebrow */}
+            <div className="mb-3">
+              <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
+                a new interface for text
               </span>
-              {" "}only where it matters.
-            </span>
-          </h1>
+            </div>
 
-          <div
-            className="grid transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
-            style={{
-              gridTemplateRows: heroDemoOpen ? "1fr" : "0fr",
-              marginTop: heroDemoOpen ? "1rem" : "0",
-            }}
-          >
-            <div className="overflow-hidden">
-              <p
-                className="max-w-2xl font-serif text-[1.05rem] leading-relaxed text-neutral-600 dark:text-neutral-300"
-                style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
-              >
-                Dig text is a new way to read text. You see the shortest
-                version first, then dig deeper only where it matters to you.
-              </p>
+            {/* Big headline */}
+            <h1
+              className={cn(topHeroHeadingClassName)}
+              style={{
+                ...topHeroHeadingStyle,
+                fontFamily: "'IBM Plex Serif', Georgia, serif",
+                textWrap: "balance",
+              }}
+            >
+              Read the shortest version first.
+              <br />
+              <span className="text-neutral-500 dark:text-neutral-400">
+                Dig{" "}
+                <span className="relative inline-block align-baseline">
+                  <span className="italic">deeper</span>
+                  <button
+                    type="button"
+                    aria-label={heroDemoOpen ? "Collapse" : "Expand"}
+                    onClick={() => setHeroDemoOpen((v) => !v)}
+                    className={cn(
+                      "align-middle ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full border transition-colors",
+                      heroDemoOpen
+                        ? "bg-neutral-900 border-neutral-900 text-white dark:bg-neutral-50 dark:border-neutral-50 dark:text-neutral-900"
+                        : "border-neutral-400 text-neutral-500 hover:text-neutral-900 hover:border-neutral-700 dark:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:border-neutral-400",
+                    )}
+                  >
+                    {heroDemoOpen ? (
+                      <X size={12} strokeWidth={2.5} />
+                    ) : (
+                      <Plus size={12} strokeWidth={2.5} />
+                    )}
+                  </button>
+                </span>
+                {" "}only where it matters.
+              </span>
+            </h1>
+
+            <div
+              className="grid transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+              style={{
+                gridTemplateRows: heroDemoOpen ? "1fr" : "0fr",
+                marginTop: heroDemoOpen ? "1rem" : "0",
+              }}
+            >
+              <div className="overflow-hidden">
+                <p
+                  className="max-w-2xl font-serif text-[1.05rem] leading-relaxed text-neutral-600 dark:text-neutral-300"
+                  style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
+                >
+                  Dig text is a new way to read text. You see the shortest
+                  version first, then dig deeper only where it matters to you.
+                </p>
+              </div>
             </div>
           </div>
 
           {/* ── Reader box ── */}
-          <div className="mt-10 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/50">
+          {composerFullscreenOpen && (
+            <div className="fixed inset-0 z-40 overflow-hidden bg-white dark:bg-neutral-950">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-40 -top-[220px] h-[560px] w-[560px] rounded-full opacity-[0.35] blur-[90px] dark:opacity-[0.22]"
+                style={{
+                  background:
+                    "radial-gradient(circle at 35% 35%, rgba(59,130,246,.55), rgba(244,114,182,.28) 42%, rgba(255,255,255,0) 70%)",
+                }}
+              />
+            </div>
+          )}
+          <div
+            className={cn(
+              "mt-10 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-900/50",
+              composerFullscreenOpen &&
+                "fixed inset-0 z-50 mt-0 flex h-dvh flex-col rounded-none border-0 md:inset-y-4 md:left-1/2 md:right-auto md:h-[calc(100dvh-2rem)] md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
+              readerWindowShadowClass,
+            )}
+            style={{ viewTransitionName: "reader-shell" }}
+          >
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200/70 bg-white/70 px-4 py-2.5 dark:border-neutral-800 dark:bg-neutral-900/70">
               <div className={shellClass}>
+                <button
+                  onClick={() => setMode("input")}
+                  className={pillButtonClass(mode === "input")}
+                  type="button"
+                >
+                  Raw text
+                </button>
                 <button
                   onClick={() => setMode("digtext")}
                   className={pillButtonClass(mode === "digtext")}
@@ -958,17 +1117,10 @@ export const HomeV2_4Page = ({
                 >
                   Dig text
                 </button>
-                <button
-                  onClick={() => setMode("input")}
-                  className={pillButtonClass(mode === "input")}
-                  type="button"
-                >
-                  Input text
-                </button>
               </div>
 
-              {mode === "digtext" && (
-                <div className="flex items-center gap-2 ml-auto">
+              <div className="ml-auto flex min-h-[34px] basis-full items-center justify-end gap-2 sm:basis-auto">
+                {mode === "digtext" && (
                   <div className={shellClass}>
                     <button
                       onClick={() => {
@@ -994,12 +1146,56 @@ export const HomeV2_4Page = ({
                       {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
                     </button>
                   </div>
-                </div>
-              )}
+                )}
+                {mode === "input" && inputMode === "textarea" && (
+                  <div className={shellClass}>
+                    <button
+                      onClick={() =>
+                        setTextareaValue(inputText.trim() ? "" : INITIAL_TEXT)
+                      }
+                      className={pillButtonClass(false)}
+                      type="button"
+                    >
+                      {inputText.trim() ? "Clear" : "Sample"}
+                    </button>
+                  </div>
+                )}
+                {composerFullscreenOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setComposerFullscreen(false)}
+                    className={iconButtonClass}
+                    aria-label="Close composer"
+                  >
+                    <X size={16} strokeWidth={2} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setComposerFullscreen(true)}
+                    className={iconButtonClass}
+                    aria-label="Open full screen"
+                  >
+                    <Maximize2 size={16} strokeWidth={1.75} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Content */}
-            <div className="px-6 pt-6 pb-7 md:px-10 md:pt-8 md:pb-9">
+            <div
+              className={cn(
+                "h-[460px] overflow-y-auto px-6 pt-6 pb-7 md:h-[520px] md:px-10 md:pt-8 md:pb-9",
+                composerFullscreenOpen && "h-auto flex-1 md:h-auto",
+                mode === "input" &&
+                  inputMode === "textarea" &&
+                  "h-auto overflow-visible p-0 md:p-0",
+                composerFullscreenOpen &&
+                  mode === "input" &&
+                  inputMode === "textarea" &&
+                  "flex-1 overflow-hidden",
+              )}
+            >
               {mode === "input" && inputMode === "editable-line" ? (
                 <EditableLineView
                   ref={editorRef}
@@ -1012,15 +1208,20 @@ export const HomeV2_4Page = ({
                   emptyStateMessage="Paste indented text or a bulleted list here"
                 />
               ) : mode === "input" ? (
-                <div>
-                  <div className="relative">
+                <div className={cn(composerFullscreenOpen && "h-full")}>
+                  <div className={cn("relative", composerFullscreenOpen && "h-full")}>
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-md border border-transparent bg-transparent px-0 py-0 text-[14px] leading-[1.8] text-neutral-700 dark:text-neutral-300"
+                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-md border border-transparent bg-transparent px-5 pb-10 pt-5 text-[14px] leading-[1.8] text-neutral-700 dark:text-neutral-300"
                       style={{ fontFamily: "var(--font-input-mono)" }}
                     >
-                      <div className="min-h-[320px] px-0 py-0">
+                      <div
+                        className={cn(
+                          "min-h-[460px] md:min-h-[520px]",
+                          composerFullscreenOpen && "h-full min-h-0",
+                        )}
+                      >
                         {inputText.length > 0 ? (
                           textareaMirrorLines.map((visual, index) => {
                             return (
@@ -1048,7 +1249,12 @@ export const HomeV2_4Page = ({
                             );
                           })
                         ) : (
-                          <div className="min-h-[320px]" />
+                          <div
+                            className={cn(
+                              "min-h-[460px] md:min-h-[520px]",
+                              composerFullscreenOpen && "h-full min-h-0",
+                            )}
+                          />
                         )}
                       </div>
                     </div>
@@ -1069,13 +1275,13 @@ export const HomeV2_4Page = ({
                     onScroll={syncTextareaMirrorScroll}
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
-                    className="relative min-h-[320px] w-full resize-y bg-transparent text-[14px] leading-[1.8] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    className={cn(
+                      "relative block min-h-[460px] w-full resize-y bg-transparent px-5 pb-10 pt-5 text-[14px] leading-[1.8] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent md:min-h-[520px]",
+                      composerFullscreenOpen && "h-full min-h-0 resize-none",
+                    )}
                     style={{ fontFamily: "var(--font-input-mono)" }}
                   />
                   </div>
-                  <p className="mt-3 font-sans text-[12px] leading-relaxed text-neutral-400 dark:text-neutral-500">
-                    Shortcuts: Tab, Shift+Tab, Cmd+Shift+Up, Cmd+Shift+Down.
-                  </p>
                 </div>
               ) : (
                 <EditableLineView
@@ -1085,13 +1291,54 @@ export const HomeV2_4Page = ({
                   onCollapseChange={() => forceUpdate((n) => n + 1)}
                   readOnly
                   readOnlyInlineDigSyntax="parentheses"
-                  readOnlyTextClassName="text-[16px] leading-[1.8]"
+                  defaultCollapsed
+                  readOnlyEndControlsOnly
+                  readOnlyTextClassName="text-lg leading-[1.85]"
                   readOnlyTextStyle={{ fontFamily: "var(--font-serif)" }}
                   lineDigCollapsedIcon="enter"
                   inlineDigCollapsedIcon="plus"
                 />
               )}
             </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 bg-white/50 px-4 py-2.5 font-sans text-[11px] text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-500">
+              <span>
+                {wordCount} words · {digSectionCount} dig sections
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg
+                  aria-hidden="true"
+                  className="h-3 w-3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4" />
+                  <path d="M12 16h.01" />
+                </svg>
+                Your text stays in your browser.
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 flex min-h-[42px] flex-wrap items-center gap-x-2 gap-y-1 font-sans text-[12px] leading-relaxed text-neutral-400 dark:text-neutral-500">
+            {mode === "input" ? (
+              <>
+                <span>Move text with</span>
+                <span className="inline-flex flex-wrap items-center gap-1">
+                  <kbd className={shortcutKeyClass}>Tab</kbd>
+                  <kbd className={shortcutKeyClass}>Shift+Tab</kbd>
+                  <kbd className={shortcutKeyClass}>Command+Shift+Up</kbd>
+                  <kbd className={shortcutKeyClass}>Command+Shift+Down</kbd>
+                </span>
+              </>
+            ) : (
+              <span>Dig text: read the shortest version first.</span>
+            )}
           </div>
 
           <div className="mt-8">
@@ -1108,9 +1355,9 @@ export const HomeV2_4Page = ({
       {/* ── PROMPT ── */}
       <section
         id="prompt"
-        className="border-t border-neutral-100 bg-neutral-50/50 scroll-mt-[65px] dark:border-neutral-800 dark:bg-neutral-900/40"
+        className="border-t border-neutral-100 scroll-mt-[65px] dark:border-neutral-800"
       >
-        <div className="max-w-3xl mx-auto px-6 py-20">
+        <div className="max-w-4xl mx-auto px-6 py-20">
           <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
             A new paradigm of using text
           </span>
@@ -1125,7 +1372,7 @@ export const HomeV2_4Page = ({
             Use this prompt to convert
             <br />
             any text into{" "}
-            <span className="italic bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
+            <span className="italic">
               dig text.
             </span>
           </h2>
@@ -1186,9 +1433,9 @@ export const HomeV2_4Page = ({
       {/* ── EMBED ── */}
       <section
         id="embed"
-        className="relative border-t border-neutral-100 dark:border-neutral-800"
+        className="relative border-t border-neutral-100 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/40"
       >
-        <div className="max-w-3xl mx-auto px-6 py-20">
+        <div className="max-w-4xl mx-auto px-6 py-20">
           <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
             Use it anywhere
           </span>
@@ -1223,8 +1470,8 @@ export const HomeV2_4Page = ({
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-neutral-100 dark:border-neutral-800">
-        <div className="max-w-3xl mx-auto px-6 py-10 flex items-center justify-between font-sans text-[12px] text-neutral-400 dark:text-neutral-500">
-          <span>Dig text — read the shortest version first.</span>
+        <div className="max-w-4xl mx-auto px-6 py-10 flex items-center justify-between font-sans text-[12px] text-neutral-400 dark:text-neutral-500">
+          <span>Dig text: read the shortest version first.</span>
           <span>© 2026</span>
         </div>
       </footer>

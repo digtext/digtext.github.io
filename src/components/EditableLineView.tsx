@@ -19,6 +19,9 @@ import { cn } from "@/lib/utils";
 
 // ── Data ──────────────────────────────────────────────────────────────
 
+const readOnlyLinkClassName =
+  "underline underline-offset-2 text-neutral-600 decoration-neutral-300 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:decoration-neutral-600 dark:hover:text-neutral-50";
+
 export interface EditableLine {
   id: number;
   text: string;
@@ -289,6 +292,8 @@ interface EditableLineViewProps {
   readOnlyInlineDigSyntax?: "parentheses";
   readOnlyTextClassName?: string;
   readOnlyTextStyle?: React.CSSProperties;
+  defaultCollapsed?: boolean;
+  readOnlyEndControlsOnly?: boolean;
   lineDigCollapsedIcon?: LineDigCollapsedIcon;
   inlineDigCollapsedIcon?: InlineDigCollapsedIcon;
 }
@@ -296,8 +301,10 @@ interface EditableLineViewProps {
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, lineDigCollapsedIcon, inlineDigCollapsedIcon }, fwdRef) => {
-  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, inlineDigCollapsedIcon }, fwdRef) => {
+  const [collapsed, setCollapsed] = useState<Set<number>>(
+    () => new Set(defaultCollapsed ? collectExpandableIds(lines) : []),
+  );
   const [expandedInlineDigIds, setExpandedInlineDigIds] = useState<Set<string>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
   const focusTarget = useRef<{ id: number; cursor: number } | null>(null);
@@ -352,6 +359,12 @@ export const EditableLineView = React.forwardRef<
     () => lines.some((line) => line.text.trim().length > 0),
     [lines],
   );
+
+  useEffect(() => {
+    if (!defaultCollapsed) return;
+    setCollapsed(new Set(expandableIds));
+    setExpandedInlineDigIds(new Set());
+  }, [defaultCollapsed, expandableIds]);
 
   useEffect(() => {
     setExpandedInlineDigIds((prev) => {
@@ -955,7 +968,7 @@ export const EditableLineView = React.forwardRef<
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline underline-offset-2 text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 transition-colors"
+          className={readOnlyLinkClassName}
         >
           {children}
         </a>
@@ -970,7 +983,7 @@ export const EditableLineView = React.forwardRef<
     "[&_h3]:mt-3 [&_h3]:mb-1.5 [&_h3]:text-[1.18em] [&_h3]:font-semibold " +
     "[&_h4]:mt-3 [&_h4]:mb-1.5 [&_h4]:font-semibold " +
     "[&_strong]:font-semibold [&_em]:italic " +
-    "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-violet-600 dark:[&_a]:text-violet-400 [&_a:hover]:text-violet-800 dark:[&_a:hover]:text-violet-300 " +
+    "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-neutral-600 [&_a]:decoration-neutral-300 dark:[&_a]:text-neutral-300 dark:[&_a]:decoration-neutral-600 [&_a:hover]:text-neutral-900 dark:[&_a:hover]:text-neutral-50 " +
     "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 " +
     "[&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-neutral-200 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-neutral-500 dark:[&_blockquote]:border-neutral-800 dark:[&_blockquote]:text-neutral-400 " +
     "[&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800 " +
@@ -1007,7 +1020,10 @@ export const EditableLineView = React.forwardRef<
             if (!isBullets && !isVisible(lines, i, collapsed)) return null;
             const expandable = !isBullets && hasChildren(lines, i);
             const isCollapsed = collapsed.has(line.id);
-            const textInset = getTextInset(line.indent);
+            const useEndControlsOnly = readOnly && readOnlyEndControlsOnly;
+            const textInset = useEndControlsOnly
+              ? line.indent * INDENT_STEP_PX
+              : getTextInset(line.indent);
             const inlineDigEntry = inlineDigEntries.get(line.id);
             const inlineDigExpandedIds =
               expandedInlineDigIdsByLine.get(line.id) ?? new Set<number>();
@@ -1042,14 +1058,18 @@ export const EditableLineView = React.forwardRef<
                           key={level}
                           className="absolute inset-y-0 block bg-[#CEC9F2] dark:bg-[#7E76C9]"
                           style={{
-                            left: `${getGuideOffset(level + 1)}px`,
+                            left: `${
+                              useEndControlsOnly
+                                ? (level + 0.5) * INDENT_STEP_PX
+                                : getGuideOffset(level + 1)
+                            }px`,
                             width: `${GUIDE_WIDTH_PX}px`,
                             transform: "translateX(-50%)",
                           }}
                         />
                       ))}
 
-                      {expandable ? (
+                      {expandable && !useEndControlsOnly ? (
                         <button
                           contentEditable={false}
                           onClick={(e) => {
@@ -1097,7 +1117,7 @@ export const EditableLineView = React.forwardRef<
                           expandedIds={inlineDigExpandedIds}
                           toggle={(inlineId) => toggleInlineDig(line.id, inlineId)}
                           unwrapParagraphs
-                          linkClassName="underline underline-offset-2 text-violet-600 transition-colors hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300"
+                          linkClassName={readOnlyLinkClassName}
                           collapsedIcon={inlineDigCollapsedIcon}
                         />
                       ) : (
