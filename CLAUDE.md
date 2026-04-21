@@ -30,7 +30,8 @@ Routes live in `src/App.tsx`.
 
 - `/` is the live Home page connected to the public main nav.
 - `/about` is the older About / prompt page.
-- `/articles` is the article library.
+- `/library` is the library.
+- `/articles` redirects to `/library` for old article-library links.
 - `/article/:articleId` is the article reader.
 - `/reader` is the fullscreen DigText reader demo.
 - `/p` is the prototype index.
@@ -43,7 +44,7 @@ The live version is the one connected to the real website and the main nav, not 
 In practice:
 
 - the live Home page is the component wired to `/`
-- the live Articles page is the component wired to `/articles`
+- the live Library page is the component wired to `/library`
 - versioned `/p/...` routes are archive / experiment routes, even if they render the same component
 
 Current example:
@@ -52,7 +53,7 @@ Current example:
 - Live Home row in `/p`: `Home v2.6 (markdown)` and it should point to `/`
 - Archived Home v2 route: `/p/home-v2`
 - Archived Home experiments: versioned routes such as `/p/home-v2-1`, `/p/home-v2-4`, `/p/home-v2-5-text-area`
-- Articles live route: `/articles`
+- Library live route: `/library`
 
 When switching a page live:
 
@@ -60,7 +61,7 @@ When switching a page live:
 - make sure the main nav points to that page
 - only then update the live pill in `/p`
 
-Do not point the live pill at a versioned `/p/...` URL if the public site is using a normal route like `/` or `/articles`.
+Do not point the live pill at a versioned `/p/...` URL if the public site is using a normal route like `/` or `/library`.
 
 ## Current Home Prototype
 
@@ -121,7 +122,7 @@ When changing it, be careful not to break both modes at once.
 - Live pill means "currently live on the public website / main nav", not "latest prototype".
 - For Home, the live `/p` entry should currently be `Home v2.11 (new-qual)` mapped to `/`.
 - `Home v2` is an archived prototype route and should stay on `/p/home-v2` unless explicitly promoted again.
-- For Articles, the live `/p` entry should map to `/articles`.
+- For Library, the live `/p` entry should map to `/library`.
 - Prefer updating the public live route instead of inventing a new "live" versioned URL.
 - For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV2_11_NewQual.tsx`.
 - Avoid changing shared or archived Home files unless the change is intentionally meant to affect multiple versions.

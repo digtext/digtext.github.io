@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import About from "./pages/About.tsx";
-import Articles from "./pages/Articles.tsx";
 import ArticlePage from "./pages/ArticlePage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import P from "./pages/P.tsx";
@@ -29,7 +28,7 @@ import HomeV2_10_EnterIcon from "./pages/HomeV2_10_EnterIcon.tsx";
 import HomeV2_11_NewMinimalStyling from "./pages/HomeV2_11_NewMinimalStyling.tsx";
 import HomeV2_11_NewQual from "./pages/HomeV2_11_NewQual.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
-import ArticlesV2 from "./pages/ArticlesV2.tsx";
+import Library from "./pages/ArticlesV2.tsx";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +42,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<HomeV2_11_NewQual />} />
             <Route path="/about" element={<About />} />
-            <Route path="/articles" element={<ArticlesV2 />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/articles" element={<Navigate to="/library" replace />} />
             <Route path="/article/:articleId" element={<ArticlePage />} />
             <Route path="/reader" element={<Reader />} />
             <Route path="/p" element={<P />} />
@@ -63,7 +63,7 @@ const App = () => (
             <Route path="/p/home-v2-11-new-minimal-styling" element={<HomeV2_11_NewMinimalStyling />} />
             <Route path="/p/home-v2-11-new-qual" element={<HomeV2_11_NewQual />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
-            <Route path="/p/articles-v2" element={<ArticlesV2 />} />
+            <Route path="/p/articles-v2" element={<Library />} />
             <Route path="/p/about-v1" element={<AboutV1 />} />
             <Route path="/p/about-v1-1" element={<AboutV1_1 />} />
             <Route path="/p/about-v1-2" element={<AboutV1_2 />} />

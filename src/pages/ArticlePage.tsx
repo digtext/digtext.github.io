@@ -40,7 +40,7 @@ const ArticlePage = () => {
       setRawContent(composeRaw(article));
       setTab("dig");
     }
-  }, [article?.id]);
+  }, [article]);
 
   if (!article?.active || !article.content) {
     return <NotFound />;
@@ -51,15 +51,15 @@ const ArticlePage = () => {
       <SiteHeader />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
-        {/* All Articles link + tab switcher on the same row */}
+        {/* Library link + tab switcher on the same row */}
         <div className="mb-10 flex items-center justify-between gap-4">
           <Link
-            to="/articles"
+            to="/library"
             className="inline-flex items-center gap-1.5 text-xs font-sans font-medium tracking-wider uppercase text-neutral-500 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50"
           >
             <ArrowLeft size={16} strokeWidth={1.5} />
             <span className="font-sans text-sm font-medium tracking-wider uppercase">
-              All Articles
+              Library
             </span>
           </Link>
 

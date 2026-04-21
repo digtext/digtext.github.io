@@ -9,8 +9,10 @@ interface SiteHeaderProps {
 const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const isArticles =
-    pathname.startsWith("/articles") || pathname.startsWith("/article/");
+  const isLibrary =
+    pathname.startsWith("/library") ||
+    pathname.startsWith("/articles") ||
+    pathname.startsWith("/article/");
   const isHome =
     pathname === "/" || pathname.startsWith("/reader");
   const isPages = pathname === "/p";
@@ -106,7 +108,7 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
             >
               Embed
             </Link>
-            {navItem("/articles", "Articles", isArticles)}
+            {navItem("/library", "Library", isLibrary)}
             {navItem("/p", "Pages", isPages)}
           </nav>
 

@@ -25,10 +25,10 @@ const groups: Group[] = [
     ],
   },
   {
-    title: "Articles",
+    title: "Library",
     versions: [
-      { label: "Articles v1", to: "/p/articles-v1" },
-      { label: "Articles v2 (minimal)", to: "/articles", live: true },
+      { label: "Library v1", to: "/p/articles-v1" },
+      { label: "Library v2 (minimal)", to: "/library", live: true },
     ],
   },
   {
