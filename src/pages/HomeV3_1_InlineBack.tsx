@@ -1499,8 +1499,8 @@ export const HomeV2_4Page = ({
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden text-base leading-[1.85] text-neutral-700 dark:text-neutral-300"
-                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                      className="pointer-events-none absolute inset-0 overflow-hidden leading-[1.85] text-neutral-700 dark:text-neutral-300"
+                      style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
                     >
                       <div
                         className={cn(
@@ -1561,8 +1561,8 @@ export const HomeV2_4Page = ({
                     onScroll={syncTextareaMirrorScroll}
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
-                    className="relative block h-full w-full resize-none bg-transparent text-base leading-[1.85] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
-                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                    className="relative block h-full w-full resize-none bg-transparent leading-[1.85] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
                   />
                   </div>
                 </div>
