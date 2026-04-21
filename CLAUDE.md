@@ -64,11 +64,12 @@ Do not point the live pill at a versioned `/p/...` URL if the public site is usi
 
 ## Current Home Prototype
 
-The current live Home prototype is the no-chevrons minimal variant.
+The current live Home prototype is the new-qual variant.
 
 - `src/pages/HomeV2_8_Minimal.tsx` is the archived minimal snapshot.
 - `src/pages/HomeV2_9_NoChevrons.tsx` is the archived no-chevrons snapshot.
 - `src/pages/HomeV2_10_EnterIcon.tsx` is the archived enter-icon snapshot.
+- `src/pages/HomeV2_11_NewMinimalStyling.tsx` is the archived new-minimal-styling snapshot.
 - `src/pages/HomeV2_11_NewQual.tsx` is the current live standalone new-qual snapshot (visual-quality pass on top of v2.10).
 - `/p/home-v2` should continue to point to the older archived Home v2 page.
 
@@ -124,6 +125,7 @@ When changing it, be careful not to break both modes at once.
 - Prefer updating the public live route instead of inventing a new "live" versioned URL.
 - For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV2_11_NewQual.tsx`.
 - Avoid changing shared or archived Home files unless the change is intentionally meant to affect multiple versions.
+- Archived Home pages should keep historical reader/icon behavior by importing the matching snapshots under `src/components/archive/`, not the live shared reader components.
 - Home versions `v2.4` through `v2.11` are standalone files; do not reintroduce a shared Home wrapper for them.
 - When creating a new Home version, duplicate the current live Home file into a new standalone page file first, then edit the new file.
 - If you change the Home textarea input behavior, update `input-process.md`.

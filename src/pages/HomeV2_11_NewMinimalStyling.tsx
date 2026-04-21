@@ -16,7 +16,7 @@ import {
   EditableLineView,
   EditableLineViewHandle,
   parseToEditableLines,
-} from "@/components/archive/home-v2-legacy/EditableLineView";
+} from "@/components/EditableLineView";
 import SiteHeader from "@/components/SiteHeader";
 import { cn } from "@/lib/utils";
 
@@ -945,33 +945,31 @@ export const HomeV2_4Page = ({
 
               {mode === "digtext" && (
                 <div className="flex items-center gap-2 ml-auto">
-                  {(digTextRef.current?.hasExpandables ?? false) && (
-                    <div className={shellClass}>
-                      <button
-                        onClick={() => {
-                          const h = digTextRef.current;
-                          if (!h) return;
-                          if (h.anyExpanded) {
-                            h.collapseAll();
-                          } else {
-                            h.expandAll();
-                          }
-                        }}
-                        className={cn(
-                          pillButtonClass(false),
-                          "inline-flex items-center gap-1.5",
-                        )}
-                        type="button"
-                      >
-                        {(digTextRef.current?.anyExpanded ?? false) ? (
-                          <X size={14} strokeWidth={2.25} className="block" />
-                        ) : (
-                          <Plus size={14} strokeWidth={2.25} className="block" />
-                        )}
-                        {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
-                      </button>
-                    </div>
-                  )}
+                  <div className={shellClass}>
+                    <button
+                      onClick={() => {
+                        const h = digTextRef.current;
+                        if (!h) return;
+                        if (h.anyExpanded) {
+                          h.collapseAll();
+                        } else {
+                          h.expandAll();
+                        }
+                      }}
+                      className={cn(
+                        pillButtonClass(false),
+                        "inline-flex items-center gap-1.5",
+                      )}
+                      type="button"
+                    >
+                      {(digTextRef.current?.anyExpanded ?? false) ? (
+                        <X size={14} strokeWidth={2.25} className="block" />
+                      ) : (
+                        <Plus size={14} strokeWidth={2.25} className="block" />
+                      )}
+                      {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1065,6 +1063,8 @@ export const HomeV2_4Page = ({
                   readOnlyInlineDigSyntax="parentheses"
                   readOnlyTextClassName="text-[16px] leading-[1.8]"
                   readOnlyTextStyle={{ fontFamily: "var(--font-serif)" }}
+                  lineDigCollapsedIcon="enter"
+                  inlineDigCollapsedIcon="plus"
                 />
               )}
             </div>
@@ -1241,11 +1241,11 @@ export const HomeV2_4Page = ({
   );
 };
 
-const HomeV2_6_Markdown = () => (
+const HomeV2_11_NewMinimalStyling = () => (
   <HomeV2_4Page
     inputMode="textarea"
     heroFontClassName="font-sans"
   />
 );
 
-export default HomeV2_6_Markdown;
+export default HomeV2_11_NewMinimalStyling;

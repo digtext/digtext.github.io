@@ -14,6 +14,7 @@ import AboutV1 from "./pages/AboutV1.tsx";
 import AboutV1_1 from "./pages/AboutV1_1.tsx";
 import AboutV1_2 from "./pages/AboutV1_2.tsx";
 import HomeV1 from "./pages/HomeV1.tsx";
+import HomeV2 from "./pages/HomeV2.tsx";
 import HomeV2_1 from "./pages/HomeV2_1.tsx";
 import HomeV2_2 from "./pages/HomeV2_2.tsx";
 import HomeV2_3 from "./pages/HomeV2_3.tsx";
@@ -25,6 +26,7 @@ import HomeV2_7_MdWPlus from "./pages/HomeV2_7_MdWPlus.tsx";
 import HomeV2_8_Minimal from "./pages/HomeV2_8_Minimal.tsx";
 import HomeV2_9_NoChevrons from "./pages/HomeV2_9_NoChevrons.tsx";
 import HomeV2_10_EnterIcon from "./pages/HomeV2_10_EnterIcon.tsx";
+import HomeV2_11_NewMinimalStyling from "./pages/HomeV2_11_NewMinimalStyling.tsx";
 import HomeV2_11_NewQual from "./pages/HomeV2_11_NewQual.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
 import ArticlesV2 from "./pages/ArticlesV2.tsx";
@@ -46,7 +48,7 @@ const App = () => (
             <Route path="/reader" element={<Reader />} />
             <Route path="/p" element={<P />} />
             <Route path="/p/home-v1" element={<HomeV1 />} />
-            <Route path="/p/home-v2" element={<About />} />
+            <Route path="/p/home-v2" element={<HomeV2 />} />
             <Route path="/p/home-v2-1" element={<HomeV2_1 />} />
             <Route path="/p/home-v2-2" element={<HomeV2_2 />} />
             <Route path="/p/home-v2-3" element={<HomeV2_3 />} />
@@ -58,6 +60,7 @@ const App = () => (
             <Route path="/p/home-v2-8-minimal" element={<HomeV2_8_Minimal />} />
             <Route path="/p/home-v2-9-no-chevrons" element={<HomeV2_9_NoChevrons />} />
             <Route path="/p/home-v2-10-enter-icon" element={<HomeV2_10_EnterIcon />} />
+            <Route path="/p/home-v2-11-new-minimal-styling" element={<HomeV2_11_NewMinimalStyling />} />
             <Route path="/p/home-v2-11-new-qual" element={<HomeV2_11_NewQual />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
             <Route path="/p/articles-v2" element={<ArticlesV2 />} />

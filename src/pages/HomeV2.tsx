@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Share } from "lucide-react";
 import DigTextReader from "@/components/archive/home-v2-legacy/DigTextReader";
 import SiteHeader from "@/components/SiteHeader";
 import { ABOUT_DEMO_CONTENT } from "@/content/aboutDemoContent";
@@ -27,8 +27,9 @@ Now transform the following text:
 
 [paste your text here]`;
 
-const HomeV2_2 = () => {
+const HomeV2 = () => {
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -45,11 +46,36 @@ const HomeV2_2 = () => {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleShare = async () => {
+    const data = {
+      title: "Dig text",
+      text: "Read text collapsed-first. Dig only as deep as you want.",
+      url: window.location.href,
+    };
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share(data);
+      } catch {
+        // user cancelled
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(data.url);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
       <SiteHeader />
 
+      {/* ── SECTION 1 — NEW HERO (gradient bg from old s1 + content from old example) ── */}
       <section className="relative overflow-hidden">
+        {/* Gradient orbs */}
         <div
           aria-hidden
           className="pointer-events-none absolute -top-24 -right-24 h-[600px] w-[600px] rounded-full opacity-40 blur-[120px]"
@@ -69,43 +95,36 @@ const HomeV2_2 = () => {
 
         <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
           <div style={{ viewTransitionName: "reader-page-top" }}>
-            <div className="mb-10 flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 dark:border-neutral-800">
-                <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500 dark:text-neutral-400">
-                  a new interface for text
-                </span>
-              </div>
-              <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-violet-700 dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300">
-                home v2.2 preview
+            {/* Eyebrow */}
+            <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 dark:border-neutral-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+              <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500 dark:text-neutral-400">
+                a new interface for text
               </span>
             </div>
 
+            {/* Big headline */}
             <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,4.17rem)]">
               Read the{" "}
               <span className="italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
                 most important{" "}
               </span>
               parts first.
-              <br />
-              Dig deeper in an{" "}
+
+              Dig only into what{" "}
               <span className="italic bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-                indented flow.
+                interests you.
               </span>
             </h1>
 
+            {/* Small sub-headline */}
             <p className="mt-8 max-w-2xl font-serif text-base md:text-[1.07rem] leading-relaxed text-neutral-600 dark:text-neutral-300">
-              This preview keeps Home v2&apos;s structure, but adds a second Dig
-              Text view. Use the new toolbar icon to shift expanded sections
-              into a progressively indented reading stack.
+              Dig text is a new way to read text. You see the shortest version
+              first, then dig deeper only where it matters to you.
             </p>
           </div>
 
-          <DigTextReader
-            content={ABOUT_DEMO_CONTENT}
-            showLayoutToggle
-            fullscreenReturnTo="/p/home-v2-2"
-          />
+          <DigTextReader content={ABOUT_DEMO_CONTENT} />
 
           <div className="mt-8" style={{ viewTransitionName: "reader-page-top-action" }}>
             <button
@@ -119,6 +138,7 @@ const HomeV2_2 = () => {
       </section>
 
       <div style={{ viewTransitionName: "reader-page-rest" }}>
+        {/* ── PROMPT ── */}
         <section
           id="prompt"
           className="border-t border-neutral-100 bg-neutral-50/50 scroll-mt-[65px] dark:border-neutral-800 dark:bg-neutral-900/40"
@@ -140,16 +160,15 @@ const HomeV2_2 = () => {
             <p className="mt-6 mb-10 max-w-xl font-serif text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
               Paste this into your favorite LLM with any text you want
               converted. Then drop the output on the{" "}
-              <Link
-                to="/"
-                className="underline underline-offset-2 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
-              >
+              <Link to="/" className="underline underline-offset-2 hover:text-neutral-900 transition-colors dark:hover:text-neutral-50">
                 dig text homepage
               </Link>{" "}
               to read it collapsed-first.
             </p>
 
+            {/* Prompt box */}
             <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+              {/* Top bar */}
               <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
                 <div className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-rose-400/70" />
@@ -178,6 +197,7 @@ const HomeV2_2 = () => {
                 </button>
               </div>
 
+              {/* Body */}
               <pre className="px-5 py-5 font-mono text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words max-h-[480px] overflow-auto dark:text-neutral-300">
                 {PROMPT}
               </pre>
@@ -189,7 +209,9 @@ const HomeV2_2 = () => {
           </div>
         </section>
 
+        {/* ── SECTION 3 — MOVED OLD HERO (same gradient bg, no pill) ── */}
         <section className="relative overflow-hidden border-t border-neutral-100 dark:border-neutral-800">
+          {/* Gradient orbs */}
           <div
             aria-hidden
             className="pointer-events-none absolute -top-24 -right-24 h-[600px] w-[600px] rounded-full opacity-40 blur-[120px]"
@@ -208,6 +230,7 @@ const HomeV2_2 = () => {
           />
 
           <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
+            {/* Big headline */}
             <h1 className="font-serif leading-[1.0] tracking-tight text-[clamp(2.7rem,7.65vw,4.17rem)]">
               It is{" "}
               <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
@@ -224,22 +247,20 @@ const HomeV2_2 = () => {
               form by default.
             </h1>
 
+            {/* Sub-headline */}
             <p className="mt-12 max-w-2xl font-serif text-xl md:text-[1.425rem] leading-snug text-neutral-600 dark:text-neutral-300">
-              <span className="font-semibold text-neutral-900 dark:text-neutral-50">
-                Dig text
-              </span>{" "}
+              <span className="font-semibold text-neutral-900 dark:text-neutral-50">Dig text</span>{" "}
               flips it. Text arrives{" "}
               <span className="italic text-rose-500">collapsed</span>, with most
               important things first. You{" "}
-              <span className="italic text-violet-600 dark:text-violet-400">
-                dig
-              </span>{" "}
-              only as deep as you want.
+              <span className="italic text-violet-600 dark:text-violet-400">dig</span> only as deep
+              as you want.
             </p>
 
+            {/* CTA row */}
             <div className="mt-12 flex items-center gap-3 flex-wrap">
               <Link
-                to="/reader?layoutToggle=1&from=%2Fp%2Fhome-v2-2"
+                to="/reader"
                 className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
                 Open the reader
@@ -268,4 +289,4 @@ const HomeV2_2 = () => {
   );
 };
 
-export default HomeV2_2;
+export default HomeV2;
