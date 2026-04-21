@@ -25,7 +25,9 @@ import HomeV2_7_MdWPlus from "./pages/HomeV2_7_MdWPlus.tsx";
 import HomeV2_8_Minimal from "./pages/HomeV2_8_Minimal.tsx";
 import HomeV2_9_NoChevrons from "./pages/HomeV2_9_NoChevrons.tsx";
 import HomeV2_10_EnterIcon from "./pages/HomeV2_10_EnterIcon.tsx";
+import HomeV2_11_NewQual from "./pages/HomeV2_11_NewQual.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
+import ArticlesV2 from "./pages/ArticlesV2.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,9 +39,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<HomeV2_10_EnterIcon />} />
+            <Route path="/" element={<HomeV2_11_NewQual />} />
             <Route path="/about" element={<About />} />
-            <Route path="/articles" element={<Articles />} />
+            <Route path="/articles" element={<ArticlesV2 />} />
             <Route path="/article/:articleId" element={<ArticlePage />} />
             <Route path="/reader" element={<Reader />} />
             <Route path="/p" element={<P />} />
@@ -56,7 +58,9 @@ const App = () => (
             <Route path="/p/home-v2-8-minimal" element={<HomeV2_8_Minimal />} />
             <Route path="/p/home-v2-9-no-chevrons" element={<HomeV2_9_NoChevrons />} />
             <Route path="/p/home-v2-10-enter-icon" element={<HomeV2_10_EnterIcon />} />
+            <Route path="/p/home-v2-11-new-qual" element={<HomeV2_11_NewQual />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
+            <Route path="/p/articles-v2" element={<ArticlesV2 />} />
             <Route path="/p/about-v1" element={<AboutV1 />} />
             <Route path="/p/about-v1-1" element={<AboutV1_1 />} />
             <Route path="/p/about-v1-2" element={<AboutV1_2 />} />

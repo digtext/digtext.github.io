@@ -111,7 +111,7 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
           </nav>
 
           <button type="button" onClick={handleOpenComposer} className={ctaClass}>
-            Open dig
+            Open
             <Maximize2 className="h-3.5 w-3.5" />
           </button>
         </div>
