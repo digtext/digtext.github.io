@@ -1,8 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronRight } from "lucide-react";
 import {
+  DigChevronIcon,
+  DigCloseIcon,
+  DigEnterIcon,
+  DigPlusIcon,
+  digChevronButtonClass,
+  digCloseButtonClass,
+  lineDigIconButtonClass,
+} from "@/components/DigIcons";
+import {
+  type InlineDigCollapsedIcon,
   extractParenthesisExpandables,
   InlineDigMarkdown,
 } from "@/components/InlineDigMarkdown";
@@ -216,6 +225,45 @@ const LineText = React.memo<{
 });
 LineText.displayName = "LineText";
 
+export type LineDigCollapsedIcon = "plus" | "enter";
+
+interface LineEndDigButtonProps {
+  onToggle: () => void;
+  isExpanded: boolean;
+  collapsedIcon?: LineDigCollapsedIcon;
+  className?: string;
+}
+
+const LineEndDigButton = ({
+  onToggle,
+  isExpanded,
+  collapsedIcon = "plus",
+  className,
+}: LineEndDigButtonProps) => (
+  <button
+    contentEditable={false}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onToggle();
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
+    className={cn(
+      isExpanded ? digCloseButtonClass : lineDigIconButtonClass,
+      "relative -top-[0.18em] ml-[0.2em] cursor-pointer",
+      className,
+    )}
+    type="button"
+    tabIndex={-1}
+    aria-label={isExpanded ? "Collapse line" : "Expand line"}
+  >
+    {isExpanded ? <DigCloseIcon /> : collapsedIcon === "enter" ? <DigEnterIcon /> : <DigPlusIcon />}
+  </button>
+);
+
 // ── Main component ────────────────────────────────────────────────────
 
 export interface EditableLineViewHandle {
@@ -241,12 +289,14 @@ interface EditableLineViewProps {
   readOnlyInlineDigSyntax?: "parentheses";
   readOnlyTextClassName?: string;
   readOnlyTextStyle?: React.CSSProperties;
+  lineDigCollapsedIcon?: LineDigCollapsedIcon;
+  inlineDigCollapsedIcon?: InlineDigCollapsedIcon;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, lineDigCollapsedIcon, inlineDigCollapsedIcon }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [expandedInlineDigIds, setExpandedInlineDigIds] = useState<Set<string>>(new Set());
   const [allSelected, setAllSelected] = useState(false);
@@ -965,7 +1015,7 @@ export const EditableLineView = React.forwardRef<
             return (
               <div
                 key={line.id}
-                className={cn("relative", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
+                className={cn("relative group/row", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
               >
                 {/* Gutter */}
                 <div
@@ -990,7 +1040,7 @@ export const EditableLineView = React.forwardRef<
                       {Array.from({ length: line.indent }).map((_, level) => (
                         <span
                           key={level}
-                          className="absolute inset-y-0 block bg-neutral-200 dark:bg-neutral-700"
+                          className="absolute inset-y-0 block bg-[#CEC9F2] dark:bg-[#7E76C9]"
                           style={{
                             left: `${getGuideOffset(level + 1)}px`,
                             width: `${GUIDE_WIDTH_PX}px`,
@@ -1012,10 +1062,8 @@ export const EditableLineView = React.forwardRef<
                             e.stopPropagation();
                           }}
                           className={cn(
-                            "pointer-events-auto absolute top-0 inline-flex items-center justify-end pt-[0.55em] pr-[2px] transition-colors",
-                            isCollapsed
-                              ? "text-[#007AFF]"
-                              : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
+                            digChevronButtonClass,
+                            "pointer-events-auto absolute top-[0.05em] group-hover/row:text-[#6155F5] dark:group-hover/row:text-[#DCD8FF]",
                           )}
                           style={{
                             left: `${getChevronOffset(line.indent)}px`,
@@ -1024,10 +1072,8 @@ export const EditableLineView = React.forwardRef<
                           type="button"
                           tabIndex={-1}
                         >
-                          <ChevronRight
-                            size={12}
-                            strokeWidth={2.5}
-                            className={cn("block transition-transform duration-150", !isCollapsed && "rotate-90")}
+                          <DigChevronIcon
+                            className={cn("transition-transform duration-150", !isCollapsed && "rotate-90")}
                           />
                         </button>
                       ) : null}
@@ -1052,6 +1098,7 @@ export const EditableLineView = React.forwardRef<
                           toggle={(inlineId) => toggleInlineDig(line.id, inlineId)}
                           unwrapParagraphs
                           linkClassName="underline underline-offset-2 text-violet-600 transition-colors hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300"
+                          collapsedIcon={inlineDigCollapsedIcon}
                         />
                       ) : (
                         <ReactMarkdown
@@ -1061,9 +1108,26 @@ export const EditableLineView = React.forwardRef<
                           {line.text}
                         </ReactMarkdown>
                       )}
+                      {expandable ? (
+                        <LineEndDigButton
+                          onToggle={() => toggleCollapse(line.id)}
+                          isExpanded={!isCollapsed}
+                          collapsedIcon={lineDigCollapsedIcon}
+                        />
+                      ) : null}
                     </div>
                   ) : (
-                    <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                    <>
+                      <LineText text={line.text} lineId={line.id} elRef={setElRef(line.id)} />
+                      {expandable ? (
+                        <LineEndDigButton
+                          onToggle={() => toggleCollapse(line.id)}
+                          isExpanded={!isCollapsed}
+                          collapsedIcon={lineDigCollapsedIcon}
+                          className="mt-[0.42em]"
+                        />
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>

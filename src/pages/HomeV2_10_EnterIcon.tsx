@@ -1063,6 +1063,8 @@ export const HomeV2_4Page = ({
                   readOnlyInlineDigSyntax="parentheses"
                   readOnlyTextClassName="text-[16px] leading-[1.8]"
                   readOnlyTextStyle={{ fontFamily: "var(--font-serif)" }}
+                  lineDigCollapsedIcon="enter"
+                  inlineDigCollapsedIcon="plus"
                 />
               )}
             </div>
@@ -1239,11 +1241,11 @@ export const HomeV2_4Page = ({
   );
 };
 
-const HomeV2_7_MdWPlus = () => (
+const HomeV2_8_Minimal = () => (
   <HomeV2_4Page
     inputMode="textarea"
     heroFontClassName="font-sans"
   />
 );
 
-export default HomeV2_7_MdWPlus;
+export default HomeV2_8_Minimal;

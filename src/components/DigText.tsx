@@ -2,6 +2,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  DigCloseIcon,
+  DigPlusIcon,
+  digIconButtonClass,
+} from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -109,15 +114,14 @@ interface ExpandButtonProps {
 const ExpandButton: React.FC<ExpandButtonProps> = ({ isExpanded, onClick }) => (
   <button
     onClick={onClick}
-    className={`relative -top-px inline-flex items-center justify-center w-5 h-5 rounded-full border transition-colors mx-0.5 align-middle cursor-pointer ${
-      isExpanded
-        ? "border-[hsl(var(--expand-button-hover))] bg-[hsl(var(--expand-button-hover))] text-white"
-        : "border-expand-button text-expand-button hover:bg-[hsl(var(--expand-button)/0.08)] hover:text-expand-button-hover hover:border-expand-button-hover"
-    }`}
+    className={cn(
+      digIconButtonClass,
+      "relative -top-[0.18em] mx-px cursor-pointer",
+    )}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
   >
-    {isExpanded ? <X size={12} strokeWidth={2.5} className="block" /> : <Plus size={12} strokeWidth={2.5} className="block" />}
+    {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
   </button>
 );
 
@@ -145,7 +149,7 @@ const ExpandSegment: React.FC<ExpandSegmentProps> = ({
       <span className="align-baseline">
         <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
         {isExpanded && (
-          <span className="mt-3 ml-6 block border-l border-neutral-200/80 pl-4 dark:border-neutral-800/80">
+          <span className="mt-3 ml-6 block border-l border-[#CEC9F2] pl-4 dark:border-[#7E76C9]">
             <ShadowMarkdown
               shadow={inner}
               expandedIds={expandedIds}
@@ -164,7 +168,7 @@ const ExpandSegment: React.FC<ExpandSegmentProps> = ({
     <span>
       <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
       {isExpanded && (
-        <span className="bg-expanded-bg rounded px-1 py-0.5 transition-all">
+        <span className="underline decoration-[#CEC9F2] decoration-[1px] underline-offset-[2px] transition-colors dark:decoration-[#8E86D8]">
           <ShadowMarkdown
             shadow={inner}
             expandedIds={expandedIds}
@@ -414,10 +418,14 @@ const DigText: React.FC<DigTextProps> = ({
         <div className="flex justify-end mb-4">
           <button
             onClick={anyExpanded ? collapseAll : expandAll}
-            className="inline-flex items-center gap-1.5 rounded-full border border-expand-button px-3 py-1 text-xs font-sans font-medium tracking-wider uppercase text-expand-button hover:bg-[hsl(var(--expand-button)/0.08)] hover:text-expand-button-hover hover:border-expand-button-hover transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full border border-expand-button px-3 py-1 text-xs font-sans font-medium tracking-wider uppercase text-expand-button transition-colors hover:border-expand-button-hover hover:bg-[hsl(var(--expand-button)/0.08)] hover:text-expand-button-hover"
             type="button"
           >
-            {anyExpanded ? <X size={12} strokeWidth={2.5} className="block" /> : <Plus size={12} strokeWidth={2.5} className="block" />}
+            {anyExpanded ? (
+              <X size={12} strokeWidth={2.5} className="block" />
+            ) : (
+              <Plus size={12} strokeWidth={2.5} className="block" />
+            )}
             {anyExpanded ? "Collapse all" : "Expand all"}
           </button>
         </div>

@@ -16,7 +16,10 @@ const groups: Group[] = [
       { label: "Home v2.4 (not text-area)", to: "/p/home-v2-4" },
       { label: "Home v2.5 (text-area)", to: "/p/home-v2-5-text-area" },
       { label: "Home v2.6 (markdown)", to: "/p/home-v2-6-markdown" },
-      { label: "Home v2.7 (md w plus)", to: "/", live: true },
+      { label: "Home v2.7 (md w plus)", to: "/p/home-v2-7-md-w-plus" },
+      { label: "Home v2.8 (minimal)", to: "/p/home-v2-8-minimal" },
+      { label: "Home v2.9 (no-chevrons)", to: "/p/home-v2-9-no-chevrons" },
+      { label: "Home v2.10 (enter-icon)", to: "/", live: true },
     ],
   },
   {

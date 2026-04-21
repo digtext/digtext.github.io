@@ -1,5 +1,12 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import {
+  DigChevronIcon,
+  DigCloseIcon,
+  DigPlusIcon,
+  digChevronButtonClass,
+  digCloseButtonClass,
+  lineDigIconButtonClass,
+} from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -139,19 +146,20 @@ const LineItem: React.FC<LineItemProps> = ({
 
   return (
     <li className="list-none">
-      <div className="flex items-baseline gap-1">
+      <div className="flex items-baseline gap-px">
         {hasChildren && (
           <button
             onClick={() => toggle(node.id)}
-            className="flex-none inline-flex items-center justify-center text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+            className={cn(
+              digChevronButtonClass,
+              "relative -top-[0.3em]",
+            )}
             aria-label={isExpanded ? "Collapse" : "Expand"}
             type="button"
           >
-            <ChevronRight
-              size={14}
-              strokeWidth={2.5}
+            <DigChevronIcon
               className={cn(
-                "block transition-transform duration-150",
+                "transition-transform duration-150",
                 isExpanded && "rotate-90",
               )}
             />
@@ -170,10 +178,23 @@ const LineItem: React.FC<LineItemProps> = ({
             …
           </span>
         )}
+        {hasChildren && (
+          <button
+            onClick={() => toggle(node.id)}
+            className={cn(
+              isExpanded ? digCloseButtonClass : lineDigIconButtonClass,
+              "relative -top-[0.18em] ml-px cursor-pointer",
+            )}
+            aria-label={isExpanded ? "Collapse" : "Expand"}
+            type="button"
+          >
+            {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
+          </button>
+        )}
       </div>
 
       {hasChildren && isExpanded && (
-        <ul className="ml-[7px] mt-0.5 border-l-[1.5px] border-neutral-200 dark:border-neutral-700 pl-5 flex flex-col gap-0.5">
+        <ul className="ml-[7px] mt-0.5 border-l-[1.5px] border-[#CEC9F2] pl-5 flex flex-col gap-0.5 dark:border-[#7E76C9]">
           {node.children.map((child) => (
             <LineItem
               key={child.id}

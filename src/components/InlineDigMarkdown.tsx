@@ -1,7 +1,13 @@
 import React, { useCallback, useMemo } from "react";
-import { Plus, X } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  DigCloseIcon,
+  DigEllipsisIcon,
+  DigPlusIcon,
+  digCloseButtonClass,
+  digIconButtonClass,
+} from "@/components/DigIcons";
 import { cn } from "@/lib/utils";
 
 const TOKEN_PREFIX = "\uE000DIG";
@@ -124,28 +130,25 @@ export function extractParenthesisExpandables(raw: string): InlineDigExtractResu
   };
 }
 
+export type InlineDigCollapsedIcon = "ellipsis" | "plus";
+
 interface ExpandButtonProps {
   isExpanded: boolean;
   onClick: () => void;
+  collapsedIcon?: InlineDigCollapsedIcon;
 }
 
-const ExpandButton = ({ isExpanded, onClick }: ExpandButtonProps) => (
+const ExpandButton = ({ isExpanded, onClick, collapsedIcon = "ellipsis" }: ExpandButtonProps) => (
   <button
     onClick={onClick}
     className={cn(
-      "relative -top-px mx-0.5 inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border align-middle transition-colors",
-      isExpanded
-        ? "border-[hsl(var(--expand-button-hover))] bg-[hsl(var(--expand-button-hover))] text-white"
-        : "border-expand-button text-expand-button hover:border-expand-button-hover hover:bg-[hsl(var(--expand-button)/0.08)] hover:text-expand-button-hover",
+      isExpanded ? digCloseButtonClass : digIconButtonClass,
+      "relative -top-[0.18em] ml-0 mr-0 cursor-pointer",
     )}
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
   >
-    {isExpanded ? (
-      <X size={12} strokeWidth={2.5} className="block" />
-    ) : (
-      <Plus size={12} strokeWidth={2.5} className="block" />
-    )}
+    {isExpanded ? <DigCloseIcon /> : collapsedIcon === "plus" ? <DigPlusIcon /> : <DigEllipsisIcon />}
   </button>
 );
 
@@ -157,6 +160,7 @@ interface InlineExpandSegmentProps {
   expandablesMap: Map<number, InlineDigExpandable>;
   renderMode: InlineDigRenderMode;
   linkClassName?: string;
+  collapsedIcon?: InlineDigCollapsedIcon;
 }
 
 const InlineExpandSegment = ({
@@ -167,15 +171,16 @@ const InlineExpandSegment = ({
   expandablesMap,
   renderMode,
   linkClassName,
+  collapsedIcon,
 }: InlineExpandSegmentProps) => {
   const isExpanded = expandedIds.has(id);
 
   if (renderMode === "indented") {
     return (
       <span className="align-baseline">
-        <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
+        <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} collapsedIcon={collapsedIcon} />
         {isExpanded && (
-          <span className="mt-3 ml-6 block border-l border-neutral-200/80 pl-4 dark:border-neutral-800/80">
+          <span className="mt-3 ml-6 block border-l border-[#CEC9F2] pl-4 dark:border-[#7E76C9]">
             <InlineDigMarkdown
               shadow={inner}
               expandablesMap={expandablesMap}
@@ -184,6 +189,7 @@ const InlineExpandSegment = ({
               inline
               renderMode={renderMode}
               linkClassName={linkClassName}
+              collapsedIcon={collapsedIcon}
             />
           </span>
         )}
@@ -193,9 +199,9 @@ const InlineExpandSegment = ({
 
   return (
     <span>
-      <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} />
+      <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} collapsedIcon={collapsedIcon} />
       {isExpanded && (
-        <span className="rounded bg-expanded-bg px-1 py-0.5 transition-all">
+        <span className="underline decoration-[#CEC9F2] decoration-[1px] underline-offset-[2px] transition-colors dark:decoration-[#8E86D8]">
           <InlineDigMarkdown
             shadow={inner}
             expandablesMap={expandablesMap}
@@ -204,6 +210,7 @@ const InlineExpandSegment = ({
             inline
             renderMode={renderMode}
             linkClassName={linkClassName}
+            collapsedIcon={collapsedIcon}
           />
         </span>
       )}
@@ -220,6 +227,7 @@ interface InlineDigMarkdownProps {
   unwrapParagraphs?: boolean;
   renderMode?: InlineDigRenderMode;
   linkClassName?: string;
+  collapsedIcon?: InlineDigCollapsedIcon;
 }
 
 export const InlineDigMarkdown = ({
@@ -231,6 +239,7 @@ export const InlineDigMarkdown = ({
   unwrapParagraphs = false,
   renderMode = "inline",
   linkClassName,
+  collapsedIcon,
 }: InlineDigMarkdownProps) => {
   const replaceTokens = useCallback(
     (children: React.ReactNode): React.ReactNode =>
@@ -259,6 +268,7 @@ export const InlineDigMarkdown = ({
                 expandablesMap={expandablesMap}
                 renderMode={renderMode}
                 linkClassName={linkClassName}
+                collapsedIcon={collapsedIcon}
               />,
             );
           }
@@ -270,7 +280,7 @@ export const InlineDigMarkdown = ({
 
         return parts.length > 0 ? parts : child;
       }),
-    [expandablesMap, expandedIds, linkClassName, renderMode, toggle],
+    [collapsedIcon, expandablesMap, expandedIds, linkClassName, renderMode, toggle],
   );
 
   const components: Components = useMemo(() => {
