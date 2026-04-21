@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 // ── Data ──────────────────────────────────────────────────────────────
 
 const readOnlyLinkClassName =
-  "underline underline-offset-2 text-neutral-500 decoration-neutral-500 transition-colors hover:text-neutral-700 hover:decoration-neutral-700 dark:text-neutral-400 dark:decoration-neutral-400 dark:hover:text-neutral-200 dark:hover:decoration-neutral-200";
+  "underline underline-offset-2 text-neutral-500 decoration-neutral-400 transition-colors hover:text-neutral-700 hover:decoration-neutral-500 dark:text-neutral-400 dark:decoration-neutral-500 dark:hover:text-neutral-200 dark:hover:decoration-neutral-300";
 
 export interface EditableLine {
   id: number;
@@ -983,7 +983,7 @@ export const EditableLineView = React.forwardRef<
     "[&_h3]:mt-3 [&_h3]:mb-1.5 [&_h3]:text-[1.18em] [&_h3]:font-semibold " +
     "[&_h4]:mt-3 [&_h4]:mb-1.5 [&_h4]:font-semibold " +
     "[&_strong]:font-semibold [&_em]:italic " +
-    "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-neutral-500 [&_a]:decoration-neutral-500 [&_a:hover]:text-neutral-700 [&_a:hover]:decoration-neutral-700 dark:[&_a]:text-neutral-400 dark:[&_a]:decoration-neutral-400 dark:[&_a:hover]:text-neutral-200 dark:[&_a:hover]:decoration-neutral-200 " +
+    "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-neutral-500 [&_a]:decoration-neutral-400 [&_a:hover]:text-neutral-700 [&_a:hover]:decoration-neutral-500 dark:[&_a]:text-neutral-400 dark:[&_a]:decoration-neutral-500 dark:[&_a:hover]:text-neutral-200 dark:[&_a:hover]:decoration-neutral-300 " +
     "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 " +
     "[&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-neutral-200 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-neutral-500 dark:[&_blockquote]:border-neutral-800 dark:[&_blockquote]:text-neutral-400 " +
     "[&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800 " +

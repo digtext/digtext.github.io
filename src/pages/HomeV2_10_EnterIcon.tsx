@@ -1213,8 +1213,8 @@ export const HomeV2_4Page = ({
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-md border border-transparent bg-transparent px-5 pb-10 pt-5 text-[14px] leading-[1.8] text-neutral-700 dark:text-neutral-300"
-                      style={{ fontFamily: "var(--font-input-mono)" }}
+                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-md border border-transparent bg-transparent px-5 pb-10 pt-5 text-base leading-[1.8] text-neutral-700 dark:text-neutral-300"
+                      style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                     >
                       <div
                         className={cn(
@@ -1276,10 +1276,10 @@ export const HomeV2_4Page = ({
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
                     className={cn(
-                      "relative block min-h-[460px] w-full resize-y bg-transparent px-5 pb-10 pt-5 text-[14px] leading-[1.8] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent md:min-h-[520px]",
+                      "relative block min-h-[460px] w-full resize-y bg-transparent px-5 pb-10 pt-5 text-base leading-[1.8] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent md:min-h-[520px]",
                       composerFullscreenOpen && "h-full min-h-0 resize-none",
                     )}
-                    style={{ fontFamily: "var(--font-input-mono)" }}
+                    style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                   />
                   </div>
                 </div>
@@ -1293,8 +1293,8 @@ export const HomeV2_4Page = ({
                   readOnlyInlineDigSyntax="parentheses"
                   defaultCollapsed
                   readOnlyEndControlsOnly
-                  readOnlyTextClassName="text-lg leading-[1.85]"
-                  readOnlyTextStyle={{ fontFamily: "var(--font-serif)" }}
+                  readOnlyTextClassName="text-base leading-[1.85]"
+                  readOnlyTextStyle={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                   lineDigCollapsedIcon="enter"
                   inlineDigCollapsedIcon="plus"
                 />
