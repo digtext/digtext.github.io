@@ -125,8 +125,10 @@ When changing it, be careful not to break both modes at once.
 - Prefer updating the public live route instead of inventing a new "live" versioned URL.
 - For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV2_11_NewQual.tsx`.
 - Avoid changing shared or archived Home files unless the change is intentionally meant to affect multiple versions.
-- Archived Home pages should keep historical reader/icon behavior by importing the matching snapshots under `src/components/archive/`, not the live shared reader components.
+- Archived Home pages must keep historical reader/icon behavior. They should import matching snapshots under `src/components/archive/`, not live shared reader components such as `EditableLineView`, `InlineDigMarkdown`, `DigIcons`, `DigTextReader`, or `BulletDigTextReader`.
+- Before changing live reader/icon behavior, check archived Home imports. If an archived route still imports a live shared component, snapshot that component first or move the archived route to an existing snapshot.
 - Home versions `v2.4` through `v2.11` are standalone files; do not reintroduce a shared Home wrapper for them.
 - When creating a new Home version, duplicate the current live Home file into a new standalone page file first, then edit the new file.
+- If creating a new Home version changes reader/editor/icon behavior, keep that behavior local to the new version or create a new archived component snapshot before later changing shared components.
 - If you change the Home textarea input behavior, update `input-process.md`.
 - Keep repo guidance synchronized here in `CLAUDE.md`; avoid duplicating long instructions in multiple files.
