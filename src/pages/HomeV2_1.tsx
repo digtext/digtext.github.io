@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, Copy } from "lucide-react";
-import BulletDigTextReader from "@/components/BulletDigTextReader";
+import BulletDigTextReader from "@/components/archive/home-v2-legacy/BulletDigTextReader";
 import SiteHeader from "@/components/SiteHeader";
 
 const BULLET_DEMO_CONTENT = `- Dig text enables readers to expand the parts of text they find valuable
