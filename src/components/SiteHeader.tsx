@@ -43,6 +43,14 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
     window.history.replaceState(null, "", `#${id}`);
   };
 
+  const handleHomeClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== "/") return;
+
+    event.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.history.replaceState(null, "", "/");
+  };
+
   const handleSectionClick =
     (id: "prompt" | "embed") =>
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -93,7 +101,14 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
 
         <div className="flex min-w-0 items-center gap-1 sm:gap-2">
           <nav className="flex items-center gap-0 sm:gap-1">
-            {navItem("/", "Home", isHome)}
+            <Link
+              to="/"
+              onClick={handleHomeClick}
+              aria-current={isHome ? "page" : undefined}
+              className={`${linkBase} ${isHome ? active : inactive}`}
+            >
+              Home
+            </Link>
             <Link
               to="/#prompt"
               onClick={handleSectionClick("prompt")}
