@@ -21,7 +21,9 @@ const groups: Group[] = [
       { label: "Home v2.9 (no-chevrons)", to: "/p/home-v2-9-no-chevrons" },
       { label: "Home v2.10 (enter-icon)", to: "/p/home-v2-10-enter-icon" },
       { label: "Home v2.11 (new minimal styling)", to: "/p/home-v2-11-new-minimal-styling" },
-      { label: "Home v2.11 (new-qual)", to: "/", live: true },
+      { label: "Home v2.11 (new-qual)", to: "/p/home-v2-11-new-qual" },
+      { label: "Home v3.0 (new-style)", to: "/p/home-v3-0-new-style" },
+      { label: "Home v3.1 (inline back)", to: "/", live: true },
     ],
   },
   {
