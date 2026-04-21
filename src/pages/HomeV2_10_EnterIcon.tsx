@@ -379,11 +379,12 @@ export const HomeV2_4Page = ({
   heroFontClassName = "font-serif",
   heroHeadingClassName = "tracking-[-0.05em] text-[clamp(2.05rem,5.75vw,3.24rem)]",
   heroHeadingStyle = { lineHeight: 1 },
-  topHeroHeadingClassName = "tracking-[-0.05em] text-[clamp(2.05rem,5.75vw,3.24rem)]",
-  topHeroHeadingStyle = { lineHeight: 1 },
+  topHeroHeadingClassName = "mt-8 tracking-tight text-[clamp(2.4rem,6.2vw,3.6rem)] leading-[1.02]",
+  topHeroHeadingStyle = {},
 }: HomeV2_4PageProps) => {
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"digtext" | "input">("digtext");
+  const [heroDemoOpen, setHeroDemoOpen] = useState(false);
   const [inputText, setInputText] = useState(INITIAL_TEXT);
   const [textareaSelection, setTextareaSelection] = useState<TextAreaSelection>({
     start: 0,
@@ -878,49 +879,72 @@ export const HomeV2_4Page = ({
           }}
         />
 
-        <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
+        <div className="relative max-w-3xl mx-auto px-6 pt-16 pb-16">
           {/* Eyebrow */}
-          <div className="mb-10 flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 dark:border-neutral-800">
-              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-              <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-neutral-500 dark:text-neutral-400">
-                a new interface for text
-              </span>
-            </div>
+          <div className="mb-8 flex items-center gap-3">
+            <span
+              aria-hidden
+              className="h-px w-10 bg-neutral-400 dark:bg-neutral-600"
+            />
+            <span className="font-sans text-[10px] tracking-[0.22em] uppercase text-neutral-500 dark:text-neutral-400">
+              a new interface for text
+            </span>
           </div>
 
           {/* Big headline */}
           <h1
-            className={cn(
-              heroFontClassName,
-              topHeroHeadingClassName,
-            )}
-            style={topHeroHeadingStyle}
+            className={cn(topHeroHeadingClassName)}
+            style={{
+              ...topHeroHeadingStyle,
+              fontFamily: "'IBM Plex Serif', Georgia, serif",
+              textWrap: "balance",
+            }}
           >
-            A new{" "}
-            <span className="-mr-[0.08em] pr-[0.08em] italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">
-              standard for text.
-            </span>
-            
-            <br />
             Read the shortest version first.
             <br />
-            Dig into what{" "}
-            <span className="-mr-[0.08em] pr-[0.08em] italic bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-              interests you
+            <span className="text-neutral-500 dark:text-neutral-400">
+              Dig{" "}
+              <span className="relative inline-block align-baseline">
+                <span className="italic">deeper</span>
+                <button
+                  type="button"
+                  aria-label={heroDemoOpen ? "Collapse" : "Expand"}
+                  onClick={() => setHeroDemoOpen((v) => !v)}
+                  className={cn(
+                    "align-middle ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full border transition-colors",
+                    heroDemoOpen
+                      ? "bg-neutral-900 border-neutral-900 text-white dark:bg-neutral-50 dark:border-neutral-50 dark:text-neutral-900"
+                      : "border-neutral-400 text-neutral-500 hover:text-neutral-900 hover:border-neutral-700 dark:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:border-neutral-400",
+                  )}
+                >
+                  {heroDemoOpen ? (
+                    <X size={12} strokeWidth={2.5} />
+                  ) : (
+                    <Plus size={12} strokeWidth={2.5} />
+                  )}
+                </button>
+              </span>
+              {" "}only where it matters.
             </span>
           </h1>
 
-          {/* Sub-headline */}
-          <p
-            className={cn(
-              heroFontClassName,
-              "mt-8 max-w-2xl text-base md:text-[1.07rem] leading-relaxed text-neutral-600 dark:text-neutral-300",
-            )}
+          <div
+            className="grid transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+            style={{
+              gridTemplateRows: heroDemoOpen ? "1fr" : "0fr",
+              marginTop: heroDemoOpen ? "1rem" : "0",
+            }}
           >
-            Dig text is a new way to read text. You see the shortest version
-            first, then dig deeper only where it matters to you.
-          </p>
+            <div className="overflow-hidden">
+              <p
+                className="max-w-2xl font-serif text-[1.05rem] leading-relaxed text-neutral-600 dark:text-neutral-300"
+                style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
+              >
+                Dig text is a new way to read text. You see the shortest
+                version first, then dig deeper only where it matters to you.
+              </p>
+            </div>
+          </div>
 
           {/* ── Reader box ── */}
           <div className="mt-10 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/50">
@@ -1086,14 +1110,17 @@ export const HomeV2_4Page = ({
         id="prompt"
         className="border-t border-neutral-100 bg-neutral-50/50 scroll-mt-[65px] dark:border-neutral-800 dark:bg-neutral-900/40"
       >
-        <div className="max-w-4xl mx-auto px-6 py-24">
+        <div className="max-w-3xl mx-auto px-6 py-20">
           <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
             A new paradigm of using text
           </span>
 
           <h2
-            className="mt-6 font-sans tracking-[-0.05em] text-[clamp(2.05rem,5.75vw,3.24rem)]"
-            style={{ lineHeight: 1 }}
+            className="mt-3 tracking-tight text-[clamp(1.9rem,4.6vw,2.8rem)] leading-[1.05]"
+            style={{
+              fontFamily: "'IBM Plex Serif', Georgia, serif",
+              textWrap: "balance",
+            }}
           >
             Use this prompt to convert
             <br />
@@ -1103,7 +1130,7 @@ export const HomeV2_4Page = ({
             </span>
           </h2>
 
-          <p className="mt-6 mb-10 max-w-xl font-serif text-lg leading-relaxed text-neutral-600 dark:text-neutral-300">
+          <p className="mt-6 mb-10 max-w-xl font-serif text-[1.05rem] leading-relaxed text-neutral-600 dark:text-neutral-300">
             Paste this into your favorite LLM with any text you want converted.
             Then drop the output on the{" "}
             <Link
@@ -1156,87 +1183,51 @@ export const HomeV2_4Page = ({
         </div>
       </section>
 
-      {/* ── BOTTOM HERO ── */}
-      <section className="relative overflow-hidden border-t border-neutral-100 dark:border-neutral-800">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 -right-24 h-[600px] w-[600px] rounded-full opacity-40 blur-[120px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(251,191,36,0.5) 0%, rgba(244,63,94,0.35) 40%, rgba(139,92,246,0.3) 70%, transparent 80%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full opacity-25 blur-[100px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(244,63,94,0.2) 60%, transparent 80%)",
-          }}
-        />
+      {/* ── EMBED ── */}
+      <section
+        id="embed"
+        className="relative border-t border-neutral-100 dark:border-neutral-800"
+      >
+        <div className="max-w-3xl mx-auto px-6 py-20">
+          <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
+            Use it anywhere
+          </span>
 
-        <div className="relative max-w-4xl mx-auto px-6 pt-20 pb-28">
-          <h1
-            className={cn(
-              heroFontClassName,
-              heroHeadingClassName,
-            )}
-            style={heroHeadingStyle}
+          <h2
+            className="mt-3 tracking-tight text-[clamp(1.9rem,4.6vw,2.8rem)] leading-[1.05]"
+            style={{
+              fontFamily: "'IBM Plex Serif', Georgia, serif",
+              textWrap: "balance",
+            }}
           >
-            It is{" "}
-            <em className="not-italic bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400 bg-clip-text text-transparent">
-              ridiculous
-            </em>
+            Embed Dig Text on any
             <br />
-            that we read text
-            <br />
-            in its{" "}
-            <em className="not-italic bg-gradient-to-r from-amber-400 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
-              most expanded
-            </em>
-            <br />
-            form by default.
-          </h1>
+            page you already write.
+          </h2>
 
-          <p className="mt-12 max-w-2xl font-serif text-xl md:text-[1.425rem] leading-snug text-neutral-600 dark:text-neutral-300">
-            <span className="font-semibold text-neutral-900 dark:text-neutral-50">
-              Dig text
-            </span>{" "}
-            flips it. Text arrives{" "}
-            <span className="italic text-rose-500">collapsed</span>, with most
-            important things first. You{" "}
-            <span className="italic text-violet-600 dark:text-violet-400">
-              dig
-            </span>{" "}
-            only as deep as you want.
+          <p className="mt-6 max-w-xl font-serif text-[1.05rem] leading-relaxed text-neutral-600 dark:text-neutral-300">
+            I am developing a script which will enable you to embed on any
+            website. If you need it, give me feedback.
           </p>
 
-          <div className="mt-12 flex items-center gap-3 flex-wrap">
-            <Link
-              to="/reader"
+          <div className="mt-8">
+            <a
+              href="mailto:pawsyshq@gmail.com?subject=Dig%20text%20embed%20feedback"
               className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white hover:bg-neutral-700 transition-colors dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              Open the reader
-            </Link>
-            <button
-              onClick={handleCopy}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 font-sans text-sm text-neutral-700 hover:border-neutral-500 hover:text-neutral-900 transition-colors dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-50"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy the prompt
-                </>
-              )}
-            </button>
+              Send feedback
+            </a>
           </div>
         </div>
       </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-neutral-100 dark:border-neutral-800">
+        <div className="max-w-3xl mx-auto px-6 py-10 flex items-center justify-between font-sans text-[12px] text-neutral-400 dark:text-neutral-500">
+          <span>Dig text — read the shortest version first.</span>
+          <span>© 2026</span>
+        </div>
+      </footer>
     </div>
   );
 };
