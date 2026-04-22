@@ -29,6 +29,7 @@ import HomeV2_11_NewMinimalStyling from "./pages/HomeV2_11_NewMinimalStyling.tsx
 import HomeV2_11_NewQual from "./pages/HomeV2_11_NewQual.tsx";
 import HomeV3_0_NewStyle from "./pages/HomeV3_0_NewStyle.tsx";
 import HomeV3_1_InlineBack from "./pages/HomeV3_1_InlineBack.tsx";
+import HomeV3_2_AwesomeClosings from "./pages/HomeV3_2_AwesomeClosings.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
 import Library from "./pages/ArticlesV2.tsx";
 
@@ -42,7 +43,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<HomeV3_1_InlineBack />} />
+            <Route path="/" element={<HomeV3_2_AwesomeClosings />} />
             <Route path="/about" element={<About />} />
             <Route path="/library" element={<Library />} />
             <Route path="/articles" element={<Navigate to="/library" replace />} />
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/p/home-v2-11-new-qual" element={<HomeV2_11_NewQual />} />
             <Route path="/p/home-v3-0-new-style" element={<HomeV3_0_NewStyle />} />
             <Route path="/p/home-v3-1-inline-back" element={<HomeV3_1_InlineBack />} />
+            <Route path="/p/home-v3-2-awesome-closings" element={<HomeV3_2_AwesomeClosings />} />
             <Route path="/p/articles-v1" element={<ArticlesV1 />} />
             <Route path="/p/articles-v2" element={<Library />} />
             <Route path="/p/about-v1" element={<AboutV1 />} />

@@ -65,7 +65,7 @@ Do not point the live pill at a versioned `/p/...` URL if the public site is usi
 
 ## Current Home Prototype
 
-The current live Home prototype is the inline-back variant (v3.1).
+The current live Home prototype is the awesome-closings variant (v3.2).
 
 - `src/pages/HomeV2_8_Minimal.tsx` is the archived minimal snapshot.
 - `src/pages/HomeV2_9_NoChevrons.tsx` is the archived no-chevrons snapshot.
@@ -73,7 +73,8 @@ The current live Home prototype is the inline-back variant (v3.1).
 - `src/pages/HomeV2_11_NewMinimalStyling.tsx` is the archived new-minimal-styling snapshot.
 - `src/pages/HomeV2_11_NewQual.tsx` is the archived new-qual snapshot (visual-quality pass on top of v2.10).
 - `src/pages/HomeV3_0_NewStyle.tsx` is the archived new-style snapshot (v3.0).
-- `src/pages/HomeV3_1_InlineBack.tsx` is the current live standalone inline-back snapshot (v3.1).
+- `src/pages/HomeV3_1_InlineBack.tsx` is the archived inline-back snapshot (v3.1).
+- `src/pages/HomeV3_2_AwesomeClosings.tsx` is the current live standalone awesome-closings snapshot (v3.2).
 - `/p/home-v2` should continue to point to the older archived Home v2 page.
 
 The textarea work is documented in `input-process.md`.
@@ -131,11 +132,11 @@ When changing it, be careful not to break both modes at once.
 ## Working Rules For This Repo
 
 - Live pill means "currently live on the public website / main nav", not "latest prototype".
-- For Home, the live `/p` entry should currently be `Home v3.1 (inline back)` mapped to `/`.
+- For Home, the live `/p` entry should currently be `Home v3.2 (awesome closings)` mapped to `/`.
 - `Home v2` is an archived prototype route and should stay on `/p/home-v2` unless explicitly promoted again.
 - For Library, the live `/p` entry should map to `/library`.
 - Prefer updating the public live route instead of inventing a new "live" versioned URL.
-- For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV3_1_InlineBack.tsx`.
+- For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV3_2_AwesomeClosings.tsx`.
 - Avoid changing shared or archived Home files unless the change is intentionally meant to affect multiple versions.
 - Archived Home pages must keep historical reader/icon behavior. They should import matching snapshots under `src/components/archive/`, not live shared reader components such as `EditableLineView`, `InlineDigMarkdown`, `DigIcons`, `DigTextReader`, or `BulletDigTextReader`.
 - Before changing live reader/icon behavior, check archived Home imports. If an archived route still imports a live shared component, snapshot that component first or move the archived route to an existing snapshot.

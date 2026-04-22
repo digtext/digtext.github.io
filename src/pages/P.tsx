@@ -23,7 +23,8 @@ const groups: Group[] = [
       { label: "Home v2.11 (new minimal styling)", to: "/p/home-v2-11-new-minimal-styling" },
       { label: "Home v2.11 (new-qual)", to: "/p/home-v2-11-new-qual" },
       { label: "Home v3.0 (new-style)", to: "/p/home-v3-0-new-style" },
-      { label: "Home v3.1 (inline back)", to: "/", live: true },
+      { label: "Home v3.1 (inline back)", to: "/p/home-v3-1-inline-back" },
+      { label: "Home v3.2 (awesome closings)", to: "/", live: true },
     ],
   },
   {
