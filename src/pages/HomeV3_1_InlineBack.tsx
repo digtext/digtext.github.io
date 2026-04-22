@@ -558,29 +558,26 @@ interface InlineBulletRenderProps {
   bullet: InlineBulletNode;
   expandedIds: Set<string>;
   toggle: (id: string) => void;
-  depth: number;
+  selfDepth: number;
+  underlineDepth?: number;
 }
 
 const InlineBulletRender = ({
   bullet,
   expandedIds,
   toggle,
-  depth,
+  selfDepth,
+  underlineDepth,
 }: InlineBulletRenderProps) => {
   const hasChildren = bullet.children.length > 0;
   const isExpanded = expandedIds.has(bullet.id);
 
-  if (!hasChildren) {
-    return <InlineMarkdown text={bullet.text} />;
-  }
+  const buttonBoxShadow: CSSProperties | undefined =
+    isExpanded && underlineDepth !== undefined
+      ? { boxShadow: `0 1.5px 0 0 ${underlineDepth === 0 ? DIG_ACCENT : DIG_ACCENT_FADED}` }
+      : undefined;
 
-  const underlineStyle = isExpanded ? getUnderlineStyle(depth) : undefined;
-  const buttonUnderlineColor = depth === 0 ? DIG_ACCENT : DIG_ACCENT_FADED;
-  const buttonUnderline: CSSProperties | undefined = isExpanded
-    ? { boxShadow: `0 1.5px 0 0 ${buttonUnderlineColor}` }
-    : undefined;
-
-  const toggleButton = (
+  const toggleButton = hasChildren ? (
     <button
       type="button"
       onClick={() => toggle(bullet.id)}
@@ -589,35 +586,29 @@ const InlineBulletRender = ({
         isExpanded ? digCloseButtonClass : softDigIconButtonClass,
         "relative -top-[0.18em] cursor-pointer",
       )}
-      style={buttonUnderline}
+      style={buttonBoxShadow}
     >
       {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
     </button>
-  );
-
-  const textAndToggle = (
-    <>
-      <InlineMarkdown text={bullet.text} /> {toggleButton}
-    </>
-  );
+  ) : null;
 
   return (
     <>
-      {isExpanded ? (
-        <span style={underlineStyle}>{textAndToggle}</span>
-      ) : (
-        textAndToggle
-      )}
+      <InlineMarkdown text={bullet.text} />
+      {toggleButton && <> {toggleButton}</>}
       {isExpanded &&
         bullet.children.map((child) => (
           <Fragment key={child.id}>
             {" "}
-            <InlineBulletRender
-              bullet={child}
-              expandedIds={expandedIds}
-              toggle={toggle}
-              depth={depth + 1}
-            />
+            <span style={getUnderlineStyle(selfDepth)}>
+              <InlineBulletRender
+                bullet={child}
+                expandedIds={expandedIds}
+                toggle={toggle}
+                selfDepth={selfDepth + 1}
+                underlineDepth={selfDepth}
+              />
+            </span>
           </Fragment>
         ))}
     </>
@@ -713,7 +704,7 @@ const InlineParagraphPreview = forwardRef<
                 bullet={bullet}
                 expandedIds={expandedIds}
                 toggle={toggle}
-                depth={0}
+                selfDepth={0}
               />
             </Fragment>
           ))}
