@@ -239,7 +239,7 @@ const DigTextReader = ({
           className={pillButtonClass(view === "digtext")}
           type="button"
         >
-          Dig text
+          Preview
         </button>
         <button
           role="tab"
@@ -248,7 +248,7 @@ const DigTextReader = ({
           className={pillButtonClass(view === "raw")}
           type="button"
         >
-          Raw text
+          Input
         </button>
       </div>
 

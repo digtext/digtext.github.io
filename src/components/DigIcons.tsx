@@ -11,7 +11,7 @@ export const digChevronButtonClass =
   "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full text-transparent transition-colors hover:text-[#6155F5] dark:text-transparent dark:hover:text-[#DCD8FF]";
 
 export const digCloseButtonClass =
-  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-500 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-400";
+  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-neutral-700 no-underline decoration-transparent transition-colors hover:bg-neutral-100/80 hover:text-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800/80 dark:hover:text-neutral-200";
 
 export const lineDigIconButtonClass =
   "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#6155F5] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#B8B0FF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
@@ -25,8 +25,18 @@ export const DigPlusIcon = ({ className }: DigIconProps) => (
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <rect
+      x="0.5"
+      y="0.5"
+      width="19"
+      height="19"
+      rx="9.5"
+      className="transition-colors group-hover:stroke-transparent"
+      stroke="#6155F5"
+      strokeOpacity="0.4"
+    />
     <path
-      fill="currentColor"
+      fill="#6155F5"
       d="M10.6299 13.8154C10.6299 13.9847 10.568 14.1312 10.4443 14.2549C10.3206 14.3786 10.1725 14.4404 10 14.4404C9.82422 14.4404 9.67611 14.3786 9.55566 14.2549C9.43522 14.1312 9.375 13.9847 9.375 13.8154V6.80859C9.375 6.63607 9.43522 6.48796 9.55566 6.36426C9.67611 6.24056 9.82422 6.17871 10 6.17871C10.1725 6.17871 10.3206 6.24056 10.4443 6.36426C10.568 6.48796 10.6299 6.63607 10.6299 6.80859V13.8154ZM6.49902 10.9395C6.3265 10.9395 6.17839 10.8792 6.05469 10.7588C5.93099 10.6351 5.86914 10.4854 5.86914 10.3096C5.86914 10.137 5.93099 9.98893 6.05469 9.86523C6.17839 9.74154 6.3265 9.67969 6.49902 9.67969H13.5059C13.6751 9.67969 13.8216 9.74154 13.9453 9.86523C14.069 9.98893 14.1309 10.137 14.1309 10.3096C14.1309 10.4854 14.069 10.6351 13.9453 10.7588C13.8216 10.8792 13.6751 10.9395 13.5059 10.9395H6.49902Z"
     />
   </svg>
@@ -42,7 +52,12 @@ export const DigCloseIcon = ({ className }: DigIconProps) => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      fill="currentColor"
+      className="transition-colors group-hover:stroke-transparent"
+      d="M10 0.5C15.2467 0.5 19.5 4.7533 19.5 10C19.5 15.2467 15.2467 19.5 10 19.5C4.7533 19.5 0.5 15.2467 0.5 10C0.5 4.7533 4.7533 0.5 10 0.5Z"
+      stroke="#C2C1C1"
+    />
+    <path
+      fill="#363636"
       d="M12.2266 7.22021C12.3021 7.1473 12.3893 7.09912 12.4883 7.07568C12.5898 7.04964 12.6914 7.04964 12.793 7.07568C12.8945 7.10173 12.9831 7.15251 13.0586 7.22803C13.1341 7.30355 13.1849 7.39209 13.2109 7.49365C13.237 7.59521 13.237 7.69678 13.2109 7.79834C13.1875 7.8973 13.1393 7.98454 13.0664 8.06006L7.76953 13.3569C7.69922 13.4272 7.61328 13.4741 7.51172 13.4976C7.41016 13.5236 7.30729 13.5236 7.20312 13.4976C7.10156 13.4741 7.01302 13.4246 6.9375 13.3491C6.86198 13.2736 6.8112 13.1851 6.78516 13.0835C6.76172 12.9819 6.76172 12.8804 6.78516 12.7788C6.8112 12.6772 6.85938 12.5913 6.92969 12.521L12.2266 7.22021ZM13.0664 12.5171C13.1393 12.59 13.1875 12.6772 13.2109 12.7788C13.237 12.8804 13.237 12.9819 13.2109 13.0835C13.1849 13.1851 13.1341 13.2736 13.0586 13.3491C12.9831 13.4246 12.8945 13.4741 12.793 13.4976C12.6914 13.5236 12.5898 13.5249 12.4883 13.5015C12.3893 13.478 12.3021 13.4285 12.2266 13.353L6.92969 8.05615C6.85938 7.98584 6.8125 7.8999 6.78906 7.79834C6.76562 7.69678 6.76562 7.59521 6.78906 7.49365C6.8125 7.39209 6.86198 7.30355 6.9375 7.22803C7.01302 7.1499 7.10156 7.09912 7.20312 7.07568C7.30729 7.05225 7.41016 7.05225 7.51172 7.07568C7.61328 7.09912 7.69922 7.1473 7.76953 7.22021L13.0664 12.5171Z"
     />
   </svg>

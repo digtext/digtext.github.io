@@ -79,7 +79,7 @@ const ArticlePage = () => {
                   : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50",
               )}
             >
-              Dig text
+              Preview
             </button>
             <button
               role="tab"
@@ -92,7 +92,7 @@ const ArticlePage = () => {
                   : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50",
               )}
             >
-              Raw text
+              Input
             </button>
           </div>
         </div>
@@ -102,7 +102,7 @@ const ArticlePage = () => {
         ) : (
           <div>
             <p className="font-sans text-xs text-neutral-500 mb-2 dark:text-neutral-400">
-              Markdown source · edits update the Dig text view live
+              Markdown source · edits update the preview live
             </p>
             <textarea
               value={rawContent}

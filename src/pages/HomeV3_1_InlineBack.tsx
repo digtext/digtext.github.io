@@ -507,7 +507,7 @@ const countExpandableBullets = (paragraphs: InlineParagraphNode[]): number =>
   );
 
 const linkClassName =
-  "underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50";
+  "text-neutral-500 underline underline-offset-2 decoration-neutral-300 transition-colors hover:text-neutral-700 hover:decoration-neutral-400 dark:text-neutral-400 dark:decoration-neutral-600 dark:hover:text-neutral-200 dark:hover:decoration-neutral-500";
 
 const markdownComponents = {
   p: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -572,11 +572,6 @@ const InlineBulletRender = ({
   const hasChildren = bullet.children.length > 0;
   const isExpanded = expandedIds.has(bullet.id);
 
-  const buttonBoxShadow: CSSProperties | undefined =
-    isExpanded && underlineDepth !== undefined
-      ? { boxShadow: `0 1.5px 0 0 ${underlineDepth === 0 ? DIG_ACCENT : DIG_ACCENT_FADED}` }
-      : undefined;
-
   const toggleButton = hasChildren ? (
     <button
       type="button"
@@ -586,7 +581,6 @@ const InlineBulletRender = ({
         isExpanded ? digCloseButtonClass : softDigIconButtonClass,
         "relative -top-[0.18em] cursor-pointer",
       )}
-      style={buttonBoxShadow}
     >
       {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
     </button>
@@ -688,7 +682,7 @@ const InlineParagraphPreview = forwardRef<
   if (paragraphs.length === 0) {
     return (
       <div className={cn("text-neutral-400 dark:text-neutral-500", className)} style={style}>
-        Start typing on the Raw text tab to see your dig text preview here.
+        Start typing on the Input tab to see your preview here.
       </div>
     );
   }
@@ -696,7 +690,7 @@ const InlineParagraphPreview = forwardRef<
   return (
     <div className={className} style={style}>
       {paragraphs.map((paragraph, pIdx) => (
-        <p key={paragraph.id} className={pIdx === 0 ? "" : "mt-5"}>
+        <p key={paragraph.id} className={pIdx === 0 ? "" : "mt-[0.5em]"}>
           {paragraph.bullets.map((bullet, bIdx) => (
             <Fragment key={bullet.id}>
               {bIdx > 0 ? " " : ""}
@@ -1419,17 +1413,17 @@ export const HomeV2_4Page = ({
               <div className={shellClass}>
                 <button
                   onClick={() => setMode("input")}
-                  className={pillButtonClass(mode === "input")}
+                  className={cn(pillButtonClass(mode === "input"), "w-[76px] text-center")}
                   type="button"
                 >
-                  Raw text
+                  Input
                 </button>
                 <button
                   onClick={() => setMode("digtext")}
-                  className={pillButtonClass(mode === "digtext")}
+                  className={cn(pillButtonClass(mode === "digtext"), "w-[76px] text-center")}
                   type="button"
                 >
-                  Dig text
+                  Preview
                 </button>
               </div>
 
