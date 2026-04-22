@@ -44,36 +44,13 @@ const DEMO_CONTENT = `- It has been ridiculous, guys,
         - Indented bullets from Google Docs, Notion, or Obsidian are transformed into expandable sections.
 - You can write with [Markdown](https://www.markdownguide.org/basic-syntax/).
     - **Bold**, *italics*, and \`code\` all show up in the Dig preview.
-- Use our LLM prompt to convert any text into dig text.
+- Use our AI prompt to convert any text into dig text.
     - Find it below.
 - You can read any dig text with this reader — hit the full-screen icon to do it without distractions.`;
 
-const PROMPT = `Summarize the following text using what I call the Quote summary approach. Use as many original fragments as possible (with quote symbols) and stitch the quotes together with your own writing to create a comprehensive and precise summary.
-
-Produce the following summaries:
-
-1. 1 min summary ***[note for humans: This is the most important setting in this prompt. Consider changing this number.]***
-2. 3x the length of "1."
-3. 6x the length of "1."
-
-Now convert the original text into "digText" format — a progressive, collapsed-by-default reading layout. The digText syntax uses indented text:
-
-Top-level text is always visible
-  Indented text is hidden by default — the reader clicks to reveal it
-    Deeper indentation = deeper levels of detail
-
-Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
-
-1. Deconstruct the summaries you prepared in the 1st step into indented lines. The shortest summary stays at the top level (visible by default); all other summaries are nested as indented lines.
-2. Roughly: the top level of dig-text should be the shortest summary you already prepared in the 1st step. 2nd level the 2nd longest summary. 3rd level the 3rd longest summary. And so on. Nest all of the original information (not only summaries) in indented lines. Nothing is cut — everything is preserved, just collapsed.
-3. Use the progressive expansion principle. Spread indented lines evenly throughout the text.
-4. After you finish, re-read only the top-level lines. They must read as a coherent, complete summary of the original on their own. If they don't, rework it until they do.
-
-Output only the converted text in indented format (use 2-space indentation for each level). The output should be ready to paste directly into dig text.
-
-Now transform the following text:
-
-[paste your text here]`;
+// The prompt shown below is loaded from /public/prompt.md so it stays in sync
+// with the standalone /prompt.md URL that users can hand directly to an LLM.
+const PROMPT_URL = "/prompt.md";
 
 const TEXTAREA_PLACEHOLDER = `- Paste indented text or a bulleted list here
   - Tab / Shift+Tab changes indentation
@@ -150,7 +127,7 @@ const eyebrowRuleClass =
   "inline-block h-px w-6 bg-neutral-300 align-middle dark:bg-neutral-700";
 
 const shortcutKeyClass =
-  "rounded border border-neutral-200 px-1.5 py-[1px] font-mono text-[10px] text-neutral-600 dark:border-neutral-800 dark:text-neutral-400";
+  "rounded border border-neutral-200 px-1.5 py-[1px] font-mono text-[12px] text-neutral-600 dark:border-neutral-800 dark:text-neutral-400";
 
 const getIndentWidth = (line: string) =>
   (line.match(/^[\t ]*/) ?? [""])[0].replace(/\t/g, VISUAL_INDENT_UNIT).length;
@@ -256,20 +233,19 @@ const getOffsetsForLineSpan = (
 };
 
 const getVisualLineData = (line: string): VisualLineData => {
+  // Keep the textarea mirror aligned with the raw textarea: render full lines
+  // without hanging indentation, only swapping "*" for a nicer bullet glyph.
   const indentMatch = line.match(/^[\t ]*/)?.[0] ?? "";
-  const normalizedIndent = indentMatch.replace(/\t/g, VISUAL_INDENT_UNIT);
-  const indentCh = normalizedIndent.length;
   const rest = line.slice(indentMatch.length);
   const bulletMatch = rest.match(/^([-*+•])\s+(.*)$/);
-  const paddingLeftCh = bulletMatch ? indentCh + BULLET_WIDTH_CH : indentCh;
   const displayLine = bulletMatch && bulletMatch[1] === "*"
     ? line.replace(/^([\t ]*)\*(\s)/, "$1•$2")
     : line;
 
   return {
     text: displayLine,
-    paddingLeftCh,
-    textIndentCh: -paddingLeftCh,
+    paddingLeftCh: 0,
+    textIndentCh: 0,
     bulletDisplay: bulletMatch ? (bulletMatch[1] === "*" ? "•" : bulletMatch[1]) : null,
   };
 };
@@ -627,13 +603,23 @@ const InlineMarkdown = ({
 );
 
 const softDigIconButtonClass =
-  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#BDB7EF] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#BDB7EF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
+  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#BDB7EF] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#C7C2FF] dark:hover:bg-[#302A63] dark:hover:text-[#E5E1FF]";
 
 const inlineDigExpandedLineClass =
-  "group/digline inline text-[#5F59A3] no-underline decoration-transparent transition-colors hover:text-neutral-800 dark:text-[#C7C2FF] dark:hover:text-neutral-200";
+  "inline-dig-branch inline text-neutral-500 no-underline decoration-transparent transition-colors dark:text-neutral-400";
 
 const inlinePreviewBoundaryButtonClass =
-  "group/boundary inline-flex h-5 flex-none cursor-pointer items-center justify-center align-middle text-current no-underline decoration-transparent outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#5F59A3]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-[#C7C2FF]/45 dark:focus-visible:ring-offset-neutral-950";
+  "inline-dig-boundary group/boundary inline-flex h-5 flex-none cursor-pointer items-center justify-center align-middle text-[#5F59A3] no-underline decoration-transparent outline-none transition-colors hover:text-[#4E478F] dark:text-[#C7C2FF] dark:hover:text-[#E5E1FF] focus-visible:ring-2 focus-visible:ring-[#5F59A3]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-[#C7C2FF]/45 dark:focus-visible:ring-offset-neutral-950";
+
+const inlinePreviewHoverStyles = `
+  .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+    color: #5F59A3;
+  }
+
+  .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+    color: #C7C2FF;
+  }
+`;
 
 const InlinePreviewDigPlusIcon = () => (
   <svg
@@ -650,21 +636,20 @@ const InlinePreviewDigPlusIcon = () => (
       width="19"
       height="19"
       rx="9.5"
-      className="transition-colors group-hover:stroke-transparent"
-      stroke="#6155F5"
+      className="stroke-[#6155F5] transition-colors group-hover:stroke-transparent dark:stroke-[#C7C2FF]"
       strokeOpacity="0.4"
     />
     <path
-      fill="#6155F5"
+      className="fill-[#6155F5] transition-colors dark:fill-[#C7C2FF]"
       d="M10.6299 13.8154C10.6299 13.9847 10.568 14.1312 10.4443 14.2549C10.3206 14.3786 10.1725 14.4404 10 14.4404C9.82422 14.4404 9.67611 14.3786 9.55566 14.2549C9.43522 14.1312 9.375 13.9847 9.375 13.8154V6.80859C9.375 6.63607 9.43522 6.48796 9.55566 6.36426C9.67611 6.24056 9.82422 6.17871 10 6.17871C10.1725 6.17871 10.3206 6.24056 10.4443 6.36426C10.568 6.48796 10.6299 6.63607 10.6299 6.80859V13.8154ZM6.49902 10.9395C6.3265 10.9395 6.17839 10.8792 6.05469 10.7588C5.93099 10.6351 5.86914 10.4854 5.86914 10.3096C5.86914 10.137 5.93099 9.98893 6.05469 9.86523C6.17839 9.74154 6.3265 9.67969 6.49902 9.67969H13.5059C13.6751 9.67969 13.8216 9.74154 13.9453 9.86523C14.069 9.98893 14.1309 10.137 14.1309 10.3096C14.1309 10.4854 14.069 10.6351 13.9453 10.7588C13.8216 10.8792 13.6751 10.9395 13.5059 10.9395H6.49902Z"
     />
   </svg>
 );
 
 const InlinePreviewDigCloseIcon = () => (
-  <span className="relative block h-[21px] w-[21px]" aria-hidden="true">
+  <span className="relative block h-5 w-5" aria-hidden="true">
     <svg
-      className="absolute inset-0 block h-[21px] w-[21px] opacity-100 transition-opacity group-hover/digline:opacity-0 group-hover/boundary:opacity-0"
+      className="absolute inset-0 block h-5 w-5 opacity-100 transition-opacity group-hover/boundary:opacity-0"
       fill="none"
       focusable="false"
       viewBox="0 0 21 21"
@@ -682,7 +667,7 @@ const InlinePreviewDigCloseIcon = () => (
       />
     </svg>
     <svg
-      className="absolute left-0 top-0.5 block h-5 w-5 opacity-0 transition-opacity group-hover/digline:opacity-100 group-hover/boundary:opacity-100"
+      className="absolute inset-0 block h-5 w-5 opacity-0 transition-opacity group-hover/boundary:opacity-100"
       fill="none"
       focusable="false"
       viewBox="0 0 20 20"
@@ -704,7 +689,7 @@ const InlinePreviewDigCloseIcon = () => (
 const InlinePreviewDigEndIcon = () => (
   <span className="relative block h-5 w-3" aria-hidden="true">
     <svg
-      className="absolute inset-0 block h-5 w-3 opacity-100 transition-opacity group-hover/digline:opacity-0 group-hover/boundary:opacity-0"
+      className="absolute inset-0 block h-5 w-3 opacity-100 transition-opacity group-hover/boundary:opacity-0"
       fill="none"
       focusable="false"
       viewBox="0 0 12 20"
@@ -719,7 +704,7 @@ const InlinePreviewDigEndIcon = () => (
       />
     </svg>
     <svg
-      className="absolute inset-0 block h-5 w-3 opacity-0 transition-opacity group-hover/digline:opacity-100 group-hover/boundary:opacity-100"
+      className="absolute inset-0 block h-5 w-3 opacity-0 transition-opacity group-hover/boundary:opacity-100"
       fill="none"
       focusable="false"
       viewBox="0 0 12 20"
@@ -754,8 +739,8 @@ const InlinePreviewBoundaryButton = ({
     aria-label={side === "start" ? "Collapse section from start" : "Collapse section from end"}
     className={cn(
       inlinePreviewBoundaryButtonClass,
-      side === "start" ? "w-[21px]" : "w-4",
-      "relative -top-[0.16em]",
+      side === "start" ? "w-5" : "w-3",
+      side === "start" ? "relative -top-[0.07em]" : "relative top-0",
     )}
   >
     {side === "start" ? <InlinePreviewDigCloseIcon /> : <InlinePreviewDigEndIcon />}
@@ -785,7 +770,7 @@ const InlineBulletRender = ({
       aria-label="Expand"
       className={cn(
         softDigIconButtonClass,
-        "relative -top-[0.18em] cursor-pointer",
+        "relative top-0 cursor-pointer",
       )}
     >
       <InlinePreviewDigPlusIcon />
@@ -794,17 +779,19 @@ const InlineBulletRender = ({
 
   return (
     <>
-      <InlineMarkdown text={bullet.text} digTone={digTone} />
+      <span className={digTone ? "inline-dig-text transition-colors" : undefined}>
+        <InlineMarkdown text={bullet.text} digTone={digTone} />
+      </span>
       {expandButton && <span style={{ whiteSpace: "nowrap" }}>{"\u00A0"}{expandButton}</span>}
       {isExpanded && (
         <span className={inlineDigExpandedLineClass}>
-          <span style={{ whiteSpace: "nowrap" }}>
+          <span className="inline-dig-start-wrap" style={{ whiteSpace: "nowrap" }}>
             {"\u00A0"}
             <InlinePreviewBoundaryButton side="start" onClick={() => toggle(bullet.id)} />
           </span>
-          {bullet.children.map((child) => (
+          {bullet.children.map((child, childIndex) => (
             <Fragment key={child.id}>
-              {" "}
+              {childIndex === 0 ? "\u2009" : " "}
               <InlineBulletRender
                 bullet={child}
                 expandedIds={expandedIds}
@@ -813,8 +800,7 @@ const InlineBulletRender = ({
               />
             </Fragment>
           ))}
-          <span style={{ whiteSpace: "nowrap" }}>
-            {"\u00A0"}
+          <span className="inline-dig-end-wrap" style={{ whiteSpace: "nowrap" }}>
             <InlinePreviewBoundaryButton side="end" onClick={() => toggle(bullet.id)} />
           </span>
         </span>
@@ -925,6 +911,7 @@ const InlineParagraphPreview = forwardRef<
 
   return (
     <div className={className} style={style}>
+      <style>{inlinePreviewHoverStyles}</style>
       {paragraphs.map((paragraph, pIdx) => (
         <div key={paragraph.id} className={pIdx === 0 ? "" : "mt-[0.5em]"}>
           {paragraph.bullets.map((bullet, bIdx) => (
@@ -963,6 +950,8 @@ export const HomeV2_4Page = ({
   topHeroHeadingStyle = {},
 }: HomeV2_4PageProps) => {
   const [copied, setCopied] = useState(false);
+  const [composerCopied, setComposerCopied] = useState(false);
+  const [promptText, setPromptText] = useState<string | null>(null);
   const [mode, setMode] = useState<"digtext" | "input">(
     () => getStoredComposerMode() as "digtext" | "input",
   );
@@ -1036,10 +1025,21 @@ export const HomeV2_4Page = ({
   }, []);
 
   const handleCopy = async () => {
+    if (!promptText) return;
     try {
-      await navigator.clipboard.writeText(PROMPT);
+      await navigator.clipboard.writeText(promptText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyComposerText = async () => {
+    try {
+      await navigator.clipboard.writeText(inputText);
+      setComposerCopied(true);
+      setTimeout(() => setComposerCopied(false), 2000);
     } catch {
       // ignore
     }
@@ -1063,6 +1063,21 @@ export const HomeV2_4Page = ({
     }
 
     setComposerFullscreenOpen(open);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(PROMPT_URL)
+      .then((response) => (response.ok ? response.text() : null))
+      .then((text) => {
+        if (!cancelled && text) setPromptText(text.trim());
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -1731,7 +1746,7 @@ export const HomeV2_4Page = ({
             style={{ viewTransitionName: "reader-shell" }}
           >
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200/70 bg-white/80 px-4 py-2.5 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/70">
+            <div className="flex items-center justify-between gap-2 border-b border-neutral-200/70 bg-white/80 px-3 py-2.5 backdrop-blur-sm sm:px-4 dark:border-neutral-800 dark:bg-neutral-900/70">
               <div className={shellClass}>
                 <button
                   onClick={() => setMode("input")}
@@ -1749,7 +1764,7 @@ export const HomeV2_4Page = ({
                 </button>
               </div>
 
-              <div className="ml-auto flex min-h-[34px] basis-full items-center justify-end gap-2 sm:basis-auto">
+              <div className="ml-auto flex min-h-[34px] items-center justify-end gap-2">
                 {mode === "digtext" && (
                   <div className={shellClass}>
                     <button
@@ -1773,7 +1788,9 @@ export const HomeV2_4Page = ({
                       ) : (
                         <Plus size={14} strokeWidth={2.25} className="block" />
                       )}
-                      {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                      <span className="hidden sm:inline">
+                        {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                      </span>
                     </button>
                   </div>
                 )}
@@ -1805,6 +1822,18 @@ export const HomeV2_4Page = ({
                     </button>
                   </div>
                 )}
+                <button
+                  type="button"
+                  onClick={handleCopyComposerText}
+                  className={iconButtonClass}
+                  aria-label="Copy input markdown"
+                >
+                  {composerCopied ? (
+                    <Check size={16} strokeWidth={2} />
+                  ) : (
+                    <Copy size={16} strokeWidth={1.85} />
+                  )}
+                </button>
                 {composerFullscreenOpen ? (
                   <button
                     type="button"
@@ -1998,7 +2027,7 @@ export const HomeV2_4Page = ({
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 bg-white/60 px-4 py-2.5 font-sans text-[11px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 bg-white/60 px-4 py-2.5 font-sans text-[14px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
               <span className="tabular-nums">
                 {wordCount} words · {digSectionCount} dig sections
               </span>
@@ -2022,7 +2051,7 @@ export const HomeV2_4Page = ({
             </div>
           </div>
 
-          <div className="mt-4 flex min-h-[42px] flex-wrap items-center gap-x-2 gap-y-1 font-sans text-[12px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+          <div className="mt-4 flex min-h-[42px] flex-wrap items-center gap-x-2 gap-y-1 font-sans text-[14px] leading-relaxed text-neutral-500 dark:text-neutral-400">
             {mode === "input" ? (
               <>
                 <span>Move text with</span>
@@ -2082,8 +2111,22 @@ export const HomeV2_4Page = ({
           </h2>
 
           <p className="mt-6 mb-10 max-w-xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300">
-            Paste this into your favorite LLM with any text you want converted.
-            Then drop the output on the{" "}
+            Paste this into your favorite AI with any text you want converted.
+            Or just hand your AI two URLs:{" "}
+            <Link
+              to="/llms"
+              className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
+            >
+              /llms.txt
+            </Link>{" "}
+            for the format and syntax, and{" "}
+            <Link
+              to="/prompt"
+              className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
+            >
+              /prompt.md
+            </Link>{" "}
+            for this exact prompt. Then drop the output on the{" "}
             <Link
               to="/"
               className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
@@ -2129,7 +2172,7 @@ export const HomeV2_4Page = ({
             </div>
 
             <pre className="px-5 py-5 text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words max-h-[480px] overflow-auto dark:text-neutral-300" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-              {PROMPT}
+              {promptText ?? "Loading prompt…"}
             </pre>
           </div>
 
