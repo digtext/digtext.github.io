@@ -18,7 +18,7 @@ const ArticlesV2 = () => {
           }}
         />
 
-        <main className="relative mx-auto max-w-3xl px-6 pt-16 pb-24">
+        <main className="relative mx-auto max-w-[59rem] px-6 pt-16 pb-24">
           <div className="mb-3">
             <span className="font-sans text-[10px] tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500">
               the library

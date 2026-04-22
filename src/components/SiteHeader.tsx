@@ -75,7 +75,7 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
 
   return (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-100 dark:bg-neutral-950/80 dark:border-neutral-800">
-      <div className="max-w-4xl mx-auto px-3 py-4 flex items-center justify-between gap-4 sm:px-6">
+      <div className="mx-auto max-w-[59rem] px-3 py-4 flex items-center justify-between gap-4 sm:px-6">
         <Link
           to="/"
           className="flex shrink-0 items-center gap-2 text-neutral-900 dark:text-neutral-50"

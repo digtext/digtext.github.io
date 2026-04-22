@@ -274,6 +274,8 @@ export interface EditableLineViewHandle {
   collapseAll: () => void;
   hasExpandables: boolean;
   anyExpanded: boolean;
+  getExpandedSourceIndices: () => Set<number>;
+  setExpandedBySourceIndices: (indices: Set<number>) => void;
 }
 
 interface EditableLineViewProps {
@@ -296,12 +298,13 @@ interface EditableLineViewProps {
   readOnlyEndControlsOnly?: boolean;
   lineDigCollapsedIcon?: LineDigCollapsedIcon;
   inlineDigCollapsedIcon?: InlineDigCollapsedIcon;
+  paragraphBreakIds?: ReadonlySet<number>;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, inlineDigCollapsedIcon }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, inlineDigCollapsedIcon, paragraphBreakIds }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(
     () => new Set(defaultCollapsed ? collectExpandableIds(lines) : []),
   );
@@ -405,6 +408,25 @@ export const EditableLineView = React.forwardRef<
           expandableIds.some((id) => !collapsed.has(id)) ||
           expandedInlineDigIds.size > 0
         );
+      },
+      getExpandedSourceIndices: () => {
+        const indices = new Set<number>();
+        linesRef.current.forEach((line, i) => {
+          if (hasChildren(linesRef.current, i) && !collapsedRef.current.has(line.id)) {
+            indices.add(i);
+          }
+        });
+        return indices;
+      },
+      setExpandedBySourceIndices: (indices: Set<number>) => {
+        const newCollapsed = new Set<number>();
+        linesRef.current.forEach((line, i) => {
+          if (hasChildren(linesRef.current, i) && !indices.has(i)) {
+            newCollapsed.add(line.id);
+          }
+        });
+        setCollapsed(newCollapsed);
+        setTimeout(() => onCollapseChange?.(), 0);
       },
     }),
     [allInlineDigKeys, collapsed, expandableIds, expandedInlineDigIds, onCollapseChange],
@@ -1027,11 +1049,13 @@ export const EditableLineView = React.forwardRef<
             const inlineDigEntry = inlineDigEntries.get(line.id);
             const inlineDigExpandedIds =
               expandedInlineDigIdsByLine.get(line.id) ?? new Set<number>();
+            const hasParagraphBreak = paragraphBreakIds?.has(line.id) ?? false;
 
             return (
               <div
                 key={line.id}
                 className={cn("relative group/row", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
+                style={hasParagraphBreak ? { marginTop: "0.75em" } : undefined}
               >
                 {/* Gutter */}
                 <div
@@ -1091,6 +1115,7 @@ export const EditableLineView = React.forwardRef<
                           }}
                           type="button"
                           tabIndex={-1}
+                          aria-label={isCollapsed ? "Expand line" : "Collapse line"}
                         >
                           <DigChevronIcon
                             className={cn("transition-transform duration-150", !isCollapsed && "rotate-90")}
@@ -1129,11 +1154,14 @@ export const EditableLineView = React.forwardRef<
                         </ReactMarkdown>
                       )}
                       {expandable ? (
-                        <LineEndDigButton
-                          onToggle={() => toggleCollapse(line.id)}
-                          isExpanded={!isCollapsed}
-                          collapsedIcon={lineDigCollapsedIcon}
-                        />
+                        <span style={{ whiteSpace: "nowrap" }}>
+                          {"\u00A0"}
+                          <LineEndDigButton
+                            onToggle={() => toggleCollapse(line.id)}
+                            isExpanded={!isCollapsed}
+                            collapsedIcon={lineDigCollapsedIcon}
+                          />
+                        </span>
                       ) : null}
                     </div>
                   ) : (

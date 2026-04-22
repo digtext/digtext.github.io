@@ -101,6 +101,15 @@ The live Home markdown prototype keeps that textarea input model.
 - The parser produces a segment tree and the renderer handles expand / collapse.
 - `globalId` is intentionally reset per render for stable IDs within one render pass.
 
+### Preview Layout Modes
+
+The Home preview has two layout modes. Use these names in all discussions:
+
+- **Inline mode** — the default paragraph layout where text flows inline and expand/collapse buttons (⊕/⊗) appear inline within the text. Rendered by `InlineParagraphPreview`.
+- **Line mode** — the bullet-list layout where each line is its own row with an expand icon at the end (the list icon button in the toolbar). Rendered by `EditableLineView` in read-only mode.
+
+Both modes are always mounted simultaneously (toggling visibility with `hidden`). Expand/collapse state is synced between them on each layout toggle via `getExpandedSourceIndices` / `setExpandedBySourceIndices` on their respective handles. The source-index key is the position of a bullet in the flat non-blank-line sequence — `node-N` in inline mode maps to `lines[N]` in line mode.
+
 ### `EditableLineView`
 
 `EditableLineView` is used both as an editor and as a read-only collapsed reader.

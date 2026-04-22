@@ -16,7 +16,7 @@ import {
   EditableLineView,
   EditableLineViewHandle,
   parseToEditableLines,
-} from "@/components/EditableLineView";
+} from "@/components/archive/home-v3-0/EditableLineView";
 import SiteHeader from "@/components/SiteHeader";
 import { cn } from "@/lib/utils";
 

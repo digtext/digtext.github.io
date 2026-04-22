@@ -9,12 +9,12 @@ import {
   digChevronButtonClass,
   digCloseButtonClass,
   lineDigIconButtonClass,
-} from "@/components/DigIcons";
+} from "./DigIcons";
 import {
   type InlineDigCollapsedIcon,
   extractParenthesisExpandables,
   InlineDigMarkdown,
-} from "@/components/InlineDigMarkdown";
+} from "./InlineDigMarkdown";
 import { cn } from "@/lib/utils";
 
 // ── Data ──────────────────────────────────────────────────────────────

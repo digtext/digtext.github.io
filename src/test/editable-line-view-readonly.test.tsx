@@ -82,4 +82,30 @@ describe("EditableLineView read-only preview", () => {
     expect(screen.queryByText("inline detail")).not.toBeInTheDocument();
     expect(screen.queryByText("Nested child")).not.toBeInTheDocument();
   });
+
+  it("can render read-only line controls as enter icons at the line end", () => {
+    const lines: EditableLine[] = [
+      { id: 1, indent: 0, text: "Parent" },
+      { id: 2, indent: 1, text: "Nested child" },
+    ];
+
+    render(
+      <EditableLineView
+        lines={lines}
+        onLinesChange={() => {}}
+        readOnly
+        defaultCollapsed
+        readOnlyEndControlsOnly
+        lineDigCollapsedIcon="enter"
+      />,
+    );
+
+    expect(screen.queryByText("Nested child")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Expand line" })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand line" }));
+
+    expect(screen.getByText("Nested child")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Collapse line" })).toHaveLength(1);
+  });
 });

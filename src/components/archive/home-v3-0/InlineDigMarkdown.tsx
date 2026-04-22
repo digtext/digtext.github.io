@@ -7,7 +7,7 @@ import {
   DigPlusIcon,
   digCloseButtonClass,
   digIconButtonClass,
-} from "@/components/DigIcons";
+} from "./DigIcons";
 import { cn } from "@/lib/utils";
 
 const TOKEN_PREFIX = "\uE000DIG";

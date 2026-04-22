@@ -22,12 +22,6 @@ import {
   EditableLineViewHandle,
   parseToEditableLines,
 } from "@/components/EditableLineView";
-import {
-  DigCloseIcon,
-  DigPlusIcon,
-  digCloseButtonClass,
-  digIconButtonClass,
-} from "@/components/DigIcons";
 import SiteHeader from "@/components/SiteHeader";
 import { cn } from "@/lib/utils";
 
@@ -105,6 +99,46 @@ const pillButtonClass = (active = false) =>
 
 const iconButtonClass =
   "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50";
+
+const layoutIconButtonClass = (active = false) =>
+  cn(
+    "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border transition-colors",
+    active
+      ? "border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-700 dark:border-neutral-50 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
+      : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+  );
+
+const listPreviewIcon = (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 16 16"
+    className="h-4 w-4"
+    fill="none"
+    focusable="false"
+  >
+    <circle cx="3" cy="4" r="1.05" fill="currentColor" />
+    <path
+      d="M5.5 4h7"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.65"
+    />
+    <circle cx="4.9" cy="8" r="1.05" fill="currentColor" />
+    <path
+      d="M7.4 8h5.6"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.65"
+    />
+    <circle cx="6.8" cy="12" r="1.05" fill="currentColor" />
+    <path
+      d="M9.3 12h4"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.65"
+    />
+  </svg>
+);
 
 const readerWindowShadowClass =
   "shadow-[0_1px_0_rgba(0,0,0,.02),0_2px_6px_-2px_rgba(0,0,0,.04),0_24px_56px_-24px_rgba(15,23,42,.18)]";
@@ -374,6 +408,20 @@ const getStoredComposerMode = () => {
   }
 };
 
+const getStoredPreviewLayout = (): PreviewLayout => {
+  if (typeof window === "undefined") return "inline";
+
+  try {
+    const stored = window.localStorage.getItem(COMPOSER_STORAGE_KEY);
+    if (!stored) return "inline";
+
+    const parsed = JSON.parse(stored) as { previewLayout?: unknown };
+    return parsed.previewLayout === "list" ? "list" : "inline";
+  } catch {
+    return "inline";
+  }
+};
+
 const isWordChar = (value: string) => /[A-Za-z0-9]/.test(value);
 
 const getDiffRange = (previous: string, next: string) => {
@@ -439,6 +487,8 @@ interface InlineParagraphNode {
   id: string;
   bullets: InlineBulletNode[];
 }
+
+type PreviewLayout = "inline" | "list";
 
 const parseInlineDocument = (text: string): InlineParagraphNode[] => {
   const lines = text.split("\n");
@@ -554,6 +604,56 @@ const getUnderlineStyle = (depth: number): CSSProperties => ({
 const softDigIconButtonClass =
   "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#BDB7EF] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#BDB7EF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
 
+const inlinePreviewCloseButtonClass =
+  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-neutral-700 no-underline decoration-transparent transition-colors hover:bg-neutral-100/80 hover:text-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800/80 dark:hover:text-neutral-200";
+
+const InlinePreviewDigPlusIcon = () => (
+  <svg
+    aria-hidden="true"
+    className="block h-5 w-5"
+    fill="none"
+    focusable="false"
+    viewBox="0 0 20 20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      x="0.5"
+      y="0.5"
+      width="19"
+      height="19"
+      rx="9.5"
+      className="transition-colors group-hover:stroke-transparent"
+      stroke="#6155F5"
+      strokeOpacity="0.4"
+    />
+    <path
+      fill="#6155F5"
+      d="M10.6299 13.8154C10.6299 13.9847 10.568 14.1312 10.4443 14.2549C10.3206 14.3786 10.1725 14.4404 10 14.4404C9.82422 14.4404 9.67611 14.3786 9.55566 14.2549C9.43522 14.1312 9.375 13.9847 9.375 13.8154V6.80859C9.375 6.63607 9.43522 6.48796 9.55566 6.36426C9.67611 6.24056 9.82422 6.17871 10 6.17871C10.1725 6.17871 10.3206 6.24056 10.4443 6.36426C10.568 6.48796 10.6299 6.63607 10.6299 6.80859V13.8154ZM6.49902 10.9395C6.3265 10.9395 6.17839 10.8792 6.05469 10.7588C5.93099 10.6351 5.86914 10.4854 5.86914 10.3096C5.86914 10.137 5.93099 9.98893 6.05469 9.86523C6.17839 9.74154 6.3265 9.67969 6.49902 9.67969H13.5059C13.6751 9.67969 13.8216 9.74154 13.9453 9.86523C14.069 9.98893 14.1309 10.137 14.1309 10.3096C14.1309 10.4854 14.069 10.6351 13.9453 10.7588C13.8216 10.8792 13.6751 10.9395 13.5059 10.9395H6.49902Z"
+    />
+  </svg>
+);
+
+const InlinePreviewDigCloseIcon = () => (
+  <svg
+    aria-hidden="true"
+    className="block h-5 w-5"
+    fill="none"
+    focusable="false"
+    viewBox="0 0 20 20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      className="transition-colors group-hover:stroke-transparent"
+      d="M10 0.5C15.2467 0.5 19.5 4.7533 19.5 10C19.5 15.2467 15.2467 19.5 10 19.5C4.7533 19.5 0.5 15.2467 0.5 10C0.5 4.7533 4.7533 0.5 10 0.5Z"
+      stroke="#C2C1C1"
+    />
+    <path
+      fill="#363636"
+      d="M12.2266 7.22021C12.3021 7.1473 12.3893 7.09912 12.4883 7.07568C12.5898 7.04964 12.6914 7.04964 12.793 7.07568C12.8945 7.10173 12.9831 7.15251 13.0586 7.22803C13.1341 7.30355 13.1849 7.39209 13.2109 7.49365C13.237 7.59521 13.237 7.69678 13.2109 7.79834C13.1875 7.8973 13.1393 7.98454 13.0664 8.06006L7.76953 13.3569C7.69922 13.4272 7.61328 13.4741 7.51172 13.4976C7.41016 13.5236 7.30729 13.5236 7.20312 13.4976C7.10156 13.4741 7.01302 13.4246 6.9375 13.3491C6.86198 13.2736 6.8112 13.1851 6.78516 13.0835C6.76172 12.9819 6.76172 12.8804 6.78516 12.7788C6.8112 12.6772 6.85938 12.5913 6.92969 12.521L12.2266 7.22021ZM13.0664 12.5171C13.1393 12.59 13.1875 12.6772 13.2109 12.7788C13.237 12.8804 13.237 12.9819 13.2109 13.0835C13.1849 13.1851 13.1341 13.2736 13.0586 13.3491C12.9831 13.4246 12.8945 13.4741 12.793 13.4976C12.6914 13.5236 12.5898 13.5249 12.4883 13.5015C12.3893 13.478 12.3021 13.4285 12.2266 13.353L6.92969 8.05615C6.85938 7.98584 6.8125 7.8999 6.78906 7.79834C6.76562 7.69678 6.76562 7.59521 6.78906 7.49365C6.8125 7.39209 6.86198 7.30355 6.9375 7.22803C7.01302 7.1499 7.10156 7.09912 7.20312 7.07568C7.30729 7.05225 7.41016 7.05225 7.51172 7.07568C7.61328 7.09912 7.69922 7.1473 7.76953 7.22021L13.0664 12.5171Z"
+    />
+  </svg>
+);
+
 interface InlineBulletRenderProps {
   bullet: InlineBulletNode;
   expandedIds: Set<string>;
@@ -578,18 +678,18 @@ const InlineBulletRender = ({
       onClick={() => toggle(bullet.id)}
       aria-label={isExpanded ? "Collapse" : "Expand"}
       className={cn(
-        isExpanded ? digCloseButtonClass : softDigIconButtonClass,
+        isExpanded ? inlinePreviewCloseButtonClass : softDigIconButtonClass,
         "relative -top-[0.18em] cursor-pointer",
       )}
     >
-      {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
+      {isExpanded ? <InlinePreviewDigCloseIcon /> : <InlinePreviewDigPlusIcon />}
     </button>
   ) : null;
 
   return (
     <>
       <InlineMarkdown text={bullet.text} />
-      {toggleButton && <> {toggleButton}</>}
+      {toggleButton && <span style={{ whiteSpace: "nowrap" }}>{"\u00A0"}{toggleButton}</span>}
       {isExpanded &&
         bullet.children.map((child) => (
           <Fragment key={child.id}>
@@ -613,6 +713,8 @@ export interface InlineParagraphPreviewHandle {
   expandAll: () => void;
   collapseAll: () => void;
   anyExpanded: boolean;
+  getExpandedSourceIndices: () => Set<number>;
+  setExpandedBySourceIndices: (indices: Set<number>) => void;
 }
 
 interface InlineParagraphPreviewProps {
@@ -650,9 +752,11 @@ const InlineParagraphPreview = forwardRef<
     });
   }, [allExpandableIds]);
 
+  const onExpandedChangeRef = useRef(onExpandedChange);
+  useEffect(() => { onExpandedChangeRef.current = onExpandedChange; });
   useEffect(() => {
-    onExpandedChange?.();
-  }, [expandedIds, onExpandedChange]);
+    onExpandedChangeRef.current?.();
+  }, [expandedIds]);
 
   const toggle = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -674,6 +778,24 @@ const InlineParagraphPreview = forwardRef<
       },
       get anyExpanded() {
         return expandedIds.size > 0;
+      },
+      getExpandedSourceIndices: () => {
+        const indices = new Set<number>();
+        expandedIds.forEach((id) => {
+          const match = id.match(/^node-(\d+)$/);
+          if (match) indices.add(parseInt(match[1], 10));
+        });
+        return indices;
+      },
+      setExpandedBySourceIndices: (indices: Set<number>) => {
+        const newExpanded = new Set<string>();
+        allExpandableIds.forEach((id) => {
+          const match = id.match(/^node-(\d+)$/);
+          if (match && indices.has(parseInt(match[1], 10))) {
+            newExpanded.add(id);
+          }
+        });
+        setExpandedIds(newExpanded);
       },
     }),
     [allExpandableIds, expandedIds],
@@ -731,6 +853,9 @@ export const HomeV2_4Page = ({
   const [mode, setMode] = useState<"digtext" | "input">(
     () => getStoredComposerMode() as "digtext" | "input",
   );
+  const [previewLayout, setPreviewLayout] = useState<PreviewLayout>(
+    () => getStoredPreviewLayout(),
+  );
   const [composerFullscreenOpen, setComposerFullscreenOpen] = useState(false);
   const [heroDemoOpen, setHeroDemoOpen] = useState(false);
   const [inputText, setInputText] = useState(() => getStoredComposerText());
@@ -738,11 +863,13 @@ export const HomeV2_4Page = ({
     start: 0,
     end: 0,
   });
+  const [textareaFocused, setTextareaFocused] = useState(false);
   const [lines, setLines] = useState<EditableLine[]>(() =>
     parseToEditableLines(getStoredComposerText()),
   );
   const editorRef = useRef<EditableLineViewHandle>(null);
-  const digTextRef = useRef<InlineParagraphPreviewHandle>(null);
+  const inlinePreviewRef = useRef<InlineParagraphPreviewHandle>(null);
+  const listPreviewRef = useRef<EditableLineViewHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textareaMirrorRef = useRef<HTMLDivElement>(null);
   const isTextareaSelectingRef = useRef(false);
@@ -759,8 +886,10 @@ export const HomeV2_4Page = ({
   const futureRef = useRef<EditableLine[][]>([]);
   const applyingHistoryRef = useRef(false);
   const [, forceUpdate] = useState(0);
+  const handlePreviewUpdate = useCallback(() => forceUpdate((n) => n + 1), []);
   const location = useLocation();
   useEffect(() => { forceUpdate((n) => n + 1); }, []);
+  useEffect(() => { forceUpdate((n) => n + 1); }, [previewLayout]);
   useEffect(() => {
     linesRef.current = lines;
   }, [lines]);
@@ -769,12 +898,12 @@ export const HomeV2_4Page = ({
     try {
       window.localStorage.setItem(
         COMPOSER_STORAGE_KEY,
-        JSON.stringify({ inputText, mode }),
+        JSON.stringify({ inputText, mode, previewLayout }),
       );
     } catch {
       /* ignore */
     }
-  }, [inputText, mode]);
+  }, [inputText, mode, previewLayout]);
 
   const cloneLines = useCallback(
     (value: EditableLine[]) => value.map((line) => ({ ...line })),
@@ -1246,6 +1375,9 @@ export const HomeV2_4Page = ({
     const lineStarts = getLineStarts(rawLines);
     const selectionStart = Math.min(textareaSelection.start, textareaSelection.end);
     const selectionEnd = Math.max(textareaSelection.start, textareaSelection.end);
+    const isCursorOnly = textareaSelection.start === textareaSelection.end;
+    const cursorPos = isCursorOnly ? textareaSelection.start : -1;
+    const cursorLineIndex = cursorPos >= 0 ? findLineIndexAtOffset(rawLines, cursorPos) : -1;
 
     return rawLines.map((line, index) => {
       const visual = getVisualLineData(line);
@@ -1254,6 +1386,10 @@ export const HomeV2_4Page = ({
       const selectedStart = Math.max(selectionStart, lineStart);
       const selectedEnd = Math.min(selectionEnd, lineEnd);
       const hasSelection = selectedEnd > selectedStart;
+      const cursorOffset =
+        cursorLineIndex === index
+          ? Math.max(0, cursorPos - lineStart - visual.hiddenPrefixLength)
+          : null;
 
       if (!hasSelection) {
         return {
@@ -1261,6 +1397,7 @@ export const HomeV2_4Page = ({
           beforeText: visual.text,
           selectedText: "",
           afterText: "",
+          cursorOffset,
         };
       }
 
@@ -1278,6 +1415,7 @@ export const HomeV2_4Page = ({
         beforeText: visual.text.slice(0, localStart),
         selectedText: visual.text.slice(localStart, localEnd),
         afterText: visual.text.slice(localEnd),
+        cursorOffset,
       };
     });
   }, [inputText, textareaSelection]);
@@ -1296,6 +1434,53 @@ export const HomeV2_4Page = ({
     () => countExpandableBullets(previewParagraphs),
     [previewParagraphs],
   );
+
+  const paragraphBreakIds = useMemo(() => {
+    const ids = new Set<number>();
+    const rawLines = inputText.split("\n");
+    let lineIndex = 0;
+    let prevWasBlank = false;
+
+    for (const rawLine of rawLines) {
+      const m = rawLine.match(/^(\s*)(?:[-*+•]\s+)?(.*)/);
+      const text = m ? m[2].trim() : "";
+      if (!text) {
+        prevWasBlank = true;
+        continue;
+      }
+      if (prevWasBlank && lineIndex > 0 && lineIndex < lines.length) {
+        ids.add(lines[lineIndex].id);
+      }
+      prevWasBlank = false;
+      lineIndex++;
+    }
+
+    return ids;
+  }, [inputText, lines]);
+  const activePreviewHandle =
+    previewLayout === "list"
+      ? listPreviewRef.current
+      : inlinePreviewRef.current;
+
+  const handleLayoutToggle = useCallback(() => {
+    setPreviewLayout((current) => {
+      if (current === "inline") {
+        const indices = inlinePreviewRef.current?.getExpandedSourceIndices() ?? new Set<number>();
+        setTimeout(() => {
+          listPreviewRef.current?.setExpandedBySourceIndices(indices);
+          handlePreviewUpdate();
+        }, 0);
+        return "list";
+      } else {
+        const indices = listPreviewRef.current?.getExpandedSourceIndices() ?? new Set<number>();
+        setTimeout(() => {
+          inlinePreviewRef.current?.setExpandedBySourceIndices(indices);
+          handlePreviewUpdate();
+        }, 0);
+        return "inline";
+      }
+    });
+  }, [forceUpdate]);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
@@ -1320,7 +1505,7 @@ export const HomeV2_4Page = ({
           }}
         />
 
-        <div className="relative mx-auto max-w-4xl px-6 pt-16 pb-16">
+        <div className="relative mx-auto max-w-[59rem] px-6 pt-16 pb-16">
           <div className="max-w-3xl">
             {/* Eyebrow */}
             <div className="mb-4">
@@ -1432,7 +1617,7 @@ export const HomeV2_4Page = ({
                   <div className={shellClass}>
                     <button
                       onClick={() => {
-                        const h = digTextRef.current;
+                        const h = activePreviewHandle;
                         if (!h) return;
                         if (h.anyExpanded) {
                           h.collapseAll();
@@ -1446,14 +1631,29 @@ export const HomeV2_4Page = ({
                       )}
                       type="button"
                     >
-                      {(digTextRef.current?.anyExpanded ?? false) ? (
+                      {(activePreviewHandle?.anyExpanded ?? false) ? (
                         <X size={14} strokeWidth={2.25} className="block" />
                       ) : (
                         <Plus size={14} strokeWidth={2.25} className="block" />
                       )}
-                      {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                      {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
                     </button>
                   </div>
+                )}
+                {mode === "digtext" && (
+                  <button
+                    type="button"
+                    onClick={handleLayoutToggle}
+                    className={layoutIconButtonClass(previewLayout === "list")}
+                    aria-label={
+                      previewLayout === "list"
+                        ? "Use inline preview"
+                        : "Use list preview"
+                    }
+                    aria-pressed={previewLayout === "list"}
+                  >
+                    {listPreviewIcon}
+                  </button>
                 )}
                 {mode === "input" && inputMode === "textarea" && (
                   <div className={shellClass}>
@@ -1509,7 +1709,7 @@ export const HomeV2_4Page = ({
                   ref={editorRef}
                   lines={lines}
                   onLinesChange={handleLinesChange}
-                  onCollapseChange={() => forceUpdate((n) => n + 1)}
+                  onCollapseChange={handlePreviewUpdate}
                   onUndo={handleUndo}
                   onRedo={handleRedo}
                   variant="bullets"
@@ -1550,6 +1750,21 @@ export const HomeV2_4Page = ({
                                     </span>
                                     {renderMirrorSegment(visual.afterText, visual.bulletDisplay)}
                                   </>
+                                ) : textareaFocused && visual.cursorOffset !== null ? (
+                                  <>
+                                    {renderMirrorSegment(visual.text.slice(0, visual.cursorOffset), visual.bulletDisplay)}
+                                    <span
+                                      aria-hidden="true"
+                                      className="relative inline-block"
+                                      style={{ width: 0 }}
+                                    >
+                                      <span
+                                        className="absolute bg-neutral-900 dark:bg-neutral-50"
+                                        style={{ left: 0, top: "-0.8em", width: "1.5px", height: "1em", animation: "textarea-cursor-blink 1.2s step-end infinite" }}
+                                      />
+                                    </span>
+                                    {renderMirrorSegment(visual.text.slice(visual.cursorOffset), visual.bulletDisplay)}
+                                  </>
                                 ) : (
                                   renderMirrorSegment(visual.text, visual.bulletDisplay) || " "
                                 )}
@@ -1576,26 +1791,58 @@ export const HomeV2_4Page = ({
                       isTextareaSelectingRef.current = true;
                       syncTextareaSelection();
                     }}
-                    onFocus={syncTextareaSelection}
+                    onFocus={() => { setTextareaFocused(true); syncTextareaSelection(); }}
+                    onBlur={() => setTextareaFocused(false)}
                     onSelect={syncTextareaSelection}
                     onKeyUp={syncTextareaSelection}
                     onMouseUp={syncTextareaSelection}
                     onScroll={syncTextareaMirrorScroll}
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
-                    className="relative block h-full w-full resize-none bg-transparent leading-[1.85] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    className="relative block h-full w-full resize-none bg-transparent leading-[1.85] text-transparent caret-transparent outline-none placeholder:text-neutral-400 selection:bg-transparent dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
                     style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
                   />
                   </div>
                 </div>
               ) : (
-                <InlineParagraphPreview
-                  ref={digTextRef}
-                  text={inputText}
-                  onExpandedChange={() => forceUpdate((n) => n + 1)}
-                  className="text-base leading-[1.85] text-neutral-800 dark:text-neutral-200"
-                  style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
-                />
+                <>
+                  <div className={previewLayout !== "list" ? "hidden" : ""}>
+                    {lines.length > 0 ? (
+                      <EditableLineView
+                        ref={listPreviewRef}
+                        lines={lines}
+                        onLinesChange={handleLinesChange}
+                        onCollapseChange={handlePreviewUpdate}
+                        readOnly
+                        readOnlyInlineDigSyntax="parentheses"
+                        defaultCollapsed
+                        readOnlyEndControlsOnly
+                        readOnlyTextClassName="text-base leading-[1.85]"
+                        readOnlyTextStyle={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
+                        lineDigCollapsedIcon="enter"
+                        inlineDigCollapsedIcon="plus"
+                        paragraphBreakIds={paragraphBreakIds}
+                      />
+                    ) : (
+                      <div
+                        className="text-neutral-400 dark:text-neutral-500"
+                        style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
+                      >
+                        Start typing on the Input tab to see your preview here.
+                      </div>
+                    )}
+                  </div>
+                  <InlineParagraphPreview
+                    ref={inlinePreviewRef}
+                    text={inputText}
+                    onExpandedChange={handlePreviewUpdate}
+                    className={cn(
+                      "text-base leading-[1.85] text-neutral-800 dark:text-neutral-200",
+                      previewLayout === "list" && "hidden",
+                    )}
+                    style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
+                  />
+                </>
               )}
             </div>
 
@@ -1661,7 +1908,7 @@ export const HomeV2_4Page = ({
         id="prompt"
         className="border-t border-neutral-200/70 scroll-mt-[65px] dark:border-neutral-800/80"
       >
-        <div className="max-w-4xl mx-auto px-6 py-20">
+        <div className="mx-auto max-w-[59rem] px-6 py-20">
           <span className={eyebrowClass}>
             <span aria-hidden="true" className={eyebrowRuleClass} />
             A new paradigm of using text
@@ -1745,7 +1992,7 @@ export const HomeV2_4Page = ({
         id="embed"
         className="relative border-t border-neutral-200/70 bg-neutral-50/60 dark:border-neutral-800/80 dark:bg-neutral-900/40"
       >
-        <div className="max-w-4xl mx-auto px-6 py-20">
+        <div className="mx-auto max-w-[59rem] px-6 py-20">
           <span className={eyebrowClass}>
             <span aria-hidden="true" className={eyebrowRuleClass} />
             Use it anywhere
@@ -1781,9 +2028,25 @@ export const HomeV2_4Page = ({
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-neutral-200/70 dark:border-neutral-800/80">
-        <div className="max-w-4xl mx-auto px-6 py-12 flex items-center justify-between font-sans text-[12px] text-neutral-500 dark:text-neutral-400">
+        <div className="mx-auto max-w-[59rem] px-6 py-12 flex flex-col gap-3 font-sans text-[12px] text-neutral-500 sm:flex-row sm:items-center sm:justify-between dark:text-neutral-400">
           <span>Dig text: read the shortest version first.</span>
-          <span className="tabular-nums">© 2026</span>
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="tabular-nums">2026</span>
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://creativecommons.org/licenses/by-sa/4.0/"
+              className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
+            >
+              CC BY-SA 4.0
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://www.pawel.world"
+              className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
+            >
+              pawel.world
+            </a>
+          </span>
         </div>
       </footer>
     </div>
