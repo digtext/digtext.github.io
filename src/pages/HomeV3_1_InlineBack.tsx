@@ -540,50 +540,86 @@ const InlineMarkdown = ({ text }: { text: string }) => (
   </ReactMarkdown>
 );
 
+const DIG_ACCENT = "#BDB7EF";
+const DIG_ACCENT_FADED = "rgba(189, 183, 239, 0.6)";
+
+const getUnderlineStyle = (depth: number): CSSProperties => ({
+  textDecorationLine: "underline",
+  textDecorationColor: depth === 0 ? DIG_ACCENT : DIG_ACCENT_FADED,
+  textDecorationStyle: depth >= 2 ? "dashed" : "solid",
+  textDecorationThickness: "1.5px",
+  textUnderlineOffset: "0.22em",
+});
+
+const softDigIconButtonClass =
+  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#BDB7EF] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#BDB7EF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
+
 interface InlineBulletRenderProps {
   bullet: InlineBulletNode;
   expandedIds: Set<string>;
   toggle: (id: string) => void;
+  depth: number;
 }
 
 const InlineBulletRender = ({
   bullet,
   expandedIds,
   toggle,
+  depth,
 }: InlineBulletRenderProps) => {
   const hasChildren = bullet.children.length > 0;
   const isExpanded = expandedIds.has(bullet.id);
 
+  if (!hasChildren) {
+    return <InlineMarkdown text={bullet.text} />;
+  }
+
+  const underlineStyle = isExpanded ? getUnderlineStyle(depth) : undefined;
+  const buttonUnderlineColor = depth === 0 ? DIG_ACCENT : DIG_ACCENT_FADED;
+  const buttonUnderline: CSSProperties | undefined = isExpanded
+    ? { boxShadow: `0 1.5px 0 0 ${buttonUnderlineColor}` }
+    : undefined;
+
+  const toggleButton = (
+    <button
+      type="button"
+      onClick={() => toggle(bullet.id)}
+      aria-label={isExpanded ? "Collapse" : "Expand"}
+      className={cn(
+        isExpanded ? digCloseButtonClass : softDigIconButtonClass,
+        "relative -top-[0.18em] cursor-pointer",
+      )}
+      style={buttonUnderline}
+    >
+      {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
+    </button>
+  );
+
+  const textAndToggle = (
+    <>
+      <InlineMarkdown text={bullet.text} /> {toggleButton}
+    </>
+  );
+
   return (
     <>
-      <InlineMarkdown text={bullet.text} />
-      {hasChildren && (
-        <>
-          {" "}
-          <button
-            type="button"
-            onClick={() => toggle(bullet.id)}
-            aria-label={isExpanded ? "Collapse" : "Expand"}
-            className={cn(
-              isExpanded ? digCloseButtonClass : digIconButtonClass,
-              "relative -top-[0.18em] cursor-pointer",
-            )}
-          >
-            {isExpanded ? <DigCloseIcon /> : <DigPlusIcon />}
-          </button>
-          {isExpanded &&
-            bullet.children.map((child) => (
-              <Fragment key={child.id}>
-                {" "}
-                <InlineBulletRender
-                  bullet={child}
-                  expandedIds={expandedIds}
-                  toggle={toggle}
-                />
-              </Fragment>
-            ))}
-        </>
+      {isExpanded ? (
+        <span style={underlineStyle}>{textAndToggle}</span>
+      ) : (
+        textAndToggle
       )}
+      {isExpanded &&
+        bullet.children.map((child) => (
+          <Fragment key={child.id}>
+            {" "}
+            <InlineBulletRender
+              bullet={child}
+              expandedIds={expandedIds}
+              toggle={toggle}
+              depth={depth + 1}
+            />
+          </Fragment>
+        ))}
     </>
   );
 };
@@ -677,6 +713,7 @@ const InlineParagraphPreview = forwardRef<
                 bullet={bullet}
                 expandedIds={expandedIds}
                 toggle={toggle}
+                depth={0}
               />
             </Fragment>
           ))}
