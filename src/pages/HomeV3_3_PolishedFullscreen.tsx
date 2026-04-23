@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -47,6 +48,11 @@ const DEMO_CONTENT = `- It has been ridiculous, guys,
 - Use our AI prompt to convert any text into dig text.
     - Find it below.
 - You can read any dig text with this reader — hit the full-screen icon to do it without distractions.`;
+
+// The live composer default is loaded from /public/dig.md so site copy can be
+// edited without touching the React source. Archived routes should pass a
+// versioned source URL so their copy remains frozen.
+const DIG_SOURCE_URL = "/dig.md";
 
 // The prompt shown below is loaded from /public/prompt.md so it stays in sync
 // with the standalone /prompt.md URL that users can hand directly to an LLM.
@@ -367,18 +373,54 @@ const normalizePastedListText = (text: string) => {
 
 const INITIAL_TEXT = normalizePastedListText(DEMO_CONTENT);
 
-const getStoredComposerText = () => {
-  if (typeof window === "undefined") return INITIAL_TEXT;
+type StoredComposerState = {
+  inputText?: unknown;
+  mode?: unknown;
+  previewLayout?: unknown;
+  sourceUrl?: unknown;
+  sourceBacked?: unknown;
+};
 
+const getStoredComposerState = (): StoredComposerState | null => {
+  if (typeof window === "undefined") return null;
   try {
     const stored = window.localStorage.getItem(COMPOSER_STORAGE_KEY);
-    if (!stored) return INITIAL_TEXT;
-
-    const parsed = JSON.parse(stored) as { inputText?: unknown };
-    return typeof parsed.inputText === "string" ? parsed.inputText : INITIAL_TEXT;
+    if (!stored) return null;
+    return JSON.parse(stored) as StoredComposerState;
   } catch {
+    return null;
+  }
+};
+
+const getStoredComposerText = (sourceUrl = DIG_SOURCE_URL) => {
+  const parsed = getStoredComposerState();
+  if (!parsed) return INITIAL_TEXT;
+
+  if (
+    typeof parsed.sourceUrl === "string" &&
+    parsed.sourceUrl !== sourceUrl
+  ) {
     return INITIAL_TEXT;
   }
+
+  return typeof parsed.inputText === "string" ? parsed.inputText : INITIAL_TEXT;
+};
+
+const getStoredComposerSourceBacked = (sourceUrl = DIG_SOURCE_URL) => {
+  const parsed = getStoredComposerState();
+  if (!parsed) return true;
+
+  if (
+    typeof parsed.sourceUrl === "string" &&
+    parsed.sourceUrl === sourceUrl &&
+    typeof parsed.sourceBacked === "boolean"
+  ) {
+    return parsed.sourceBacked;
+  }
+
+  return typeof parsed.inputText === "string"
+    ? parsed.inputText === INITIAL_TEXT
+    : true;
 };
 
 const getStoredComposerMode = () => {
@@ -658,13 +700,13 @@ const InlineMarkdown = ({
 );
 
 const softDigIconButtonClass =
-  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#BDB7EF] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#C7C2FF] dark:hover:bg-[#302A63] dark:hover:text-[#E5E1FF]";
+  "inline-dig-expand-icon group inline-flex h-5 w-5 flex-none items-center justify-center rounded-[7px] align-middle text-[#6155F5] transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-[#C7C2FF] dark:hover:bg-neutral-800 dark:hover:text-neutral-200";
 
 const inlineDigExpandedLineClass =
-  "inline-dig-branch inline text-neutral-500 no-underline decoration-transparent transition-colors dark:text-neutral-400";
+  "inline-dig-branch inline text-inherit no-underline decoration-transparent transition-colors";
 
 const inlinePreviewBoundaryButtonClass =
-  "inline-dig-boundary group/boundary inline-flex h-5 flex-none cursor-pointer items-center justify-center align-middle text-[#5F59A3] no-underline decoration-transparent outline-none transition-colors hover:text-[#4E478F] dark:text-[#C7C2FF] dark:hover:text-[#E5E1FF] focus-visible:ring-2 focus-visible:ring-[#5F59A3]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-[#C7C2FF]/45 dark:focus-visible:ring-offset-neutral-950";
+  "inline-dig-boundary group/boundary inline-flex h-5 flex-none cursor-pointer items-center justify-center align-middle text-neutral-500 no-underline decoration-transparent outline-none transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 focus-visible:ring-2 focus-visible:ring-neutral-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-neutral-300/40 dark:focus-visible:ring-offset-neutral-950";
 
 const inlinePreviewHoverStyles = `
   @media (hover: hover) and (pointer: fine) {
@@ -672,14 +714,14 @@ const inlinePreviewHoverStyles = `
     .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
     .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
     .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
-      color: #4E478F;
+      color: #404040;
     }
 
     .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
     .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
     .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
     .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
-      color: #E5E1FF;
+      color: #E5E5E5;
     }
 
     .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
@@ -697,19 +739,24 @@ const inlinePreviewHoverStyles = `
     }
 
     .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #5F59A3;
+      color: #6B6B6B;
     }
 
     .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #5F59A3;
+      color: #6B6B6B;
     }
 
     .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #C7C2FF;
+      color: #6B6B6B;
     }
 
     .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #C7C2FF;
+      color: #6B6B6B;
+    }
+
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-expand-icon,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-expand-icon {
+      opacity: 0.45;
     }
   }
 `;
@@ -730,104 +777,207 @@ const InlinePreviewDigPlusIcon = () => (
       y="0.5"
       width="19"
       height="19"
-      rx="9.5"
-      className="stroke-[#6155F5] transition-colors group-hover:stroke-transparent dark:stroke-[#C7C2FF]"
+      rx="6.5"
+      stroke="currentColor"
       strokeOpacity="0.4"
     />
     <path
-      className="fill-[#6155F5] transition-colors dark:fill-[#C7C2FF]"
+      fill="currentColor"
       d="M10.6299 13.8154C10.6299 13.9847 10.568 14.1312 10.4443 14.2549C10.3206 14.3786 10.1725 14.4404 10 14.4404C9.82422 14.4404 9.67611 14.3786 9.55566 14.2549C9.43522 14.1312 9.375 13.9847 9.375 13.8154V6.80859C9.375 6.63607 9.43522 6.48796 9.55566 6.36426C9.67611 6.24056 9.82422 6.17871 10 6.17871C10.1725 6.17871 10.3206 6.24056 10.4443 6.36426C10.568 6.48796 10.6299 6.63607 10.6299 6.80859V13.8154ZM6.49902 10.9395C6.3265 10.9395 6.17839 10.8792 6.05469 10.7588C5.93099 10.6351 5.86914 10.4854 5.86914 10.3096C5.86914 10.137 5.93099 9.98893 6.05469 9.86523C6.17839 9.74154 6.3265 9.67969 6.49902 9.67969H13.5059C13.6751 9.67969 13.8216 9.74154 13.9453 9.86523C14.069 9.98893 14.1309 10.137 14.1309 10.3096C14.1309 10.4854 14.069 10.6351 13.9453 10.7588C13.8216 10.8792 13.6751 10.9395 13.5059 10.9395H6.49902Z"
     />
   </svg>
 );
 
-const InlinePreviewDigCloseIcon = () => (
-  <span className="relative block h-5 w-5" aria-hidden="true">
-    <svg
-      className="inline-dig-boundary-default absolute inset-0 block h-5 w-5 opacity-100 transition-opacity group-hover/boundary:opacity-0"
-      fill="none"
-      focusable="false"
-      width="20"
-      height="20"
-      viewBox="0 0 21 21"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M14.2266 7.72021C14.3021 7.6473 14.3893 7.59912 14.4883 7.57568C14.5898 7.54964 14.6914 7.54964 14.793 7.57568C14.8945 7.60173 14.9831 7.65251 15.0586 7.72803C15.1341 7.80355 15.1849 7.89209 15.2109 7.99365C15.237 8.09521 15.237 8.19678 15.2109 8.29834C15.1875 8.3973 15.1393 8.48454 15.0664 8.56006L9.76953 13.8569C9.69922 13.9272 9.61328 13.9741 9.51172 13.9976C9.41016 14.0236 9.30729 14.0236 9.20312 13.9976C9.10156 13.9741 9.01302 13.9246 8.9375 13.8491C8.86198 13.7736 8.8112 13.6851 8.78516 13.5835C8.76172 13.4819 8.76172 13.3804 8.78516 13.2788C8.8112 13.1772 8.85938 13.0913 8.92969 13.021L14.2266 7.72021ZM15.0664 13.0171C15.1393 13.09 15.1875 13.1772 15.2109 13.2788C15.237 13.3804 15.237 13.4819 15.2109 13.5835C15.1849 13.6851 15.1341 13.7736 15.0586 13.8491C14.9831 13.9246 14.8945 13.9741 14.793 13.9976C14.6914 14.0236 14.5898 14.0249 14.4883 14.0015C14.3893 13.978 14.3021 13.9285 14.2266 13.853L8.92969 8.55615C8.85938 8.48584 8.8125 8.3999 8.78906 8.29834C8.76562 8.19678 8.76562 8.09521 8.78906 7.99365C8.8125 7.89209 8.86198 7.80355 8.9375 7.72803C9.01302 7.6499 9.10156 7.59912 9.20312 7.57568C9.30729 7.55225 9.41016 7.55225 9.51172 7.57568C9.61328 7.59912 9.69922 7.6473 9.76953 7.72021L15.0664 13.0171Z"
-        fill="currentColor"
-      />
-      <path
-        d="M20 0.5H12C6.47715 0.5 2 4.97715 2 10.5C2 16.0228 6.47715 20.5 12 20.5H20"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeOpacity="0.4"
-      />
-    </svg>
-    <svg
-      className="inline-dig-boundary-hover absolute inset-0 block h-5 w-5 opacity-0 transition-opacity group-hover/boundary:opacity-100"
-      fill="none"
-      focusable="false"
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M14.2266 7.22021C14.3021 7.1473 14.3893 7.09912 14.4883 7.07568C14.5898 7.04964 14.6914 7.04964 14.793 7.07568C14.8945 7.10173 14.9831 7.15251 15.0586 7.22803C15.1341 7.30355 15.1849 7.39209 15.2109 7.49365C15.237 7.59521 15.237 7.69678 15.2109 7.79834C15.1875 7.8973 15.1393 7.98454 15.0664 8.06006L9.76953 13.3569C9.69922 13.4272 9.61328 13.4741 9.51172 13.4976C9.41016 13.5236 9.30729 13.5236 9.20312 13.4976C9.10156 13.4741 9.01302 13.4246 8.9375 13.3491C8.86198 13.2736 8.8112 13.1851 8.78516 13.0835C8.76172 12.9819 8.76172 12.8804 8.78516 12.7788C8.8112 12.6772 8.85938 12.5913 8.92969 12.521L14.2266 7.22021ZM15.0664 12.5171C15.1393 12.59 15.1875 12.6772 15.2109 12.7788C15.237 12.8804 15.237 12.9819 15.2109 13.0835C15.1849 13.1851 15.1341 13.2736 15.0586 13.3491C14.9831 13.4246 14.8945 13.4741 14.793 13.4976C14.6914 13.5236 14.5898 13.5249 14.4883 13.5015C14.3893 13.478 14.3021 13.4285 14.2266 13.353L8.92969 8.05615C8.85938 7.98584 8.8125 7.8999 8.78906 7.79834C8.76562 7.69678 8.76562 7.59521 8.78906 7.49365C8.8125 7.39209 8.86198 7.30355 8.9375 7.22803C9.01302 7.1499 9.10156 7.09912 9.20312 7.07568C9.30729 7.05225 9.41016 7.05225 9.51172 7.07568C9.61328 7.09912 9.69922 7.1473 9.76953 7.22021L15.0664 12.5171Z"
-        fill="currentColor"
-      />
-      <path
-        d="M20 0H12C6.47715 0 2 4.47715 2 10C2 15.5228 6.47715 20 12 20H20V0Z"
-        fill="currentColor"
-        fillOpacity="0.11"
-      />
-    </svg>
-  </span>
+const InlinePreviewDigNewlineIcon = () => (
+  <svg
+    aria-hidden="true"
+    className="block h-5 w-5"
+    fill="none"
+    focusable="false"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      x="0.5"
+      y="0.5"
+      width="19"
+      height="19"
+      rx="6.5"
+      stroke="currentColor"
+      strokeOpacity="0.4"
+    />
+    <path
+      d="M10.0781 13.9072L11.4453 12.3496L12.9004 10.8896C12.9557 10.8343 13.0192 10.7904 13.0908 10.7578C13.1657 10.722 13.2471 10.7041 13.335 10.7041C13.501 10.7041 13.6393 10.7611 13.75 10.875C13.8607 10.9857 13.916 11.1289 13.916 11.3047C13.916 11.4609 13.8525 11.6042 13.7256 11.7344L10.5225 14.9375C10.3988 15.0645 10.249 15.1279 10.0732 15.1279C9.89746 15.1279 9.74772 15.0645 9.62402 14.9375L6.4209 11.7344C6.2972 11.6042 6.23535 11.4609 6.23535 11.3047C6.23535 11.1289 6.28906 10.9857 6.39648 10.875C6.50716 10.7611 6.64551 10.7041 6.81152 10.7041C6.89941 10.7041 6.98079 10.722 7.05566 10.7578C7.13053 10.7904 7.19564 10.8343 7.25098 10.8896L8.69629 12.3496L10.0781 13.9072ZM7.40723 5.82129C8.49447 5.82129 9.31152 6.06706 9.8584 6.55859C10.4085 7.04688 10.6836 7.83789 10.6836 8.93164V12.0127L10.6348 13.8682C10.6283 14.0212 10.5713 14.153 10.4639 14.2637C10.3564 14.3743 10.2279 14.4297 10.0781 14.4297C9.92188 14.4297 9.79004 14.3743 9.68262 14.2637C9.5752 14.153 9.51986 14.0212 9.5166 13.8682L9.46289 12.0127L9.46777 9.01953C9.47103 8.52474 9.39941 8.13249 9.25293 7.84277C9.10645 7.55306 8.87858 7.34473 8.56934 7.21777C8.26335 7.09082 7.86621 7.02734 7.37793 7.02734C7.24121 7.02734 7.11263 7.0306 6.99219 7.03711C6.875 7.04036 6.77083 7.04362 6.67969 7.04688C6.50065 7.04688 6.35579 6.99479 6.24512 6.89062C6.13444 6.78646 6.0791 6.64648 6.0791 6.4707C6.0791 6.34375 6.10677 6.23958 6.16211 6.1582C6.2207 6.07357 6.29232 6.00846 6.37695 5.96289C6.46484 5.91732 6.55436 5.88639 6.64551 5.87012C6.75944 5.85059 6.87826 5.83757 7.00195 5.83105C7.12891 5.82454 7.264 5.82129 7.40723 5.82129Z"
+      fill="currentColor"
+    />
+  </svg>
 );
 
-const InlinePreviewDigEndIcon = () => (
-  <span className="relative block h-5 w-3" aria-hidden="true">
-    <svg
-      className="inline-dig-boundary-default absolute inset-0 block h-5 w-3 opacity-100 transition-opacity group-hover/boundary:opacity-0"
-      fill="none"
-      focusable="false"
-      width="12"
-      height="20"
-      viewBox="0 0 12 20"
+const InlinePreviewDigCloseIcon = () => {
+  const gradientBaseId = useId().replace(/:/g, "");
+  const defaultGradientId = `${gradientBaseId}-close-start-default`;
+  const hoverGradientId = `${gradientBaseId}-close-start-hover`;
+
+  return (
+    <span className="relative block h-5 w-5" aria-hidden="true">
+      <svg
+        className="inline-dig-boundary-default absolute inset-0 block h-5 w-5 opacity-100 transition-opacity group-hover/boundary:opacity-0"
+        fill="none"
+        focusable="false"
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12.2266 7.22021C12.3021 7.1473 12.3893 7.09912 12.4883 7.07568C12.5898 7.04964 12.6914 7.04964 12.793 7.07568C12.8945 7.10173 12.9831 7.15251 13.0586 7.22803C13.1341 7.30355 13.1849 7.39209 13.2109 7.49365C13.237 7.59521 13.237 7.69678 13.2109 7.79834C13.1875 7.8973 13.1393 7.98454 13.0664 8.06006L7.76953 13.3569C7.69922 13.4272 7.61328 13.4741 7.51172 13.4976C7.41016 13.5236 7.30729 13.5236 7.20312 13.4976C7.10156 13.4741 7.01302 13.4246 6.9375 13.3491C6.86198 13.2736 6.8112 13.1851 6.78516 13.0835C6.76172 12.9819 6.76172 12.8804 6.78516 12.7788C6.8112 12.6772 6.85938 12.5913 6.92969 12.521L12.2266 7.22021ZM13.0664 12.5171C13.1393 12.59 13.1875 12.6772 13.2109 12.7788C13.237 12.8804 13.237 12.9819 13.2109 13.0835C13.1849 13.1851 13.1341 13.2736 13.0586 13.3491C12.9831 13.4246 12.8945 13.4741 12.793 13.4976C12.6914 13.5236 12.5898 13.5249 12.4883 13.5015C12.3893 13.478 12.3021 13.4285 12.2266 13.353L6.92969 8.05615C6.85938 7.98584 6.8125 7.8999 6.78906 7.79834C6.76562 7.69678 6.76562 7.59521 6.78906 7.49365C6.8125 7.39209 6.86198 7.30355 6.9375 7.22803C7.01302 7.1499 7.10156 7.09912 7.20312 7.07568C7.30729 7.05225 7.41016 7.05225 7.51172 7.07568C7.61328 7.09912 7.69922 7.1473 7.76953 7.22021L13.0664 12.5171Z"
+          fill="currentColor"
+        />
+        <path
+          d="M7 0.5H26.5V19.5H7C3.41015 19.5 0.5 16.5899 0.5 13V7C0.5 3.41015 3.41015 0.5 7 0.5Z"
+          stroke={`url(#${defaultGradientId})`}
+          strokeLinecap="round"
+        />
+        <defs>
+          <linearGradient
+            id={defaultGradientId}
+            x1="0"
+            y1="10"
+            x2="20"
+            y2="10"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.163462" stopColor="currentColor" stopOpacity="0.45" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <svg
+        className="inline-dig-boundary-hover absolute inset-0 block h-5 w-5 opacity-0 transition-opacity group-hover/boundary:opacity-100"
+        fill="none"
+        focusable="false"
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12.2266 7.22021C12.3021 7.1473 12.3893 7.09912 12.4883 7.07568C12.5898 7.04964 12.6914 7.04964 12.793 7.07568C12.8945 7.10173 12.9831 7.15251 13.0586 7.22803C13.1341 7.30355 13.1849 7.39209 13.2109 7.49365C13.237 7.59521 13.237 7.69678 13.2109 7.79834C13.1875 7.8973 13.1393 7.98454 13.0664 8.06006L7.76953 13.3569C7.69922 13.4272 7.61328 13.4741 7.51172 13.4976C7.41016 13.5236 7.30729 13.5236 7.20312 13.4976C7.10156 13.4741 7.01302 13.4246 6.9375 13.3491C6.86198 13.2736 6.8112 13.1851 6.78516 13.0835C6.76172 12.9819 6.76172 12.8804 6.78516 12.7788C6.8112 12.6772 6.85938 12.5913 6.92969 12.521L12.2266 7.22021ZM13.0664 12.5171C13.1393 12.59 13.1875 12.6772 13.2109 12.7788C13.237 12.8804 13.237 12.9819 13.2109 13.0835C13.1849 13.1851 13.1341 13.2736 13.0586 13.3491C12.9831 13.4246 12.8945 13.4741 12.793 13.4976C12.6914 13.5236 12.5898 13.5249 12.4883 13.5015C12.3893 13.478 12.3021 13.4285 12.2266 13.353L6.92969 8.05615C6.85938 7.98584 6.8125 7.8999 6.78906 7.79834C6.76562 7.69678 6.76562 7.59521 6.78906 7.49365C6.8125 7.39209 6.86198 7.30355 6.9375 7.22803C7.01302 7.1499 7.10156 7.09912 7.20312 7.07568C7.30729 7.05225 7.41016 7.05225 7.51172 7.07568C7.61328 7.09912 7.69922 7.1473 7.76953 7.22021L13.0664 12.5171Z"
+          fill="currentColor"
+        />
+        <path
+          d="M7 0.5H26.5V19.5H7C3.41015 19.5 0.5 16.5899 0.5 13V7C0.5 3.41015 3.41015 0.5 7 0.5Z"
+          stroke={`url(#${hoverGradientId})`}
+          strokeLinecap="round"
+        />
+        <defs>
+          <linearGradient
+            id={hoverGradientId}
+            x1="0"
+            y1="10"
+            x2="20"
+            y2="10"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.163462" stopColor="currentColor" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </span>
+  );
+};
+
+const InlinePreviewDigEndIcon = () => {
+  const gradientBaseId = useId().replace(/:/g, "");
+  const defaultGradientId = `${gradientBaseId}-close-end-default`;
+  const gradientId = `${gradientBaseId}-close-end-hover`;
+  const defaultClipPathId = `${gradientBaseId}-close-end-default-clip`;
+  const clipPathId = `${gradientBaseId}-close-end-hover-clip`;
+
+  return (
+    <span className="relative block h-5 w-[11px]" aria-hidden="true">
+      <svg
+        className="inline-dig-boundary-default absolute inset-0 block h-5 w-[11px] opacity-100 transition-opacity group-hover/boundary:opacity-0"
+        fill="none"
+        focusable="false"
+        width="11"
+        height="20"
+      viewBox="0 0 11 20"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <circle
-        cx="-2"
-        cy="10"
-        r="9.5"
-        stroke="currentColor"
-        strokeOpacity="0.4"
-      />
-    </svg>
-    <svg
-      className="inline-dig-boundary-hover absolute inset-0 block h-5 w-3 opacity-0 transition-opacity group-hover/boundary:opacity-100"
-      fill="none"
-      focusable="false"
-      width="12"
-      height="20"
-      viewBox="0 0 12 20"
+        <g clipPath={`url(#${defaultClipPathId})`}>
+          <path
+            d="M2 0.5H-8.5V19.5H2C5.58985 19.5 8.5 16.5899 8.5 13V7C8.5 3.41015 5.58985 0.5 2 0.5Z"
+            stroke={`url(#${defaultGradientId})`}
+            strokeLinecap="round"
+          />
+        </g>
+        <defs>
+          <linearGradient
+            id={defaultGradientId}
+            x1="9"
+            y1="10"
+            x2="0"
+            y2="10"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.163462" stopColor="currentColor" stopOpacity="0.4" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+          <clipPath id={defaultClipPathId}>
+            <rect
+              width="11"
+              height="20"
+              fill="white"
+              transform="matrix(-1 0 0 1 11 0)"
+            />
+          </clipPath>
+        </defs>
+      </svg>
+      <svg
+        className="inline-dig-boundary-hover absolute inset-0 block h-5 w-[11px] opacity-0 transition-opacity group-hover/boundary:opacity-100"
+        fill="none"
+        focusable="false"
+        width="11"
+        height="20"
+      viewBox="0 0 11 20"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path
-        d="M0 0.200195C4.56447 1.12675 8 5.1621 8 10C8 14.8378 4.56437 18.8722 0 19.7988V0.200195Z"
-        fill="currentColor"
-        fillOpacity="0.11"
-      />
-      <circle
-        cx="-2"
-        cy="10"
-        r="9.5"
-        stroke="currentColor"
-        strokeOpacity="0.4"
-      />
-    </svg>
-  </span>
-);
+        <g clipPath={`url(#${clipPathId})`}>
+          <path
+            d="M2 0.5H-8.5V19.5H2C5.58985 19.5 8.5 16.5899 8.5 13V7C8.5 3.41015 5.58985 0.5 2 0.5Z"
+            stroke={`url(#${gradientId})`}
+            strokeLinecap="round"
+          />
+        </g>
+        <defs>
+          <linearGradient
+            id={gradientId}
+            x1="9"
+            y1="10"
+            x2="0"
+            y2="10"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.163462" stopColor="currentColor" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+          <clipPath id={clipPathId}>
+            <rect
+              width="11"
+              height="20"
+              fill="white"
+              transform="matrix(-1 0 0 1 11 0)"
+            />
+          </clipPath>
+        </defs>
+      </svg>
+    </span>
+  );
+};
 
 const InlinePreviewBoundaryButton = ({
   side,
@@ -842,7 +992,7 @@ const InlinePreviewBoundaryButton = ({
     aria-label={side === "start" ? "Collapse section from start" : "Collapse section from end"}
     className={cn(
       inlinePreviewBoundaryButtonClass,
-      side === "start" ? "w-5" : "w-3",
+      side === "start" ? "w-5" : "w-[11px]",
       side === "start" ? "relative -top-[0.10em]" : "relative -top-[0.03em]",
     )}
   >
@@ -1037,6 +1187,7 @@ InlineParagraphPreview.displayName = "InlineParagraphPreview";
 
 interface HomeV2_4PageProps {
   inputMode?: "editable-line" | "textarea";
+  digSourceUrl?: string;
   heroFontClassName?: string;
   heroHeadingClassName?: string;
   heroHeadingStyle?: CSSProperties;
@@ -1046,6 +1197,7 @@ interface HomeV2_4PageProps {
 
 export const HomeV2_4Page = ({
   inputMode = "editable-line",
+  digSourceUrl = DIG_SOURCE_URL,
   heroFontClassName = "font-serif",
   heroHeadingClassName = "tracking-[-0.05em] text-[clamp(2.05rem,5.75vw,3.24rem)]",
   heroHeadingStyle = { lineHeight: 1 },
@@ -1063,14 +1215,16 @@ export const HomeV2_4Page = ({
   );
   const [composerFullscreenOpen, setComposerFullscreenOpen] = useState(false);
   const [heroDemoOpen, setHeroDemoOpen] = useState(false);
-  const [inputText, setInputText] = useState(() => getStoredComposerText());
+  const [inputText, setInputText] = useState(() =>
+    getStoredComposerText(digSourceUrl),
+  );
   const [textareaSelection, setTextareaSelection] = useState<TextAreaSelection>({
     start: 0,
     end: 0,
   });
   const [textareaFocused, setTextareaFocused] = useState(false);
   const [lines, setLines] = useState<EditableLine[]>(() =>
-    parseToEditableLines(getStoredComposerText()),
+    parseToEditableLines(getStoredComposerText(digSourceUrl)),
   );
   const editorRef = useRef<EditableLineViewHandle>(null);
   const inlinePreviewRef = useRef<InlineParagraphPreviewHandle>(null);
@@ -1090,6 +1244,9 @@ export const HomeV2_4Page = ({
   const pastRef = useRef<EditableLine[][]>([]);
   const futureRef = useRef<EditableLine[][]>([]);
   const applyingHistoryRef = useRef(false);
+  const composerSourceBackedRef = useRef(
+    getStoredComposerSourceBacked(digSourceUrl),
+  );
   const [, forceUpdate] = useState(0);
   const handlePreviewUpdate = useCallback(() => forceUpdate((n) => n + 1), []);
   const location = useLocation();
@@ -1103,12 +1260,18 @@ export const HomeV2_4Page = ({
     try {
       window.localStorage.setItem(
         COMPOSER_STORAGE_KEY,
-        JSON.stringify({ inputText, mode, previewLayout }),
+        JSON.stringify({
+          inputText,
+          mode,
+          previewLayout,
+          sourceUrl: digSourceUrl,
+          sourceBacked: composerSourceBackedRef.current,
+        }),
       );
     } catch {
       /* ignore */
     }
-  }, [inputText, mode, previewLayout]);
+  }, [digSourceUrl, inputText, mode, previewLayout]);
 
   const cloneLines = useCallback(
     (value: EditableLine[]) => value.map((line) => ({ ...line })),
@@ -1219,6 +1382,7 @@ export const HomeV2_4Page = ({
   }, [composerFullscreenOpen, setComposerFullscreen]);
 
   const handleLinesChange = useCallback((newLines: EditableLine[]) => {
+    composerSourceBackedRef.current = false;
     if (!applyingHistoryRef.current && !areLinesEqual(linesRef.current, newLines)) {
       pastRef.current.push(cloneLines(linesRef.current));
       futureRef.current = [];
@@ -1251,12 +1415,43 @@ export const HomeV2_4Page = ({
     });
   }, [cloneLines]);
 
-  const commitTextareaEntry = useCallback((entry: TextAreaHistoryEntry) => {
+  const commitTextareaEntry = useCallback((
+    entry: TextAreaHistoryEntry,
+    options?: { sourceBacked?: boolean },
+  ) => {
+    composerSourceBackedRef.current = options?.sourceBacked ?? false;
     textAreaCurrentRef.current = entry;
     setInputText(entry.value);
     setLines(parseToEditableLines(entry.value));
     pendingSelectionRef.current = entry.selection;
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(digSourceUrl)
+      .then((response) => (response.ok ? response.text() : null))
+      .then((text) => {
+        if (cancelled || !text || !composerSourceBackedRef.current) return;
+
+        const nextText = normalizePastedListText(text.trim());
+        const nextEntry = {
+          value: nextText,
+          selection: { start: 0, end: 0 },
+        };
+        textAreaPastRef.current = [];
+        textAreaFutureRef.current = [];
+        textAreaBatchRef.current = null;
+        pastRef.current = [];
+        futureRef.current = [];
+        commitTextareaEntry(nextEntry, { sourceBacked: true });
+      })
+      .catch(() => {
+        /* keep the embedded fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [commitTextareaEntry, digSourceUrl]);
 
   const pushTextareaHistory = useCallback((entry: TextAreaHistoryEntry) => {
     textAreaPastRef.current.push({
@@ -2119,7 +2314,8 @@ export const HomeV2_4Page = ({
           )}
           <div
             className={cn(
-              "-mx-5 mt-10 overflow-hidden rounded-[20px] border border-neutral-200/80 bg-neutral-50/70 ring-1 ring-black/[0.02] backdrop-blur-[2px] sm:mx-0 dark:border-neutral-800 dark:bg-neutral-900/60 dark:ring-white/[0.03]",
+              "mt-10 overflow-hidden rounded-[20px] border border-neutral-200/80 bg-neutral-50/70 ring-1 ring-black/[0.02] backdrop-blur-[2px] dark:border-neutral-800 dark:bg-neutral-900/60 dark:ring-white/[0.03]",
+              !composerFullscreenOpen && "-mx-5 sm:mx-0",
               composerFullscreenOpen &&
                 "fixed inset-0 z-50 mt-0 flex h-dvh flex-col rounded-none border-0 md:inset-y-4 md:left-1/2 md:right-auto md:h-[calc(100dvh-2rem)] md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
               readerWindowShadowClass,
@@ -2261,6 +2457,11 @@ export const HomeV2_4Page = ({
                   onUndo={handleUndo}
                   onRedo={handleRedo}
                   variant="bullets"
+                  className="text-zinc-900 dark:text-neutral-200"
+                  lineDigIcons={{
+                    collapsed: <InlinePreviewDigNewlineIcon />,
+                    expanded: <InlinePreviewDigCloseIcon />,
+                  }}
                   emptyStateMessage="Paste indented text or a bulleted list here"
                 />
               ) : mode === "input" ? (
@@ -2269,7 +2470,7 @@ export const HomeV2_4Page = ({
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden px-6 pt-6 pb-7 leading-[1.85] text-neutral-700 dark:text-neutral-300 md:px-10 md:pt-8 md:pb-9"
+                      className="pointer-events-none absolute inset-0 overflow-hidden px-6 pt-6 pb-7 leading-[1.85] text-zinc-900 dark:text-neutral-300 md:px-10 md:pt-8 md:pb-9"
                       style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
                     >
                       <div
@@ -2414,10 +2615,18 @@ export const HomeV2_4Page = ({
                         readOnlyInlineDigSyntax="parentheses"
                         defaultCollapsed
                         readOnlyEndControlsOnly
-                        readOnlyTextClassName="text-base leading-[1.85]"
+                        readOnlyTextClassName="text-base leading-[1.85] text-zinc-900 dark:text-neutral-200"
                         readOnlyTextStyle={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                         lineDigCollapsedIcon="enter"
+                        lineDigIcons={{
+                          collapsed: <InlinePreviewDigNewlineIcon />,
+                          expanded: <InlinePreviewDigCloseIcon />,
+                        }}
                         inlineDigCollapsedIcon="plus"
+                        inlineDigIcons={{
+                          collapsed: <InlinePreviewDigPlusIcon />,
+                          expanded: <InlinePreviewDigCloseIcon />,
+                        }}
                         paragraphBreakIds={paragraphBreakIds}
                         paragraphBreakSpacing="0.5em"
                       />
@@ -2435,7 +2644,7 @@ export const HomeV2_4Page = ({
                     text={inputText}
                     onExpandedChange={handlePreviewUpdate}
                     className={cn(
-                      "text-base leading-[1.85] text-neutral-800 dark:text-neutral-200",
+                      "text-base leading-[1.85] text-zinc-900 dark:text-neutral-200",
                       previewLayout === "list" && "hidden",
                     )}
                     style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
@@ -2644,11 +2853,18 @@ export const HomeV2_4Page = ({
   );
 };
 
-const HomeV3_1_InlineBack = () => (
+interface HomeV3_3_PolishedFullscreenProps {
+  digSourceUrl?: string;
+}
+
+const HomeV3_3_PolishedFullscreen = ({
+  digSourceUrl = DIG_SOURCE_URL,
+}: HomeV3_3_PolishedFullscreenProps) => (
   <HomeV2_4Page
     inputMode="textarea"
+    digSourceUrl={digSourceUrl}
     heroFontClassName="font-sans"
   />
 );
 
-export default HomeV3_1_InlineBack;
+export default HomeV3_3_PolishedFullscreen;

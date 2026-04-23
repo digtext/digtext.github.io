@@ -19,7 +19,7 @@ npm run preview      # Preview the production build
 Dig.txt is a progressive reading app built with React, TypeScript, and Vite.
 There are two main authoring and reading systems in the repo:
 
-- `src/components/DigText.tsx` renders the inline `>>hidden<<` dig text format.
+- `src/components/DigText.tsx` renders the inline `((hidden))` dig text format.
 - `src/components/EditableLineView.tsx` powers the bullet / line-based reader-editor used in the `/p` prototypes.
 
 The app is intentionally split between stable product pages and experimental prototype pages.
@@ -30,6 +30,8 @@ Routes live in `src/App.tsx`.
 
 - `/` is the live Home page connected to the public main nav.
 - `/about` is the older About / prompt page.
+- `/prompt` is the standalone prompt page (renders the LLM prompt for converting text to dig text).
+- `/llms` is the LLMs.txt viewer page (renders `public/llms.txt` as a readable page).
 - `/library` is the library.
 - `/articles` redirects to `/library` for old article-library links.
 - `/article/:articleId` is the article reader.
@@ -50,7 +52,7 @@ In practice:
 Current example:
 
 - Home live route: `/`
-- Live Home row in `/p`: `Home v3.0 (new-style)` and it should point to `/`
+- Live Home row in `/p`: `Home v3.3 (polished fullscreen)` and it should point to `/`
 - Archived Home v2 route: `/p/home-v2`
 - Archived Home experiments: versioned routes such as `/p/home-v2-1`, `/p/home-v2-4`, `/p/home-v2-5-text-area`
 - Library live route: `/library`
@@ -65,7 +67,7 @@ Do not point the live pill at a versioned `/p/...` URL if the public site is usi
 
 ## Current Home Prototype
 
-The current live Home prototype is the awesome-closings variant (v3.2).
+The current live Home prototype is the polished-fullscreen variant (v3.3).
 
 - `src/pages/HomeV2_8_Minimal.tsx` is the archived minimal snapshot.
 - `src/pages/HomeV2_9_NoChevrons.tsx` is the archived no-chevrons snapshot.
@@ -74,7 +76,8 @@ The current live Home prototype is the awesome-closings variant (v3.2).
 - `src/pages/HomeV2_11_NewQual.tsx` is the archived new-qual snapshot (visual-quality pass on top of v2.10).
 - `src/pages/HomeV3_0_NewStyle.tsx` is the archived new-style snapshot (v3.0).
 - `src/pages/HomeV3_1_InlineBack.tsx` is the archived inline-back snapshot (v3.1).
-- `src/pages/HomeV3_2_AwesomeClosings.tsx` is the current live standalone awesome-closings snapshot (v3.2).
+- `src/pages/HomeV3_2_AwesomeClosings.tsx` is the archived awesome-closings snapshot (v3.2).
+- `src/pages/HomeV3_3_PolishedFullscreen.tsx` is the current live standalone polished-fullscreen snapshot (v3.3).
 - `/p/home-v2` should continue to point to the older archived Home v2 page.
 
 The textarea work is documented in `input-process.md`.
@@ -88,7 +91,7 @@ That file is the best short history of the decisions around:
 The live Home markdown prototype keeps that textarea input model.
 
 - line-to-line dig text still comes from indentation
-- inline dig text in the live Home preview now uses `((hidden text))` markers
+- inline dig text uses `((hidden text))` markers everywhere (the old `>>text<<` syntax was removed)
 - markdown in the Dig preview is supported within each line without changing the textarea editing behavior
 
 ## Dig / Editor Notes
@@ -97,9 +100,10 @@ The live Home markdown prototype keeps that textarea input model.
 
 `src/components/DigText.tsx` is still the core inline dig-text parser.
 
-- `>>text<<` marks an expandable section.
+- `((text))` marks an expandable section.
 - Nesting is supported.
 - The parser produces a segment tree and the renderer handles expand / collapse.
+- Markdown link URLs `](...)` are skipped so their parens don't register as expand markers.
 - `globalId` is intentionally reset per render for stable IDs within one render pass.
 
 ### Preview Layout Modes
@@ -132,11 +136,11 @@ When changing it, be careful not to break both modes at once.
 ## Working Rules For This Repo
 
 - Live pill means "currently live on the public website / main nav", not "latest prototype".
-- For Home, the live `/p` entry should currently be `Home v3.2 (awesome closings)` mapped to `/`.
+- For Home, the live `/p` entry should currently be `Home v3.3 (polished fullscreen)` mapped to `/`.
 - `Home v2` is an archived prototype route and should stay on `/p/home-v2` unless explicitly promoted again.
 - For Library, the live `/p` entry should map to `/library`.
 - Prefer updating the public live route instead of inventing a new "live" versioned URL.
-- For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV3_2_AwesomeClosings.tsx`.
+- For Home changes, scope edits to the newest live variant first, which is currently `src/pages/HomeV3_3_PolishedFullscreen.tsx`.
 - Avoid changing shared or archived Home files unless the change is intentionally meant to affect multiple versions.
 - Archived Home pages must keep historical reader/icon behavior. They should import matching snapshots under `src/components/archive/`, not live shared reader components such as `EditableLineView`, `InlineDigMarkdown`, `DigIcons`, `DigTextReader`, or `BulletDigTextReader`.
 - Before changing live reader/icon behavior, check archived Home imports. If an archived route still imports a live shared component, snapshot that component first or move the archived route to an existing snapshot.

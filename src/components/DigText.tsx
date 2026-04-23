@@ -12,15 +12,16 @@ import { cn } from "@/lib/utils";
 /**
  * DigText markup format:
  * - Standard markdown (headings, bold, lists, links, code, etc.)
- * - Use <<text>> to mark expandable sections (nesting supported).
- *   The markers act like parentheses: << opens, >> closes.
+ * - Use ((text)) to mark expandable sections (nesting supported).
  *
- * Implementation: extract every <<...>> block into a placeholder map,
+ * Implementation: extract every ((...)) block into a placeholder map,
  * leaving a "shadow" markdown string with private-use-area tokens. The
  * shadow is rendered with react-markdown; custom component overrides
  * scan their own string children for tokens and replace each with an
  * <ExpandSegment> button. When expanded, the segment recursively renders
  * its inner shadow (so markdown + nested expanders work inside).
+ * Markdown link URLs `](...)` are skipped so their parens don't register
+ * as expand markers.
  */
 
 const TOKEN_PREFIX = "\uE000EXP";
@@ -57,47 +58,85 @@ function extractExpandables(raw: string): ExtractResult {
   const process = (text: string): string => {
     let out = "";
     let i = 0;
+    let markdownLinkDepth = 0;
+
     while (i < text.length) {
-      if (text[i] === "<" && text[i + 1] === "<") {
-        // find matching >> at this nest level
+      if (markdownLinkDepth === 0 && text[i] === "]" && text[i + 1] === "(") {
+        out += "](";
+        markdownLinkDepth = 1;
+        i += 2;
+        continue;
+      }
+
+      if (markdownLinkDepth > 0) {
+        out += text[i];
+        if (text[i] === "(") markdownLinkDepth += 1;
+        else if (text[i] === ")") markdownLinkDepth -= 1;
+        i += 1;
+        continue;
+      }
+
+      if (text[i] === "(" && text[i + 1] === "(") {
+        // find matching )) at this nest level, skipping markdown link URLs
         let nest = 1;
         let j = i + 2;
         let matched = false;
+        let nestedMarkdownLinkDepth = 0;
+
         while (j < text.length) {
-          if (text[j] === "<" && text[j + 1] === "<") {
-            nest++;
+          if (
+            nestedMarkdownLinkDepth === 0 &&
+            text[j] === "]" &&
+            text[j + 1] === "("
+          ) {
+            nestedMarkdownLinkDepth = 1;
             j += 2;
-          } else if (text[j] === ">" && text[j + 1] === ">") {
-            nest--;
+            continue;
+          }
+
+          if (nestedMarkdownLinkDepth > 0) {
+            if (text[j] === "(") nestedMarkdownLinkDepth += 1;
+            else if (text[j] === ")") nestedMarkdownLinkDepth -= 1;
+            j += 1;
+            continue;
+          }
+
+          if (text[j] === "(" && text[j + 1] === "(") {
+            nest += 1;
+            j += 2;
+            continue;
+          }
+
+          if (text[j] === ")" && text[j + 1] === ")") {
+            nest -= 1;
             if (nest === 0) {
               matched = true;
               break;
             }
             j += 2;
-          } else {
-            j++;
+            continue;
           }
+
+          j += 1;
         }
+
         if (!matched) {
-          // unmatched << — treat literally so stray markers don't spawn
-          // spurious expand buttons
-          out += "<<";
+          out += "((";
           i += 2;
           continue;
         }
+
         const inner = text.slice(i + 2, j);
         const innerShadow = process(inner);
         const id = nextId++;
         map.set(id, { id, shadow: innerShadow });
         out += `${TOKEN_PREFIX}${id}${TOKEN_SUFFIX}`;
-        i = j + 2; // skip closing >>
-      } else if (text[i] === ">" && text[i + 1] === ">") {
-        // stray closing — skip silently
-        i += 2;
-      } else {
-        out += text[i];
-        i++;
+        i = j + 2; // skip closing ))
+        continue;
       }
+
+      out += text[i];
+      i++;
     }
     return out;
   };

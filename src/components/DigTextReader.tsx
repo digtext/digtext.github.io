@@ -48,6 +48,8 @@ const IndentedLayoutIcon = () => (
     viewBox="0 0 16 16"
     className="h-4 w-4"
     fill="none"
+    width="16"
+    height="16"
     stroke="currentColor"
     strokeWidth="1.75"
     strokeLinecap="round"
@@ -62,7 +64,7 @@ const IndentedLayoutIcon = () => (
 const RAW_INDENT = "  ";
 
 const formatRawDigTextForIndentedView = (value: string) => {
-  const parts = value.split(/(<<|>>)/);
+  const parts = value.split(/(\(\(|\)\))/);
   const output: string[] = [];
   let depth = 0;
   let atLineStart = true;
@@ -81,17 +83,17 @@ const formatRawDigTextForIndentedView = (value: string) => {
   for (const part of parts) {
     if (!part) continue;
 
-    if (part === "<<") {
+    if (part === "((") {
       ensureLineStart();
-      append("<< ");
+      append("(( ");
       depth += 1;
       continue;
     }
 
-    if (part === ">>") {
+    if (part === "))") {
       if (!atLineStart) append("\n");
       depth = Math.max(0, depth - 1);
-      append(`${RAW_INDENT.repeat(depth)}>>\n`);
+      append(`${RAW_INDENT.repeat(depth)}))\n`);
       continue;
     }
 

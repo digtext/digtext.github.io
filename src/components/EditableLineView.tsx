@@ -12,6 +12,7 @@ import {
 } from "@/components/DigIcons";
 import {
   type InlineDigCollapsedIcon,
+  type InlineDigIconSet,
   extractParenthesisExpandables,
   InlineDigMarkdown,
 } from "@/components/InlineDigMarkdown";
@@ -230,10 +231,16 @@ LineText.displayName = "LineText";
 
 export type LineDigCollapsedIcon = "plus" | "enter";
 
+export interface LineDigIconSet {
+  collapsed?: React.ReactNode;
+  expanded?: React.ReactNode;
+}
+
 interface LineEndDigButtonProps {
   onToggle: () => void;
   isExpanded: boolean;
   collapsedIcon?: LineDigCollapsedIcon;
+  icons?: LineDigIconSet;
   className?: string;
 }
 
@@ -241,6 +248,7 @@ const LineEndDigButton = ({
   onToggle,
   isExpanded,
   collapsedIcon = "plus",
+  icons,
   className,
 }: LineEndDigButtonProps) => (
   <button
@@ -263,7 +271,9 @@ const LineEndDigButton = ({
     tabIndex={-1}
     aria-label={isExpanded ? "Collapse line" : "Expand line"}
   >
-    {isExpanded ? <DigCloseIcon /> : collapsedIcon === "enter" ? <DigEnterIcon /> : <DigPlusIcon />}
+    {isExpanded
+      ? (icons?.expanded ?? <DigCloseIcon />)
+      : (icons?.collapsed ?? (collapsedIcon === "enter" ? <DigEnterIcon /> : <DigPlusIcon />))}
   </button>
 );
 
@@ -297,14 +307,17 @@ interface EditableLineViewProps {
   defaultCollapsed?: boolean;
   readOnlyEndControlsOnly?: boolean;
   lineDigCollapsedIcon?: LineDigCollapsedIcon;
+  lineDigIcons?: LineDigIconSet;
   inlineDigCollapsedIcon?: InlineDigCollapsedIcon;
+  inlineDigIcons?: InlineDigIconSet;
   paragraphBreakIds?: ReadonlySet<number>;
+  paragraphBreakSpacing?: string;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, inlineDigCollapsedIcon, paragraphBreakIds }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, lineDigIcons, inlineDigCollapsedIcon, inlineDigIcons, paragraphBreakIds, paragraphBreakSpacing = "0.75em" }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(
     () => new Set(defaultCollapsed ? collectExpandableIds(lines) : []),
   );
@@ -1055,7 +1068,7 @@ export const EditableLineView = React.forwardRef<
               <div
                 key={line.id}
                 className={cn("relative group/row", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
-                style={hasParagraphBreak ? { marginTop: "0.75em" } : undefined}
+                style={hasParagraphBreak ? { marginTop: paragraphBreakSpacing } : undefined}
               >
                 {/* Gutter */}
                 <div
@@ -1144,6 +1157,7 @@ export const EditableLineView = React.forwardRef<
                           unwrapParagraphs
                           linkClassName={readOnlyLinkClassName}
                           collapsedIcon={inlineDigCollapsedIcon}
+                          icons={inlineDigIcons}
                         />
                       ) : (
                         <ReactMarkdown
@@ -1160,6 +1174,7 @@ export const EditableLineView = React.forwardRef<
                             onToggle={() => toggleCollapse(line.id)}
                             isExpanded={!isCollapsed}
                             collapsedIcon={lineDigCollapsedIcon}
+                            icons={lineDigIcons}
                           />
                         </span>
                       ) : null}
@@ -1172,6 +1187,7 @@ export const EditableLineView = React.forwardRef<
                           onToggle={() => toggleCollapse(line.id)}
                           isExpanded={!isCollapsed}
                           collapsedIcon={lineDigCollapsedIcon}
+                          icons={lineDigIcons}
                           className="mt-[0.42em]"
                         />
                       ) : null}
