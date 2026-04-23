@@ -22,6 +22,8 @@ export const DigPlusIcon = ({ className }: DigIconProps) => (
     className={cn("block h-5 w-5", className)}
     fill="none"
     focusable="false"
+    width="20"
+    height="20"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -38,6 +40,8 @@ export const DigCloseIcon = ({ className }: DigIconProps) => (
     className={cn("block h-5 w-5", className)}
     fill="none"
     focusable="false"
+    width="20"
+    height="20"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -54,6 +58,8 @@ export const DigChevronIcon = ({ className }: DigIconProps) => (
     className={cn("block h-5 w-5", className)}
     fill="none"
     focusable="false"
+    width="20"
+    height="20"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -70,6 +76,8 @@ export const DigEnterIcon = ({ className }: DigIconProps) => (
     className={cn("block h-5 w-5", className)}
     fill="none"
     focusable="false"
+    width="20"
+    height="20"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -86,6 +94,8 @@ export const DigEllipsisIcon = ({ className }: DigIconProps) => (
     className={cn("block h-5 w-5", className)}
     fill="none"
     focusable="false"
+    width="20"
+    height="20"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >

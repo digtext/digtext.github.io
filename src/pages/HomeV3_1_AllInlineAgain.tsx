@@ -1,9 +1,6 @@
 import {
-  Fragment,
-  forwardRef,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -14,8 +11,6 @@ import {
 } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Check, Copy, Maximize2, Plus, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   EditableLine,
   EditableLineView,
@@ -25,28 +20,21 @@ import {
 import SiteHeader from "@/components/SiteHeader";
 import { cn } from "@/lib/utils";
 
-const DEMO_CONTENT = `- It has been ridiculous, guys,
-    - that since writing was first invented in Mesopotamia around 3400 BCE,
-        - likely in or around Uruk, probably by Sumerian record-keepers developing early accounting methods, using simple symbols pressed into wet clay tablets.
-            - Look at this incredible photo from the British Museum of some of the early [clay tablets](https://www.britishmuseum.org/collection/object/W_1989-0130-4).
-- we've read text in its most expanded form by default.
-
-- Dig text flips it and by default presents the text in its most succinct form.
-    - Nesting has no limit,
-        - every layer is a choice the reader makes,
-            - to get further involved.
-- You may be a master at skipping text, but it's a game of luck whether you missed important context.
-    - In practice, the more you skip of a book, the less likely you'll have sufficient context to enjoy finishing it.
-        - Dig text flips it. Start from the shortest, dig into what matters.
-
-- Write dig text in any editor, by using indented lists.
-    - Paste here any bulleted list — it can be any bullet type that is \`-\`, \`*\`, or \`+\`.
-        - Indented bullets from Google Docs, Notion, or Obsidian are transformed into expandable sections.
+const DEMO_CONTENT = `- **Dig text** is a new way to read and write text. ((You see the shortest version first, then dig deeper only where it matters to you.))
+    - Nesting has no limit
+        - every layer is a choice the reader makes
+- You can read any dig text with this reader, but hit the full-screen icon to do it without distractions.
+- Paste here any bulleted list.
+    - (Google Docs, Notion, Obsidian) indented bullets are transformed into indented sections
 - You can write with [Markdown](https://www.markdownguide.org/basic-syntax/).
-    - **Bold**, *italics*, and \`code\` all show up in the Dig preview.
-- Use our LLM prompt to convert any text into dig text.
-    - Find it below.
-- You can read any dig text with this reader — hit the full-screen icon to do it without distractions.`;
+    - **Bold**, *italics*, \`code\`, and inline dig markers like ((this hidden aside)) all show up in the Dig preview.
+- You can use our LLM prompt to convert any text into dig text
+    - find it below
+- They don't have to read everything to understand the context of what comes after.
+- It has been ridiculous, guys, that since the beginning of text we've read text in the most expanded form by default
+    - You may be a master at skipping text but it's a game of luck whether you missed important context
+        - In practice the more you skip of a book the less likely you'll have sufficient context to enjoy finishing it
+            - dig text flips it. start from the shortest, dig into what matters`;
 
 const PROMPT = `Summarize the following text using what I call the Quote summary approach. Use as many original fragments as possible (with quote symbols) and stitch the quotes together with your own writing to create a comprehensive and precise summary.
 
@@ -78,7 +66,7 @@ Now transform the following text:
 const TEXTAREA_PLACEHOLDER = `- Paste indented text or a bulleted list here
   - Tab / Shift+Tab changes indentation
   - Cmd+Shift+Up/Down moves the current item
-  - A blank line between bullets starts a new paragraph in the preview`;
+  - Use ((hidden text)) for inline dig sections`;
 
 const INDENT_TOKEN = "\t";
 const VISUAL_INDENT_UNIT = "    ";
@@ -99,46 +87,6 @@ const pillButtonClass = (active = false) =>
 
 const iconButtonClass =
   "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50";
-
-const layoutIconButtonClass = (active = false) =>
-  cn(
-    "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border transition-colors",
-    active
-      ? "border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-700 dark:border-neutral-50 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
-      : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-  );
-
-const listPreviewIcon = (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 16 16"
-    className="h-4 w-4"
-    fill="none"
-    focusable="false"
-  >
-    <circle cx="3" cy="4" r="1.05" fill="currentColor" />
-    <path
-      d="M5.5 4h7"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeWidth="1.65"
-    />
-    <circle cx="4.9" cy="8" r="1.05" fill="currentColor" />
-    <path
-      d="M7.4 8h5.6"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeWidth="1.65"
-    />
-    <circle cx="6.8" cy="12" r="1.05" fill="currentColor" />
-    <path
-      d="M9.3 12h4"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeWidth="1.65"
-    />
-  </svg>
-);
 
 const readerWindowShadowClass =
   "shadow-[0_1px_0_rgba(0,0,0,.02),0_2px_6px_-2px_rgba(0,0,0,.04),0_24px_56px_-24px_rgba(15,23,42,.18)]";
@@ -210,9 +158,6 @@ const dedentLine = (line: string) => {
   if (line.startsWith(" ")) return line.slice(1);
   return line;
 };
-
-const getIndentLevel = (line: string) =>
-  Math.floor(getIndentWidth(line) / VISUAL_INDENT_UNIT.length);
 
 const getBlockEndIndex = (lines: string[], startIndex: number) => {
   const startIndent = getIndentWidth(lines[startIndex]);
@@ -292,11 +237,6 @@ const getOffsetsForLineSpan = (
 };
 
 const getVisualLineData = (line: string): VisualLineData => {
-  // The mirror draws each line inside its own <div> with a hanging-indent
-  // padding so wrapped rows line up under the bullet.  See the "Caret
-  // alignment" section in input-process.md for why this layout and the
-  // textarea's wrapping geometry have to stay coordinated — changing one
-  // without the other breaks click-to-place-caret on wrapped rows.
   const indentMatch = line.match(/^[\t ]*/)?.[0] ?? "";
   const normalizedIndent = indentMatch.replace(/\t/g, VISUAL_INDENT_UNIT);
   const indentCh = normalizedIndent.length;
@@ -416,20 +356,6 @@ const getStoredComposerMode = () => {
   }
 };
 
-const getStoredPreviewLayout = (): PreviewLayout => {
-  if (typeof window === "undefined") return "inline";
-
-  try {
-    const stored = window.localStorage.getItem(COMPOSER_STORAGE_KEY);
-    if (!stored) return "inline";
-
-    const parsed = JSON.parse(stored) as { previewLayout?: unknown };
-    return parsed.previewLayout === "list" ? "list" : "inline";
-  } catch {
-    return "inline";
-  }
-};
-
 const isWordChar = (value: string) => /[A-Za-z0-9]/.test(value);
 
 const getDiffRange = (previous: string, next: string) => {
@@ -485,361 +411,6 @@ interface VisualLineData {
   bulletDisplay: string | null;
 }
 
-interface InlineBulletNode {
-  id: string;
-  text: string;
-  children: InlineBulletNode[];
-}
-
-interface InlineParagraphNode {
-  id: string;
-  bullets: InlineBulletNode[];
-}
-
-type PreviewLayout = "inline" | "list";
-
-const parseInlineDocument = (text: string): InlineParagraphNode[] => {
-  const lines = text.split("\n");
-  const paragraphs: InlineParagraphNode[] = [];
-  let currentBullets: InlineBulletNode[] = [];
-  let stack: InlineBulletNode[] = [];
-  let nodeCounter = 0;
-  let paraCounter = 0;
-
-  const flush = () => {
-    if (currentBullets.length > 0) {
-      paragraphs.push({ id: `para-${paraCounter++}`, bullets: currentBullets });
-      currentBullets = [];
-    }
-    stack = [];
-  };
-
-  for (const rawLine of lines) {
-    if (!rawLine.trim()) {
-      flush();
-      continue;
-    }
-
-    const indentMatch = rawLine.match(/^[\t ]*/)?.[0] ?? "";
-    const normalizedIndent = indentMatch.replace(/\t/g, VISUAL_INDENT_UNIT);
-    const depth = Math.floor(normalizedIndent.length / VISUAL_INDENT_UNIT.length);
-
-    const rest = rawLine.slice(indentMatch.length);
-    const bulletMatch = rest.match(/^[-*+•]\s+(.*)$/);
-    const bodyText = (bulletMatch ? bulletMatch[1] : rest).trim();
-    if (!bodyText) continue;
-
-    const node: InlineBulletNode = {
-      id: `node-${nodeCounter++}`,
-      text: bodyText,
-      children: [],
-    };
-
-    while (stack.length > depth) stack.pop();
-    if (stack.length === 0) {
-      currentBullets.push(node);
-    } else {
-      stack[stack.length - 1].children.push(node);
-    }
-    stack.push(node);
-  }
-
-  flush();
-  return paragraphs;
-};
-
-const collectExpandableIds = (bullets: InlineBulletNode[]): string[] => {
-  const ids: string[] = [];
-  const walk = (bullet: InlineBulletNode) => {
-    if (bullet.children.length > 0) ids.push(bullet.id);
-    bullet.children.forEach(walk);
-  };
-  bullets.forEach(walk);
-  return ids;
-};
-
-const countExpandableBullets = (paragraphs: InlineParagraphNode[]): number =>
-  paragraphs.reduce(
-    (total, paragraph) => total + collectExpandableIds(paragraph.bullets).length,
-    0,
-  );
-
-const linkClassName =
-  "text-neutral-500 underline underline-offset-2 decoration-neutral-300 transition-colors hover:text-neutral-700 hover:decoration-neutral-400 dark:text-neutral-400 dark:decoration-neutral-600 dark:hover:text-neutral-200 dark:hover:decoration-neutral-500";
-
-const markdownComponents = {
-  p: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  a: ({
-    href,
-    children,
-  }: {
-    href?: string;
-    children?: React.ReactNode;
-  }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={linkClassName}
-    >
-      {children}
-    </a>
-  ),
-  code: ({ children }: { children?: React.ReactNode }) => (
-    <code className="rounded bg-neutral-100 px-1 py-[1px] font-mono text-[0.9em] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
-      {children}
-    </code>
-  ),
-};
-
-const InlineMarkdown = ({ text }: { text: string }) => (
-  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-    {text}
-  </ReactMarkdown>
-);
-
-const DIG_ACCENT = "#BDB7EF";
-const DIG_ACCENT_FADED = "rgba(189, 183, 239, 0.6)";
-
-const getUnderlineStyle = (depth: number): CSSProperties => ({
-  textDecorationLine: "underline",
-  textDecorationColor: depth === 0 ? DIG_ACCENT : DIG_ACCENT_FADED,
-  textDecorationStyle: depth >= 2 ? "dashed" : "solid",
-  textDecorationThickness: "1.5px",
-  textUnderlineOffset: "0.22em",
-});
-
-const softDigIconButtonClass =
-  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-[#BDB7EF] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#BDB7EF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
-
-const inlinePreviewCloseButtonClass =
-  "group inline-flex h-5 w-5 flex-none items-center justify-center rounded-full align-middle text-neutral-700 no-underline decoration-transparent transition-colors hover:bg-neutral-100/80 hover:text-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800/80 dark:hover:text-neutral-200";
-
-const InlinePreviewDigPlusIcon = () => (
-  <svg
-    aria-hidden="true"
-    className="block h-5 w-5"
-    fill="none"
-    focusable="false"
-    viewBox="0 0 20 20"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <rect
-      x="0.5"
-      y="0.5"
-      width="19"
-      height="19"
-      rx="9.5"
-      className="transition-colors group-hover:stroke-transparent"
-      stroke="#6155F5"
-      strokeOpacity="0.4"
-    />
-    <path
-      fill="#6155F5"
-      d="M10.6299 13.8154C10.6299 13.9847 10.568 14.1312 10.4443 14.2549C10.3206 14.3786 10.1725 14.4404 10 14.4404C9.82422 14.4404 9.67611 14.3786 9.55566 14.2549C9.43522 14.1312 9.375 13.9847 9.375 13.8154V6.80859C9.375 6.63607 9.43522 6.48796 9.55566 6.36426C9.67611 6.24056 9.82422 6.17871 10 6.17871C10.1725 6.17871 10.3206 6.24056 10.4443 6.36426C10.568 6.48796 10.6299 6.63607 10.6299 6.80859V13.8154ZM6.49902 10.9395C6.3265 10.9395 6.17839 10.8792 6.05469 10.7588C5.93099 10.6351 5.86914 10.4854 5.86914 10.3096C5.86914 10.137 5.93099 9.98893 6.05469 9.86523C6.17839 9.74154 6.3265 9.67969 6.49902 9.67969H13.5059C13.6751 9.67969 13.8216 9.74154 13.9453 9.86523C14.069 9.98893 14.1309 10.137 14.1309 10.3096C14.1309 10.4854 14.069 10.6351 13.9453 10.7588C13.8216 10.8792 13.6751 10.9395 13.5059 10.9395H6.49902Z"
-    />
-  </svg>
-);
-
-const InlinePreviewDigCloseIcon = () => (
-  <svg
-    aria-hidden="true"
-    className="block h-5 w-5"
-    fill="none"
-    focusable="false"
-    viewBox="0 0 20 20"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      className="transition-colors group-hover:stroke-transparent"
-      d="M10 0.5C15.2467 0.5 19.5 4.7533 19.5 10C19.5 15.2467 15.2467 19.5 10 19.5C4.7533 19.5 0.5 15.2467 0.5 10C0.5 4.7533 4.7533 0.5 10 0.5Z"
-      stroke="#C2C1C1"
-    />
-    <path
-      fill="#363636"
-      d="M12.2266 7.22021C12.3021 7.1473 12.3893 7.09912 12.4883 7.07568C12.5898 7.04964 12.6914 7.04964 12.793 7.07568C12.8945 7.10173 12.9831 7.15251 13.0586 7.22803C13.1341 7.30355 13.1849 7.39209 13.2109 7.49365C13.237 7.59521 13.237 7.69678 13.2109 7.79834C13.1875 7.8973 13.1393 7.98454 13.0664 8.06006L7.76953 13.3569C7.69922 13.4272 7.61328 13.4741 7.51172 13.4976C7.41016 13.5236 7.30729 13.5236 7.20312 13.4976C7.10156 13.4741 7.01302 13.4246 6.9375 13.3491C6.86198 13.2736 6.8112 13.1851 6.78516 13.0835C6.76172 12.9819 6.76172 12.8804 6.78516 12.7788C6.8112 12.6772 6.85938 12.5913 6.92969 12.521L12.2266 7.22021ZM13.0664 12.5171C13.1393 12.59 13.1875 12.6772 13.2109 12.7788C13.237 12.8804 13.237 12.9819 13.2109 13.0835C13.1849 13.1851 13.1341 13.2736 13.0586 13.3491C12.9831 13.4246 12.8945 13.4741 12.793 13.4976C12.6914 13.5236 12.5898 13.5249 12.4883 13.5015C12.3893 13.478 12.3021 13.4285 12.2266 13.353L6.92969 8.05615C6.85938 7.98584 6.8125 7.8999 6.78906 7.79834C6.76562 7.69678 6.76562 7.59521 6.78906 7.49365C6.8125 7.39209 6.86198 7.30355 6.9375 7.22803C7.01302 7.1499 7.10156 7.09912 7.20312 7.07568C7.30729 7.05225 7.41016 7.05225 7.51172 7.07568C7.61328 7.09912 7.69922 7.1473 7.76953 7.22021L13.0664 12.5171Z"
-    />
-  </svg>
-);
-
-interface InlineBulletRenderProps {
-  bullet: InlineBulletNode;
-  expandedIds: Set<string>;
-  toggle: (id: string) => void;
-  selfDepth: number;
-  underlineDepth?: number;
-}
-
-const InlineBulletRender = ({
-  bullet,
-  expandedIds,
-  toggle,
-  selfDepth,
-  underlineDepth,
-}: InlineBulletRenderProps) => {
-  const hasChildren = bullet.children.length > 0;
-  const isExpanded = expandedIds.has(bullet.id);
-
-  const toggleButton = hasChildren ? (
-    <button
-      type="button"
-      onClick={() => toggle(bullet.id)}
-      aria-label={isExpanded ? "Collapse" : "Expand"}
-      className={cn(
-        isExpanded ? inlinePreviewCloseButtonClass : softDigIconButtonClass,
-        "relative -top-[0.18em] cursor-pointer",
-      )}
-    >
-      {isExpanded ? <InlinePreviewDigCloseIcon /> : <InlinePreviewDigPlusIcon />}
-    </button>
-  ) : null;
-
-  return (
-    <>
-      <InlineMarkdown text={bullet.text} />
-      {toggleButton && <span style={{ whiteSpace: "nowrap" }}>{"\u00A0"}{toggleButton}</span>}
-      {isExpanded &&
-        bullet.children.map((child) => (
-          <Fragment key={child.id}>
-            {" "}
-            <span style={getUnderlineStyle(selfDepth)}>
-              <InlineBulletRender
-                bullet={child}
-                expandedIds={expandedIds}
-                toggle={toggle}
-                selfDepth={selfDepth + 1}
-                underlineDepth={selfDepth}
-              />
-            </span>
-          </Fragment>
-        ))}
-    </>
-  );
-};
-
-export interface InlineParagraphPreviewHandle {
-  expandAll: () => void;
-  collapseAll: () => void;
-  anyExpanded: boolean;
-  getExpandedSourceIndices: () => Set<number>;
-  setExpandedBySourceIndices: (indices: Set<number>) => void;
-}
-
-interface InlineParagraphPreviewProps {
-  text: string;
-  onExpandedChange?: () => void;
-  className?: string;
-  style?: CSSProperties;
-}
-
-const InlineParagraphPreview = forwardRef<
-  InlineParagraphPreviewHandle,
-  InlineParagraphPreviewProps
->(({ text, onExpandedChange, className, style }, ref) => {
-  const paragraphs = useMemo(() => parseInlineDocument(text), [text]);
-
-  const allExpandableIds = useMemo(() => {
-    const ids: string[] = [];
-    paragraphs.forEach((paragraph) => {
-      ids.push(...collectExpandableIds(paragraph.bullets));
-    });
-    return ids;
-  }, [paragraphs]);
-
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    setExpandedIds((prev) => {
-      const valid = new Set<string>();
-      const known = new Set(allExpandableIds);
-      prev.forEach((id) => {
-        if (known.has(id)) valid.add(id);
-      });
-      if (valid.size === prev.size) return prev;
-      return valid;
-    });
-  }, [allExpandableIds]);
-
-  const onExpandedChangeRef = useRef(onExpandedChange);
-  useEffect(() => { onExpandedChangeRef.current = onExpandedChange; });
-  useEffect(() => {
-    onExpandedChangeRef.current?.();
-  }, [expandedIds]);
-
-  const toggle = useCallback((id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      expandAll: () => {
-        setExpandedIds(new Set(allExpandableIds));
-      },
-      collapseAll: () => {
-        setExpandedIds(new Set());
-      },
-      get anyExpanded() {
-        return expandedIds.size > 0;
-      },
-      getExpandedSourceIndices: () => {
-        const indices = new Set<number>();
-        expandedIds.forEach((id) => {
-          const match = id.match(/^node-(\d+)$/);
-          if (match) indices.add(parseInt(match[1], 10));
-        });
-        return indices;
-      },
-      setExpandedBySourceIndices: (indices: Set<number>) => {
-        const newExpanded = new Set<string>();
-        allExpandableIds.forEach((id) => {
-          const match = id.match(/^node-(\d+)$/);
-          if (match && indices.has(parseInt(match[1], 10))) {
-            newExpanded.add(id);
-          }
-        });
-        setExpandedIds(newExpanded);
-      },
-    }),
-    [allExpandableIds, expandedIds],
-  );
-
-  if (paragraphs.length === 0) {
-    return (
-      <div className={cn("text-neutral-400 dark:text-neutral-500", className)} style={style}>
-        Start typing on the Input tab to see your preview here.
-      </div>
-    );
-  }
-
-  return (
-    <div className={className} style={style}>
-      {paragraphs.map((paragraph, pIdx) => (
-        <p key={paragraph.id} className={pIdx === 0 ? "" : "mt-[0.5em]"}>
-          {paragraph.bullets.map((bullet, bIdx) => (
-            <Fragment key={bullet.id}>
-              {bIdx > 0 ? " " : ""}
-              <InlineBulletRender
-                bullet={bullet}
-                expandedIds={expandedIds}
-                toggle={toggle}
-                selfDepth={0}
-              />
-            </Fragment>
-          ))}
-        </p>
-      ))}
-    </div>
-  );
-});
-
-InlineParagraphPreview.displayName = "InlineParagraphPreview";
-
 interface HomeV2_4PageProps {
   inputMode?: "editable-line" | "textarea";
   heroFontClassName?: string;
@@ -861,9 +432,6 @@ export const HomeV2_4Page = ({
   const [mode, setMode] = useState<"digtext" | "input">(
     () => getStoredComposerMode() as "digtext" | "input",
   );
-  const [previewLayout, setPreviewLayout] = useState<PreviewLayout>(
-    () => getStoredPreviewLayout(),
-  );
   const [composerFullscreenOpen, setComposerFullscreenOpen] = useState(false);
   const [heroDemoOpen, setHeroDemoOpen] = useState(false);
   const [inputText, setInputText] = useState(() => getStoredComposerText());
@@ -871,13 +439,11 @@ export const HomeV2_4Page = ({
     start: 0,
     end: 0,
   });
-  const [textareaFocused, setTextareaFocused] = useState(false);
   const [lines, setLines] = useState<EditableLine[]>(() =>
     parseToEditableLines(getStoredComposerText()),
   );
   const editorRef = useRef<EditableLineViewHandle>(null);
-  const inlinePreviewRef = useRef<InlineParagraphPreviewHandle>(null);
-  const listPreviewRef = useRef<EditableLineViewHandle>(null);
+  const digTextRef = useRef<EditableLineViewHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textareaMirrorRef = useRef<HTMLDivElement>(null);
   const isTextareaSelectingRef = useRef(false);
@@ -894,10 +460,8 @@ export const HomeV2_4Page = ({
   const futureRef = useRef<EditableLine[][]>([]);
   const applyingHistoryRef = useRef(false);
   const [, forceUpdate] = useState(0);
-  const handlePreviewUpdate = useCallback(() => forceUpdate((n) => n + 1), []);
   const location = useLocation();
   useEffect(() => { forceUpdate((n) => n + 1); }, []);
-  useEffect(() => { forceUpdate((n) => n + 1); }, [previewLayout]);
   useEffect(() => {
     linesRef.current = lines;
   }, [lines]);
@@ -906,12 +470,12 @@ export const HomeV2_4Page = ({
     try {
       window.localStorage.setItem(
         COMPOSER_STORAGE_KEY,
-        JSON.stringify({ inputText, mode, previewLayout }),
+        JSON.stringify({ inputText, mode }),
       );
     } catch {
       /* ignore */
     }
-  }, [inputText, mode, previewLayout]);
+  }, [inputText, mode]);
 
   const cloneLines = useCallback(
     (value: EditableLine[]) => value.map((line) => ({ ...line })),
@@ -1080,111 +644,6 @@ export const HomeV2_4Page = ({
     };
   }, []);
 
-  // ------------------------------------------------------------------
-  // Click → caret remap
-  //
-  // The mirror renders each line with a per-level hanging indent
-  // (paddingLeft = indent + bullet width, textIndent = -bullet width), so
-  // wrapped rows sit under the bullet.  The real <textarea> has no
-  // hanging-indent support, so its wrapped rows start at column 0.  That
-  // mismatch means a click on a wrapped row in the mirror corresponds to
-  // a *different* visual row in the textarea — native click-to-place-caret
-  // lands on the wrong source character (often on the line below).
-  //
-  // Rather than drop the hanging-indent visual, we keep the two layouts
-  // and remap the final caret position on mouseup whenever the interaction
-  // was a single click (no drag, click count = 1).  Drag selection and
-  // double/triple-click keep native behavior.  See input-process.md →
-  // "Caret alignment on wrapped lines" for the rationale.
-  const computeSourceOffsetFromPoint = useCallback(
-    (clientX: number, clientY: number): number | null => {
-      const mirror = textareaMirrorRef.current;
-      const textarea = textareaRef.current;
-      if (!mirror || !textarea) return null;
-
-      const previousTextareaPE = textarea.style.pointerEvents;
-      const previousMirrorPE = mirror.style.pointerEvents;
-      textarea.style.pointerEvents = "none";
-      mirror.style.pointerEvents = "auto";
-
-      try {
-        type DocWithCaret = Document & {
-          caretRangeFromPoint?: (x: number, y: number) => Range | null;
-          caretPositionFromPoint?: (
-            x: number,
-            y: number,
-          ) => { offsetNode: Node; offset: number } | null;
-        };
-        const doc = document as DocWithCaret;
-        let caretContainer: Node | null = null;
-        let caretOffset = 0;
-
-        const range = doc.caretRangeFromPoint?.(clientX, clientY);
-        if (range) {
-          caretContainer = range.startContainer;
-          caretOffset = range.startOffset;
-        } else if (doc.caretPositionFromPoint) {
-          const pos = doc.caretPositionFromPoint(clientX, clientY);
-          if (pos) {
-            caretContainer = pos.offsetNode;
-            caretOffset = pos.offset;
-          }
-        }
-        if (!caretContainer) return null;
-
-        let lineEl: HTMLElement | null = null;
-        let node: Node | null = caretContainer;
-        while (node && node !== mirror) {
-          if (
-            node instanceof HTMLElement &&
-            node.hasAttribute("data-mirror-line")
-          ) {
-            lineEl = node;
-            break;
-          }
-          node = node.parentNode;
-        }
-        if (!lineEl) return null;
-
-        const rawLines = textarea.value.split("\n");
-        const lineIndex = Number(lineEl.getAttribute("data-mirror-line"));
-        if (!Number.isInteger(lineIndex) || lineIndex < 0 || lineIndex >= rawLines.length) {
-          return null;
-        }
-
-        // Count rendered chars from the start of the line div up to the
-        // caret position.  The mirror renders `visual.text` (source line
-        // with the leading whitespace stripped), so rendered offset maps
-        // 1:1 into `visual.text`; bullet glyph replacement ("*" → "•") is
-        // a same-length swap, so indices stay aligned.
-        const preRange = document.createRange();
-        preRange.setStart(lineEl, 0);
-        preRange.setEnd(caretContainer, caretOffset);
-        const renderedOffset = preRange.toString().length;
-
-        const lineStarts = getLineStarts(rawLines);
-        const hiddenPrefix =
-          rawLines[lineIndex].match(/^[\t ]*/)?.[0].length ?? 0;
-        const sourceOffset =
-          (lineStarts[lineIndex] ?? 0) + hiddenPrefix + renderedOffset;
-
-        const lineEnd =
-          (lineStarts[lineIndex] ?? 0) + rawLines[lineIndex].length;
-        return Math.min(sourceOffset, lineEnd);
-      } finally {
-        textarea.style.pointerEvents = previousTextareaPE;
-        mirror.style.pointerEvents = previousMirrorPE;
-      }
-    },
-    [],
-  );
-
-  const textareaMouseDownPointRef = useRef<{
-    x: number;
-    y: number;
-    withShift: boolean;
-  } | null>(null);
-
   const applyTextareaUpdate = useCallback(
     (
       nextValue: string,
@@ -1348,68 +807,27 @@ export const HomeV2_4Page = ({
           selectionStart,
           selectionEnd,
         );
-        const cursorOnly =
-          selectionStart === selectionEnd && startIndex === endIndex;
-
-        // Indent validation (single-line, cursor-only, non-dedent):
-        //   • the line immediately above must be non-blank, and
-        //   • the new indent level must be at most one deeper than that line.
-        // This blocks orphan indents like Tab on the very first line, Tab
-        // after a blank separator, and Tab that would jump two levels deep.
-        if (!event.shiftKey && cursorOnly) {
-          const currentLevel = getIndentLevel(rawLines[startIndex]);
-          const prevLine = startIndex > 0 ? rawLines[startIndex - 1] : "";
-          const prevIsBlank = !prevLine.trim();
-          if (prevIsBlank) return;
-          const prevLevel = getIndentLevel(prevLine);
-          if (currentLevel >= prevLevel + 1) return;
-        }
-
-        // Only expand to the whole sub-block when the caret sits on a
-        // non-empty line. On an empty line `getBlockEndIndex` would greedily
-        // swallow every following line that has more indent than 0, which is
-        // the bug that made Enter → Tab select the next bullet.
-        const currentLineIsEmpty = !rawLines[startIndex]?.trim();
-        const useWholeBlock = cursorOnly && !currentLineIsEmpty;
+        const nextLines = [...rawLines];
+        const useWholeBlock = startIndex === endIndex && selectionStart === selectionEnd;
         const targetEndIndex = useWholeBlock
           ? getBlockEndIndex(rawLines, startIndex) - 1
           : endIndex;
 
-        const nextLines = [...rawLines];
-        let firstLineDelta = 0;
         for (let index = startIndex; index <= targetEndIndex; index += 1) {
-          const before = nextLines[index];
-          const after = event.shiftKey ? dedentLine(before) : indentLine(before);
-          nextLines[index] = after;
-          if (index === startIndex) firstLineDelta = after.length - before.length;
+          nextLines[index] = event.shiftKey
+            ? dedentLine(nextLines[index])
+            : indentLine(nextLines[index]);
         }
 
-        if (cursorOnly) {
-          // Preserve the caret position, just nudged by the indent delta. This
-          // replaces the earlier "select the whole line" behavior that made
-          // typing accidentally overwrite the line.
-          const nextLineStarts = getLineStarts(nextLines);
-          const lineStart = nextLineStarts[startIndex] ?? 0;
-          const nextCursor = Math.max(lineStart, selectionStart + firstLineDelta);
-          applyTextareaUpdate(
-            nextLines.join("\n"),
-            { start: nextCursor, end: nextCursor },
-            {
-              history: "push",
-              batchKind: null,
-            },
-          );
-        } else {
-          const selection = getOffsetsForLineSpan(
-            nextLines,
-            startIndex,
-            targetEndIndex + 1,
-          );
-          applyTextareaUpdate(nextLines.join("\n"), selection, {
-            history: "push",
-            batchKind: null,
-          });
-        }
+        const selection = getOffsetsForLineSpan(
+          nextLines,
+          startIndex,
+          targetEndIndex + 1,
+        );
+        applyTextareaUpdate(nextLines.join("\n"), selection, {
+          history: "push",
+          batchKind: null,
+        });
         return;
       }
 
@@ -1529,9 +947,6 @@ export const HomeV2_4Page = ({
     const lineStarts = getLineStarts(rawLines);
     const selectionStart = Math.min(textareaSelection.start, textareaSelection.end);
     const selectionEnd = Math.max(textareaSelection.start, textareaSelection.end);
-    const isCursorOnly = textareaSelection.start === textareaSelection.end;
-    const cursorPos = isCursorOnly ? textareaSelection.start : -1;
-    const cursorLineIndex = cursorPos >= 0 ? findLineIndexAtOffset(rawLines, cursorPos) : -1;
 
     return rawLines.map((line, index) => {
       const visual = getVisualLineData(line);
@@ -1540,10 +955,6 @@ export const HomeV2_4Page = ({
       const selectedStart = Math.max(selectionStart, lineStart);
       const selectedEnd = Math.min(selectionEnd, lineEnd);
       const hasSelection = selectedEnd > selectedStart;
-      const cursorOffset =
-        cursorLineIndex === index
-          ? Math.max(0, cursorPos - lineStart - visual.hiddenPrefixLength)
-          : null;
 
       if (!hasSelection) {
         return {
@@ -1551,7 +962,6 @@ export const HomeV2_4Page = ({
           beforeText: visual.text,
           selectedText: "",
           afterText: "",
-          cursorOffset,
         };
       }
 
@@ -1569,7 +979,6 @@ export const HomeV2_4Page = ({
         beforeText: visual.text.slice(0, localStart),
         selectedText: visual.text.slice(localStart, localEnd),
         afterText: visual.text.slice(localEnd),
-        cursorOffset,
       };
     });
   }, [inputText, textareaSelection]);
@@ -1579,62 +988,21 @@ export const HomeV2_4Page = ({
     return trimmed ? trimmed.split(/\s+/).length : 0;
   }, [inputText]);
 
-  const previewParagraphs = useMemo(
-    () => parseInlineDocument(inputText),
+  const lineDigSectionCount = useMemo(
+    () =>
+      lines.filter((line, index) => {
+        const nextLine = lines[index + 1];
+        return nextLine ? nextLine.indent > line.indent : false;
+      }).length,
+    [lines],
+  );
+
+  const inlineDigSectionCount = useMemo(
+    () => inputText.match(/\(\(/g)?.length ?? 0,
     [inputText],
   );
 
-  const digSectionCount = useMemo(
-    () => countExpandableBullets(previewParagraphs),
-    [previewParagraphs],
-  );
-
-  const paragraphBreakIds = useMemo(() => {
-    const ids = new Set<number>();
-    const rawLines = inputText.split("\n");
-    let lineIndex = 0;
-    let prevWasBlank = false;
-
-    for (const rawLine of rawLines) {
-      const m = rawLine.match(/^(\s*)(?:[-*+•]\s+)?(.*)/);
-      const text = m ? m[2].trim() : "";
-      if (!text) {
-        prevWasBlank = true;
-        continue;
-      }
-      if (prevWasBlank && lineIndex > 0 && lineIndex < lines.length) {
-        ids.add(lines[lineIndex].id);
-      }
-      prevWasBlank = false;
-      lineIndex++;
-    }
-
-    return ids;
-  }, [inputText, lines]);
-  const activePreviewHandle =
-    previewLayout === "list"
-      ? listPreviewRef.current
-      : inlinePreviewRef.current;
-
-  const handleLayoutToggle = useCallback(() => {
-    setPreviewLayout((current) => {
-      if (current === "inline") {
-        const indices = inlinePreviewRef.current?.getExpandedSourceIndices() ?? new Set<number>();
-        setTimeout(() => {
-          listPreviewRef.current?.setExpandedBySourceIndices(indices);
-          handlePreviewUpdate();
-        }, 0);
-        return "list";
-      } else {
-        const indices = listPreviewRef.current?.getExpandedSourceIndices() ?? new Set<number>();
-        setTimeout(() => {
-          inlinePreviewRef.current?.setExpandedBySourceIndices(indices);
-          handlePreviewUpdate();
-        }, 0);
-        return "inline";
-      }
-    });
-  }, [forceUpdate]);
+  const digSectionCount = lineDigSectionCount + inlineDigSectionCount;
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
@@ -1659,7 +1027,7 @@ export const HomeV2_4Page = ({
           }}
         />
 
-        <div className="relative mx-auto max-w-[59rem] px-6 pt-16 pb-16">
+        <div className="relative mx-auto max-w-4xl px-6 pt-16 pb-16">
           <div className="max-w-3xl">
             {/* Eyebrow */}
             <div className="mb-4">
@@ -1752,17 +1120,17 @@ export const HomeV2_4Page = ({
               <div className={shellClass}>
                 <button
                   onClick={() => setMode("input")}
-                  className={cn(pillButtonClass(mode === "input"), "w-[76px] text-center")}
+                  className={pillButtonClass(mode === "input")}
                   type="button"
                 >
-                  Input
+                  Raw text
                 </button>
                 <button
                   onClick={() => setMode("digtext")}
-                  className={cn(pillButtonClass(mode === "digtext"), "w-[76px] text-center")}
+                  className={pillButtonClass(mode === "digtext")}
                   type="button"
                 >
-                  Preview
+                  Dig text
                 </button>
               </div>
 
@@ -1771,7 +1139,7 @@ export const HomeV2_4Page = ({
                   <div className={shellClass}>
                     <button
                       onClick={() => {
-                        const h = activePreviewHandle;
+                        const h = digTextRef.current;
                         if (!h) return;
                         if (h.anyExpanded) {
                           h.collapseAll();
@@ -1785,29 +1153,14 @@ export const HomeV2_4Page = ({
                       )}
                       type="button"
                     >
-                      {(activePreviewHandle?.anyExpanded ?? false) ? (
+                      {(digTextRef.current?.anyExpanded ?? false) ? (
                         <X size={14} strokeWidth={2.25} className="block" />
                       ) : (
                         <Plus size={14} strokeWidth={2.25} className="block" />
                       )}
-                      {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                      {(digTextRef.current?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
                     </button>
                   </div>
-                )}
-                {mode === "digtext" && (
-                  <button
-                    type="button"
-                    onClick={handleLayoutToggle}
-                    className={layoutIconButtonClass(previewLayout === "list")}
-                    aria-label={
-                      previewLayout === "list"
-                        ? "Use inline preview"
-                        : "Use list preview"
-                    }
-                    aria-pressed={previewLayout === "list"}
-                  >
-                    {listPreviewIcon}
-                  </button>
                 )}
                 {mode === "input" && inputMode === "textarea" && (
                   <div className={shellClass}>
@@ -1863,7 +1216,7 @@ export const HomeV2_4Page = ({
                   ref={editorRef}
                   lines={lines}
                   onLinesChange={handleLinesChange}
-                  onCollapseChange={handlePreviewUpdate}
+                  onCollapseChange={() => forceUpdate((n) => n + 1)}
                   onUndo={handleUndo}
                   onRedo={handleRedo}
                   variant="bullets"
@@ -1875,8 +1228,8 @@ export const HomeV2_4Page = ({
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden leading-[1.85] text-neutral-700 dark:text-neutral-300"
-                      style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
+                      className="pointer-events-none absolute inset-0 overflow-hidden text-base leading-[1.85] text-neutral-700 dark:text-neutral-300"
+                      style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                     >
                       <div
                         className={cn(
@@ -1889,7 +1242,6 @@ export const HomeV2_4Page = ({
                             return (
                               <div
                                 key={`${index}-${visual.text}`}
-                                data-mirror-line={index}
                                 className="whitespace-pre-wrap break-words"
                                 style={{
                                   paddingLeft: `${visual.paddingLeftCh}ch`,
@@ -1904,21 +1256,6 @@ export const HomeV2_4Page = ({
                                       {renderMirrorSegment(visual.selectedText, visual.bulletDisplay)}
                                     </span>
                                     {renderMirrorSegment(visual.afterText, visual.bulletDisplay)}
-                                  </>
-                                ) : textareaFocused && visual.cursorOffset !== null ? (
-                                  <>
-                                    {renderMirrorSegment(visual.text.slice(0, visual.cursorOffset), visual.bulletDisplay)}
-                                    <span
-                                      aria-hidden="true"
-                                      className="relative inline-block"
-                                      style={{ width: 0 }}
-                                    >
-                                      <span
-                                        className="absolute bg-neutral-900 dark:bg-neutral-50"
-                                        style={{ left: 0, top: "-0.8em", width: "1.5px", height: "1em", animation: "textarea-cursor-blink 1.2s step-end infinite" }}
-                                      />
-                                    </span>
-                                    {renderMirrorSegment(visual.text.slice(visual.cursorOffset), visual.bulletDisplay)}
                                   </>
                                 ) : (
                                   renderMirrorSegment(visual.text, visual.bulletDisplay) || " "
@@ -1942,102 +1279,37 @@ export const HomeV2_4Page = ({
                     onChange={handleTextareaChange}
                     onPaste={handleTextareaPaste}
                     onKeyDown={handleTextareaKeyDown}
-                    onMouseDown={(event) => {
+                    onMouseDown={() => {
                       isTextareaSelectingRef.current = true;
-                      textareaMouseDownPointRef.current = {
-                        x: event.clientX,
-                        y: event.clientY,
-                        withShift: event.shiftKey,
-                      };
                       syncTextareaSelection();
                     }}
-                    onFocus={() => { setTextareaFocused(true); syncTextareaSelection(); }}
-                    onBlur={() => setTextareaFocused(false)}
+                    onFocus={syncTextareaSelection}
                     onSelect={syncTextareaSelection}
                     onKeyUp={syncTextareaSelection}
-                    onMouseUp={(event) => {
-                      const start = textareaMouseDownPointRef.current;
-                      textareaMouseDownPointRef.current = null;
-
-                      // Only remap simple single clicks.  Drag selections and
-                      // double/triple clicks keep native behavior so word and
-                      // line selection still work.
-                      const isSimpleClick =
-                        start !== null &&
-                        event.detail === 1 &&
-                        !start.withShift &&
-                        Math.abs(event.clientX - start.x) < 3 &&
-                        Math.abs(event.clientY - start.y) < 3;
-
-                      if (isSimpleClick) {
-                        const sourceOffset = computeSourceOffsetFromPoint(
-                          event.clientX,
-                          event.clientY,
-                        );
-                        if (sourceOffset !== null && textareaRef.current) {
-                          textareaRef.current.setSelectionRange(
-                            sourceOffset,
-                            sourceOffset,
-                          );
-                        }
-                      }
-
-                      syncTextareaSelection();
-                    }}
+                    onMouseUp={syncTextareaSelection}
                     onScroll={syncTextareaMirrorScroll}
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
-                    className="relative block h-full w-full resize-none bg-transparent leading-[1.85] text-transparent caret-transparent outline-none placeholder:text-neutral-400 selection:bg-transparent dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
-                    style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: "15px",
-                      tabSize: 4,
-                      padding: 0,
-                      margin: 0,
-                      border: 0,
-                    }}
+                    className="relative block h-full w-full resize-none bg-transparent text-base leading-[1.85] text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400 selection:bg-transparent dark:caret-neutral-50 dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                   />
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className={previewLayout !== "list" ? "hidden" : ""}>
-                    {lines.length > 0 ? (
-                      <EditableLineView
-                        ref={listPreviewRef}
-                        lines={lines}
-                        onLinesChange={handleLinesChange}
-                        onCollapseChange={handlePreviewUpdate}
-                        readOnly
-                        readOnlyInlineDigSyntax="parentheses"
-                        defaultCollapsed
-                        readOnlyEndControlsOnly
-                        readOnlyTextClassName="text-base leading-[1.85]"
-                        readOnlyTextStyle={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
-                        lineDigCollapsedIcon="enter"
-                        inlineDigCollapsedIcon="plus"
-                        paragraphBreakIds={paragraphBreakIds}
-                      />
-                    ) : (
-                      <div
-                        className="text-neutral-400 dark:text-neutral-500"
-                        style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
-                      >
-                        Start typing on the Input tab to see your preview here.
-                      </div>
-                    )}
-                  </div>
-                  <InlineParagraphPreview
-                    ref={inlinePreviewRef}
-                    text={inputText}
-                    onExpandedChange={handlePreviewUpdate}
-                    className={cn(
-                      "text-base leading-[1.85] text-neutral-800 dark:text-neutral-200",
-                      previewLayout === "list" && "hidden",
-                    )}
-                    style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
-                  />
-                </>
+                <EditableLineView
+                  ref={digTextRef}
+                  lines={lines}
+                  onLinesChange={handleLinesChange}
+                  onCollapseChange={() => forceUpdate((n) => n + 1)}
+                  readOnly
+                  readOnlyInlineDigSyntax="parentheses"
+                  defaultCollapsed
+                  readOnlyEndControlsOnly
+                  readOnlyTextClassName="text-base leading-[1.85]"
+                  readOnlyTextStyle={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
+                  lineDigCollapsedIcon="enter"
+                  inlineDigCollapsedIcon="plus"
+                />
               )}
             </div>
 
@@ -2103,7 +1375,7 @@ export const HomeV2_4Page = ({
         id="prompt"
         className="border-t border-neutral-200/70 scroll-mt-[65px] dark:border-neutral-800/80"
       >
-        <div className="mx-auto max-w-[59rem] px-6 py-20">
+        <div className="max-w-4xl mx-auto px-6 py-20">
           <span className={eyebrowClass}>
             <span aria-hidden="true" className={eyebrowRuleClass} />
             A new paradigm of using text
@@ -2171,7 +1443,7 @@ export const HomeV2_4Page = ({
               </button>
             </div>
 
-            <pre className="px-5 py-5 text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words max-h-[480px] overflow-auto dark:text-neutral-300" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+            <pre className="px-5 py-5 font-mono text-[13px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words max-h-[480px] overflow-auto dark:text-neutral-300">
               {PROMPT}
             </pre>
           </div>
@@ -2187,7 +1459,7 @@ export const HomeV2_4Page = ({
         id="embed"
         className="relative border-t border-neutral-200/70 bg-neutral-50/60 dark:border-neutral-800/80 dark:bg-neutral-900/40"
       >
-        <div className="mx-auto max-w-[59rem] px-6 py-20">
+        <div className="max-w-4xl mx-auto px-6 py-20">
           <span className={eyebrowClass}>
             <span aria-hidden="true" className={eyebrowRuleClass} />
             Use it anywhere
@@ -2223,36 +1495,20 @@ export const HomeV2_4Page = ({
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-neutral-200/70 dark:border-neutral-800/80">
-        <div className="mx-auto max-w-[59rem] px-6 py-12 flex flex-col gap-3 font-sans text-[12px] text-neutral-500 sm:flex-row sm:items-center sm:justify-between dark:text-neutral-400">
+        <div className="max-w-4xl mx-auto px-6 py-12 flex items-center justify-between font-sans text-[12px] text-neutral-500 dark:text-neutral-400">
           <span>Dig text: read the shortest version first.</span>
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="tabular-nums">2026</span>
-            <span aria-hidden="true">·</span>
-            <a
-              href="https://creativecommons.org/licenses/by-sa/4.0/"
-              className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
-            >
-              CC BY-SA 4.0
-            </a>
-            <span aria-hidden="true">·</span>
-            <a
-              href="https://www.pawel.world"
-              className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
-            >
-              pawel.world
-            </a>
-          </span>
+          <span className="tabular-nums">© 2026</span>
         </div>
       </footer>
     </div>
   );
 };
 
-const HomeV3_1_InlineBack = () => (
+const HomeV2_11_NewQual = () => (
   <HomeV2_4Page
     inputMode="textarea"
     heroFontClassName="font-sans"
   />
 );
 
-export default HomeV3_1_InlineBack;
+export default HomeV2_11_NewQual;

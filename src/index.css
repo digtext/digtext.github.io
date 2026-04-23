@@ -107,6 +107,11 @@
     @apply bg-background text-foreground;
     font-family: var(--font-serif);
   }
+
+  html,
+  body {
+    overflow-x: clip;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

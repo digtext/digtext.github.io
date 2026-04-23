@@ -132,13 +132,24 @@ export function extractParenthesisExpandables(raw: string): InlineDigExtractResu
 
 export type InlineDigCollapsedIcon = "ellipsis" | "plus";
 
+export interface InlineDigIconSet {
+  collapsed?: React.ReactNode;
+  expanded?: React.ReactNode;
+}
+
 interface ExpandButtonProps {
   isExpanded: boolean;
   onClick: () => void;
   collapsedIcon?: InlineDigCollapsedIcon;
+  icons?: InlineDigIconSet;
 }
 
-const ExpandButton = ({ isExpanded, onClick, collapsedIcon = "ellipsis" }: ExpandButtonProps) => (
+const ExpandButton = ({
+  isExpanded,
+  onClick,
+  collapsedIcon = "ellipsis",
+  icons,
+}: ExpandButtonProps) => (
   <button
     onClick={onClick}
     className={cn(
@@ -148,7 +159,9 @@ const ExpandButton = ({ isExpanded, onClick, collapsedIcon = "ellipsis" }: Expan
     aria-label={isExpanded ? "Collapse" : "Expand"}
     type="button"
   >
-    {isExpanded ? <DigCloseIcon /> : collapsedIcon === "plus" ? <DigPlusIcon /> : <DigEllipsisIcon />}
+    {isExpanded
+      ? (icons?.expanded ?? <DigCloseIcon />)
+      : (icons?.collapsed ?? (collapsedIcon === "plus" ? <DigPlusIcon /> : <DigEllipsisIcon />))}
   </button>
 );
 
@@ -161,6 +174,7 @@ interface InlineExpandSegmentProps {
   renderMode: InlineDigRenderMode;
   linkClassName?: string;
   collapsedIcon?: InlineDigCollapsedIcon;
+  icons?: InlineDigIconSet;
 }
 
 const InlineExpandSegment = ({
@@ -172,13 +186,19 @@ const InlineExpandSegment = ({
   renderMode,
   linkClassName,
   collapsedIcon,
+  icons,
 }: InlineExpandSegmentProps) => {
   const isExpanded = expandedIds.has(id);
 
   if (renderMode === "indented") {
     return (
       <span className="align-baseline">
-        <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} collapsedIcon={collapsedIcon} />
+        <ExpandButton
+          isExpanded={isExpanded}
+          onClick={() => toggle(id)}
+          collapsedIcon={collapsedIcon}
+          icons={icons}
+        />
         {isExpanded && (
           <span className="mt-3 ml-6 block border-l border-[#CEC9F2] pl-4 dark:border-[#7E76C9]">
             <InlineDigMarkdown
@@ -190,6 +210,7 @@ const InlineExpandSegment = ({
               renderMode={renderMode}
               linkClassName={linkClassName}
               collapsedIcon={collapsedIcon}
+              icons={icons}
             />
           </span>
         )}
@@ -199,7 +220,12 @@ const InlineExpandSegment = ({
 
   return (
     <span>
-      <ExpandButton isExpanded={isExpanded} onClick={() => toggle(id)} collapsedIcon={collapsedIcon} />
+      <ExpandButton
+        isExpanded={isExpanded}
+        onClick={() => toggle(id)}
+        collapsedIcon={collapsedIcon}
+        icons={icons}
+      />
       {isExpanded && (
         <span className="underline decoration-[#CEC9F2] decoration-[1px] underline-offset-[2px] transition-colors dark:decoration-[#8E86D8]">
           <InlineDigMarkdown
@@ -211,6 +237,7 @@ const InlineExpandSegment = ({
             renderMode={renderMode}
             linkClassName={linkClassName}
             collapsedIcon={collapsedIcon}
+            icons={icons}
           />
         </span>
       )}
@@ -228,6 +255,7 @@ interface InlineDigMarkdownProps {
   renderMode?: InlineDigRenderMode;
   linkClassName?: string;
   collapsedIcon?: InlineDigCollapsedIcon;
+  icons?: InlineDigIconSet;
 }
 
 export const InlineDigMarkdown = ({
@@ -240,6 +268,7 @@ export const InlineDigMarkdown = ({
   renderMode = "inline",
   linkClassName,
   collapsedIcon,
+  icons,
 }: InlineDigMarkdownProps) => {
   const replaceTokens = useCallback(
     (children: React.ReactNode): React.ReactNode =>
@@ -269,6 +298,7 @@ export const InlineDigMarkdown = ({
                 renderMode={renderMode}
                 linkClassName={linkClassName}
                 collapsedIcon={collapsedIcon}
+                icons={icons}
               />,
             );
           }
@@ -280,7 +310,7 @@ export const InlineDigMarkdown = ({
 
         return parts.length > 0 ? parts : child;
       }),
-    [collapsedIcon, expandablesMap, expandedIds, linkClassName, renderMode, toggle],
+    [collapsedIcon, expandablesMap, expandedIds, icons, linkClassName, renderMode, toggle],
   );
 
   const components: Components = useMemo(() => {

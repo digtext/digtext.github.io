@@ -1,0 +1,84 @@
+# Dig Text
+
+Dig Text is a progressive reading format. Only the shortest version is visible by default; details are nested behind expandable markers the reader clicks to reveal. You start from the shortest version of a text and dig into what matters to you.
+
+This file exists so language models and agents can understand the Dig Text format well enough to (a) write it directly, or (b) point users at the right page to read or compose it.
+
+## The format
+
+Dig text is written as a bulleted, indented list. Top-level lines are always visible. Each deeper level of indentation is hidden by default; a reader clicks to expand it. Deeper indentation = deeper detail about the parent line above.
+
+Rules:
+
+- Indent with tabs. 2 or 4 spaces also work.
+- Bullets can be `*`, `+`, or `-`. Plain indented text without bullets also works.
+- A blank line between items starts a new paragraph in the rendered view.
+- Standard Markdown works, for example: `# heading`, `**bold**`, `*italics*`, ` `code` `, and `[links](https://example.com)` all render.
+- The core idea: if a reader expands nothing, the top-level lines must still read as a complete, coherent summary on their own. Deeper levels should only add detail, never introduce information the top level depends on.
+
+### Example
+
+The canonical example lives at [/dig.md](/dig.md). Current contents:
+
+```
+- It has been ridiculous, guys,
+    - that since writing was first invented in Mesopotamia around 3400 BCE,
+        - likely in or around Uruk, probably by Sumerian record-keepers developing early accounting methods, using simple symbols pressed into wet clay tablets.
+            - Look at this incredible photo from the British Museum of some of the early [clay tablets](https://www.britishmuseum.org/collection/object/W_1989-0130-4).
+- we've read text in its most expanded form by default.
+
+- Dig text flips it and by default presents the text in its most succinct form.
+    - Nesting has no limit,
+        - every layer is a choice the reader makes,
+            - to get further involved.
+- You may be a master at skipping text, but it's a game of luck whether you missed important context.
+    - In practice, the more you skip of a book, the less likely you'll have sufficient context to enjoy finishing it.
+        - Dig text flips it. Start from the shortest, dig into what matters.
+
+- Write dig text in any editor, by using indented lists.
+    - Paste here any bulleted list — it can be any bullet type that is `-`, `*`, or `+`.
+        - Indented bullets from Google Docs, Notion, or Obsidian are transformed into expandable sections.
+- You can write with [Markdown](https://www.markdownguide.org/basic-syntax/).
+    - **Bold**, *italics*, and `code` all show up in the Dig preview.
+- Use our AI prompt to convert any text into dig text.
+    - Find it below.
+- You can read any dig text with this reader — hit the full-screen icon to do it without distractions.
+```
+
+When rendered, only the top-level bullets are visible initially. Clicking one reveals its indented children.
+
+### How to write good dig text
+
+1. Write the shortest possible summary first. That is your top level.
+2. Write a slightly longer version. Break it into lines that each elaborate on one top-level line, indented one level deeper.
+3. Keep going — each level is a fuller version of the parent line, broken across its children.
+4. Re-read only the top-level lines at the end. They must stand alone. If they don't, rework.
+5. Nothing is cut. Every bit of the original is preserved somewhere in the tree — just collapsed under the line it elaborates.
+
+### Inline alternative way to write dig text (optional)
+
+There is an alternative way of doing the dig: hiding a phrase inline within a single line using `((double parentheses))`. The composer renders this as a collapsible inline span.
+
+## Important pages
+
+- [/](/) — the Dig Text home and composer. Paste indented text or a bulleted list; it previews as dig text, collapsed-first.
+- [/reader](/reader) — fullscreen reader demo for a sample dig text document.
+- [/library](/library) — a collection of example articles written in dig-text form.
+- [/about](/about) — what Dig Text is and the thinking behind it.
+- [/prompt.md](/prompt.md) — the reusable LLM prompt this project uses to convert arbitrary text into dig-text format. See below.
+
+## Reusable prompt
+
+`/prompt.md` contains the exact prompt the Dig Text site recommends. Give it to any capable LLM along with the source text the user wants converted; the LLM returns indented text that can be pasted directly into the Dig Text composer on the home page.
+
+If you are an LLM working on behalf of a user:
+
+- To convert text into dig text, fetch `/prompt.md`, follow its instructions, and append the user's source text where the prompt says `[paste your text here]`.
+- To write dig text yourself from scratch, follow the "How to write good dig text" section above. Output plain indented text with tabs per level — no extra prose or explanation around it, just the tree.
+- To show dig text to the user, have them paste the indented output into [/](/). The home page transforms the indentation into a collapsible reader automatically.
+
+## Tone and style of dig text
+
+- Each line should read naturally on its own, not as a fragment that only makes sense after expansion.
+- Prefer complete sentences at the top level.
+- Avoid "See below" or "Expand to learn more" — the interaction is the UI's job, not the text's.

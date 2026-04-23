@@ -75,13 +75,13 @@ const pillButtonClass = (active = false) =>
   );
 
 const iconButtonClass =
-  "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50";
+  "inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[18px] border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50";
 
 const layoutIconButtonClass = (active = false) =>
   cn(
-    "inline-flex h-[34px] w-[34px] items-center justify-center rounded-[18px] border transition-colors",
+    "inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[18px] border transition-colors",
     active
-      ? "border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-700 dark:border-neutral-50 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
+      ? "border-neutral-300 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-50"
       : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
   );
 
@@ -92,28 +92,66 @@ const listPreviewIcon = (
     className="h-4 w-4"
     fill="none"
     focusable="false"
+    width="16"
+    height="16"
   >
-    <circle cx="3" cy="4" r="1.05" fill="currentColor" />
+    <circle cx="3" cy="4" r="0.9" fill="currentColor" />
     <path
       d="M5.5 4h7"
       stroke="currentColor"
       strokeLinecap="round"
-      strokeWidth="1.65"
+      strokeWidth="1.4"
     />
-    <circle cx="4.9" cy="8" r="1.05" fill="currentColor" />
+    <circle cx="4.9" cy="8" r="0.9" fill="currentColor" />
     <path
       d="M7.4 8h5.6"
       stroke="currentColor"
       strokeLinecap="round"
-      strokeWidth="1.65"
+      strokeWidth="1.4"
     />
-    <circle cx="6.8" cy="12" r="1.05" fill="currentColor" />
+    <circle cx="6.8" cy="12" r="0.9" fill="currentColor" />
     <path
       d="M9.3 12h4"
       stroke="currentColor"
       strokeLinecap="round"
-      strokeWidth="1.65"
+      strokeWidth="1.4"
     />
+  </svg>
+);
+
+const ExpandAllIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 16 16"
+    className="block h-4 w-4"
+    fill="none"
+    focusable="false"
+    width="16"
+    height="16"
+  >
+    <path d="M8 3v10" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+    <path d="M5.7 8H2.1" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+    <path d="M4.1 5.9 2.1 8l2 2.1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
+    <path d="M10.3 8h3.6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+    <path d="M11.9 5.9 13.9 8l-2 2.1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
+  </svg>
+);
+
+const CollapseAllIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 16 16"
+    className="block h-4 w-4"
+    fill="none"
+    focusable="false"
+    width="16"
+    height="16"
+  >
+    <path d="M8 3v10" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+    <path d="M2.1 8h3.6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+    <path d="M3.7 5.9 5.7 8l-2 2.1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
+    <path d="M13.9 8h-3.6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+    <path d="M12.3 5.9 10.3 8l2 2.1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
   </svg>
 );
 
@@ -188,6 +226,9 @@ const dedentLine = (line: string) => {
   return line;
 };
 
+const getIndentLevel = (line: string) =>
+  Math.floor(getIndentWidth(line) / VISUAL_INDENT_UNIT.length);
+
 const getBlockEndIndex = (lines: string[], startIndex: number) => {
   const startIndent = getIndentWidth(lines[startIndex]);
   let endIndex = startIndex + 1;
@@ -233,20 +274,33 @@ const getOffsetsForLineSpan = (
 };
 
 const getVisualLineData = (line: string): VisualLineData => {
-  // Keep the textarea mirror aligned with the raw textarea: render full lines
-  // without hanging indentation, only swapping "*" for a nicer bullet glyph.
+  // The mirror draws each line inside its own <div> with a hanging-indent
+  // padding so wrapped rows line up under the bullet.  See the "Caret
+  // alignment" section in input-process.md for why this layout and the
+  // textarea's wrapping geometry have to stay coordinated — changing one
+  // without the other breaks click-to-place-caret on wrapped rows.
   const indentMatch = line.match(/^[\t ]*/)?.[0] ?? "";
+  const normalizedIndent = indentMatch.replace(/\t/g, VISUAL_INDENT_UNIT);
+  const indentCh = normalizedIndent.length;
   const rest = line.slice(indentMatch.length);
   const bulletMatch = rest.match(/^([-*+•])\s+(.*)$/);
-  const displayLine = bulletMatch && bulletMatch[1] === "*"
-    ? line.replace(/^([\t ]*)\*(\s)/, "$1•$2")
-    : line;
+
+  if (bulletMatch) {
+    return {
+      text: `${bulletMatch[1]} ${bulletMatch[2]}`,
+      paddingLeftCh: indentCh + BULLET_WIDTH_CH,
+      textIndentCh: -BULLET_WIDTH_CH,
+      hiddenPrefixLength: indentMatch.length,
+      bulletDisplay: bulletMatch[1] === "*" ? "•" : bulletMatch[1],
+    };
+  }
 
   return {
-    text: displayLine,
-    paddingLeftCh: 0,
+    text: rest,
+    paddingLeftCh: indentCh,
     textIndentCh: 0,
-    bulletDisplay: bulletMatch ? (bulletMatch[1] === "*" ? "•" : bulletMatch[1]) : null,
+    hiddenPrefixLength: indentMatch.length,
+    bulletDisplay: null,
   };
 };
 
@@ -408,6 +462,7 @@ interface VisualLineData {
   text: string;
   paddingLeftCh: number;
   textIndentCh: number;
+  hiddenPrefixLength: number;
   bulletDisplay: string | null;
 }
 
@@ -612,12 +667,50 @@ const inlinePreviewBoundaryButtonClass =
   "inline-dig-boundary group/boundary inline-flex h-5 flex-none cursor-pointer items-center justify-center align-middle text-[#5F59A3] no-underline decoration-transparent outline-none transition-colors hover:text-[#4E478F] dark:text-[#C7C2FF] dark:hover:text-[#E5E1FF] focus-visible:ring-2 focus-visible:ring-[#5F59A3]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-[#C7C2FF]/45 dark:focus-visible:ring-offset-neutral-950";
 
 const inlinePreviewHoverStyles = `
-  .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-    color: #5F59A3;
-  }
+  @media (hover: hover) and (pointer: fine) {
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
+      color: #4E478F;
+    }
 
-  .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-    color: #C7C2FF;
+    .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
+    .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
+      color: #E5E1FF;
+    }
+
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-default,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-default {
+      opacity: 0;
+    }
+
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-hover {
+      opacity: 1;
+    }
+
+    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #5F59A3;
+    }
+
+    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #5F59A3;
+    }
+
+    .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #C7C2FF;
+    }
+
+    .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #C7C2FF;
+    }
   }
 `;
 
@@ -627,6 +720,8 @@ const InlinePreviewDigPlusIcon = () => (
     className="block h-5 w-5"
     fill="none"
     focusable="false"
+    width="20"
+    height="20"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -649,9 +744,11 @@ const InlinePreviewDigPlusIcon = () => (
 const InlinePreviewDigCloseIcon = () => (
   <span className="relative block h-5 w-5" aria-hidden="true">
     <svg
-      className="absolute inset-0 block h-5 w-5 opacity-100 transition-opacity group-hover/boundary:opacity-0"
+      className="inline-dig-boundary-default absolute inset-0 block h-5 w-5 opacity-100 transition-opacity group-hover/boundary:opacity-0"
       fill="none"
       focusable="false"
+      width="20"
+      height="20"
       viewBox="0 0 21 21"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -667,9 +764,11 @@ const InlinePreviewDigCloseIcon = () => (
       />
     </svg>
     <svg
-      className="absolute inset-0 block h-5 w-5 opacity-0 transition-opacity group-hover/boundary:opacity-100"
+      className="inline-dig-boundary-hover absolute inset-0 block h-5 w-5 opacity-0 transition-opacity group-hover/boundary:opacity-100"
       fill="none"
       focusable="false"
+      width="20"
+      height="20"
       viewBox="0 0 20 20"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -689,9 +788,11 @@ const InlinePreviewDigCloseIcon = () => (
 const InlinePreviewDigEndIcon = () => (
   <span className="relative block h-5 w-3" aria-hidden="true">
     <svg
-      className="absolute inset-0 block h-5 w-3 opacity-100 transition-opacity group-hover/boundary:opacity-0"
+      className="inline-dig-boundary-default absolute inset-0 block h-5 w-3 opacity-100 transition-opacity group-hover/boundary:opacity-0"
       fill="none"
       focusable="false"
+      width="12"
+      height="20"
       viewBox="0 0 12 20"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -704,9 +805,11 @@ const InlinePreviewDigEndIcon = () => (
       />
     </svg>
     <svg
-      className="absolute inset-0 block h-5 w-3 opacity-0 transition-opacity group-hover/boundary:opacity-100"
+      className="inline-dig-boundary-hover absolute inset-0 block h-5 w-3 opacity-0 transition-opacity group-hover/boundary:opacity-100"
       fill="none"
       focusable="false"
+      width="12"
+      height="20"
       viewBox="0 0 12 20"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -1200,6 +1303,104 @@ export const HomeV2_4Page = ({
     };
   }, []);
 
+  // Click-to-place-caret on wrapped rows: the textarea and the mirror use
+  // different wrap geometry (the mirror has a per-level hanging indent, the
+  // textarea wraps at column 0), so a native click against the textarea can
+  // land on the wrong line. We hit-test the mirror layer instead via
+  // caretRangeFromPoint / caretPositionFromPoint and remap the final caret
+  // position on mouseup whenever the interaction was a single click (no
+  // drag, click count = 1). Drag selection and double/triple-click keep
+  // native behavior. See input-process.md → "Caret alignment on wrapped
+  // lines" for the rationale.
+  const computeSourceOffsetFromPoint = useCallback(
+    (clientX: number, clientY: number): number | null => {
+      const mirror = textareaMirrorRef.current;
+      const textarea = textareaRef.current;
+      if (!mirror || !textarea) return null;
+
+      const previousTextareaPE = textarea.style.pointerEvents;
+      const previousMirrorPE = mirror.style.pointerEvents;
+      textarea.style.pointerEvents = "none";
+      mirror.style.pointerEvents = "auto";
+
+      try {
+        type DocWithCaret = Document & {
+          caretRangeFromPoint?: (x: number, y: number) => Range | null;
+          caretPositionFromPoint?: (
+            x: number,
+            y: number,
+          ) => { offsetNode: Node; offset: number } | null;
+        };
+        const doc = document as DocWithCaret;
+        let caretContainer: Node | null = null;
+        let caretOffset = 0;
+
+        const range = doc.caretRangeFromPoint?.(clientX, clientY);
+        if (range) {
+          caretContainer = range.startContainer;
+          caretOffset = range.startOffset;
+        } else if (doc.caretPositionFromPoint) {
+          const pos = doc.caretPositionFromPoint(clientX, clientY);
+          if (pos) {
+            caretContainer = pos.offsetNode;
+            caretOffset = pos.offset;
+          }
+        }
+        if (!caretContainer) return null;
+
+        let lineEl: HTMLElement | null = null;
+        let node: Node | null = caretContainer;
+        while (node && node !== mirror) {
+          if (
+            node instanceof HTMLElement &&
+            node.hasAttribute("data-mirror-line")
+          ) {
+            lineEl = node;
+            break;
+          }
+          node = node.parentNode;
+        }
+        if (!lineEl) return null;
+
+        const rawLines = textarea.value.split("\n");
+        const lineIndex = Number(lineEl.getAttribute("data-mirror-line"));
+        if (!Number.isInteger(lineIndex) || lineIndex < 0 || lineIndex >= rawLines.length) {
+          return null;
+        }
+
+        // Count rendered chars from the start of the line div up to the
+        // caret position.  The mirror renders `visual.text` (source line
+        // with the leading whitespace stripped), so rendered offset maps
+        // 1:1 into `visual.text`; bullet glyph replacement ("*" → "•") is
+        // a same-length swap, so indices stay aligned.
+        const preRange = document.createRange();
+        preRange.setStart(lineEl, 0);
+        preRange.setEnd(caretContainer, caretOffset);
+        const renderedOffset = preRange.toString().length;
+
+        const lineStarts = getLineStarts(rawLines);
+        const hiddenPrefix =
+          rawLines[lineIndex].match(/^[\t ]*/)?.[0].length ?? 0;
+        const sourceOffset =
+          (lineStarts[lineIndex] ?? 0) + hiddenPrefix + renderedOffset;
+
+        const lineEnd =
+          (lineStarts[lineIndex] ?? 0) + rawLines[lineIndex].length;
+        return Math.min(sourceOffset, lineEnd);
+      } finally {
+        textarea.style.pointerEvents = previousTextareaPE;
+        mirror.style.pointerEvents = previousMirrorPE;
+      }
+    },
+    [],
+  );
+
+  const textareaMouseDownPointRef = useRef<{
+    x: number;
+    y: number;
+    withShift: boolean;
+  } | null>(null);
+
   const applyTextareaUpdate = useCallback(
     (
       nextValue: string,
@@ -1363,27 +1564,77 @@ export const HomeV2_4Page = ({
           selectionStart,
           selectionEnd,
         );
-        const nextLines = [...rawLines];
-        const useWholeBlock = startIndex === endIndex && selectionStart === selectionEnd;
+        const cursorOnly =
+          selectionStart === selectionEnd && startIndex === endIndex;
+
+        // Indent validation (single-line, cursor-only, non-dedent).  The
+        // line immediately above must be non-blank, and its level must be
+        // in [currentLevel, currentLevel + 1] — i.e. a sibling (same level)
+        // or a direct parent (one deeper than current).  Both directions
+        // matter:
+        //   • prev shallower than current → we'd over-indent into an
+        //     orphan position (e.g. tab a L1 child when its L0 parent is
+        //     the line above → new L2 has no L1 parent).
+        //   • prev more than one deeper than current → the new level
+        //     would be disconnected from the outline above (e.g. "we've
+        //     read" at L0 right after a L3 wrap: tab to L1 has no L0
+        //     parent directly above).
+        // Dedent (shift) is always allowed.
+        if (!event.shiftKey && cursorOnly) {
+          const currentLevel = getIndentLevel(rawLines[startIndex]);
+          const prevLine = startIndex > 0 ? rawLines[startIndex - 1] : "";
+          const prevIsBlank = !prevLine.trim();
+          if (prevIsBlank) return;
+          const prevLevel = getIndentLevel(prevLine);
+          if (prevLevel < currentLevel) return;
+          if (prevLevel > currentLevel + 1) return;
+        }
+
+        // Only expand to the whole sub-block when the caret sits on a
+        // non-empty line. On an empty line `getBlockEndIndex` would greedily
+        // swallow every following line that has more indent than 0, which is
+        // the bug that made Enter → Tab select the next bullet.
+        const currentLineIsEmpty = !rawLines[startIndex]?.trim();
+        const useWholeBlock = cursorOnly && !currentLineIsEmpty;
         const targetEndIndex = useWholeBlock
           ? getBlockEndIndex(rawLines, startIndex) - 1
           : endIndex;
 
+        const nextLines = [...rawLines];
+        let firstLineDelta = 0;
         for (let index = startIndex; index <= targetEndIndex; index += 1) {
-          nextLines[index] = event.shiftKey
-            ? dedentLine(nextLines[index])
-            : indentLine(nextLines[index]);
+          const before = nextLines[index];
+          const after = event.shiftKey ? dedentLine(before) : indentLine(before);
+          nextLines[index] = after;
+          if (index === startIndex) firstLineDelta = after.length - before.length;
         }
 
-        const selection = getOffsetsForLineSpan(
-          nextLines,
-          startIndex,
-          targetEndIndex + 1,
-        );
-        applyTextareaUpdate(nextLines.join("\n"), selection, {
-          history: "push",
-          batchKind: null,
-        });
+        if (cursorOnly) {
+          // Preserve the caret position, just nudged by the indent delta. This
+          // replaces the earlier "select the whole line" behavior that made
+          // typing accidentally overwrite the line.
+          const nextLineStarts = getLineStarts(nextLines);
+          const lineStart = nextLineStarts[startIndex] ?? 0;
+          const nextCursor = Math.max(lineStart, selectionStart + firstLineDelta);
+          applyTextareaUpdate(
+            nextLines.join("\n"),
+            { start: nextCursor, end: nextCursor },
+            {
+              history: "push",
+              batchKind: null,
+            },
+          );
+        } else {
+          const selection = getOffsetsForLineSpan(
+            nextLines,
+            startIndex,
+            targetEndIndex + 1,
+          );
+          applyTextareaUpdate(nextLines.join("\n"), selection, {
+            history: "push",
+            batchKind: null,
+          });
+        }
         return;
       }
 
@@ -1452,32 +1703,148 @@ export const HomeV2_4Page = ({
 
       if (!rawLines[startIndex]?.trim()) return;
 
-      const direction = event.key === "ArrowUp" ? -1 : 1;
-      let targetIndex = startIndex + direction;
-      while (
-        targetIndex >= 0 &&
-        targetIndex < rawLines.length &&
-        !rawLines[targetIndex].trim()
-      ) {
-        targetIndex += direction;
+      // Cmd+Shift+Up/Down walks the current line (together with its
+      // children, i.e. its whole sub-block) through every allowed
+      // (position, indent) slot.  The rules, matching the spec image:
+      //
+      //   UP:
+      //     • if we can still go deeper at this position
+      //       (currentLevel < prevLevel + 1): just increment the whole
+      //       block's indent by 1.
+      //     • else swap our block with the single line immediately
+      //       above, and take that line's level as our new indent
+      //       (so we become a sibling of what was previously above us).
+      //     • if there is no prev line: no-op.
+      //
+      //   DOWN: symmetric.
+      //     • if there is a next line below our block: swap with that
+      //       single line and set our indent to nextLineLevel + 1
+      //       (so we become a deepest-valid child of it).
+      //     • else (we're at the tail), decrement indent by 1.  No-op
+      //       if already at 0.
+      //
+      // The block "moves with its children" because we always operate
+      // on [startIndex, blockEnd).  The single prev/next line we swap
+      // with keeps ITS subtree in place — only that single line
+      // crosses our block.
+      const direction = event.key === "ArrowUp" ? "up" : "down";
+      const blockEnd = getBlockEndIndex(rawLines, startIndex);
+      const currentLevel = getIndentLevel(rawLines[startIndex]);
+      const oldLineStart = getLineStarts(rawLines)[startIndex] ?? 0;
+      const offsetInLine = selectionStart - oldLineStart;
+
+      const shiftBlockBy = (lines: string[], delta: number) =>
+        lines.map((line) => {
+          if (delta === 0) return line;
+          if (delta > 0) return INDENT_TOKEN.repeat(delta) + line;
+          let result = line;
+          for (let i = 0; i < -delta; i += 1) result = dedentLine(result);
+          return result;
+        });
+
+      const commit = (
+        nextLines: string[],
+        newBlockStartIndex: number,
+        newLevel: number,
+      ) => {
+        const newStarts = getLineStarts(nextLines);
+        const newLineStart = newStarts[newBlockStartIndex] ?? 0;
+        const delta = newLevel - currentLevel;
+        const newCursor = Math.max(newLineStart, newLineStart + offsetInLine + delta);
+        applyTextareaUpdate(
+          nextLines.join("\n"),
+          { start: newCursor, end: newCursor },
+          { history: "push", batchKind: null },
+        );
+      };
+
+      if (direction === "up") {
+        let prevIndex = startIndex - 1;
+        while (prevIndex >= 0 && !rawLines[prevIndex].trim()) prevIndex -= 1;
+
+        if (prevIndex < 0) {
+          // No block above: can only decrement indent as a mercy move so
+          // a line at an orphaned depth can climb out.  Match DOWN's
+          // behavior at the tail: decrement by 1 if > 0, else no-op.
+          if (currentLevel <= 0) return;
+          const newBlock = shiftBlockBy(rawLines.slice(startIndex, blockEnd), -1);
+          const nextLines = [...rawLines];
+          nextLines.splice(startIndex, blockEnd - startIndex, ...newBlock);
+          commit(nextLines, startIndex, currentLevel - 1);
+          return;
+        }
+
+        const prevLevel = getIndentLevel(rawLines[prevIndex]);
+
+        if (currentLevel < prevLevel + 1) {
+          // Still room to go deeper under prev — just indent the block.
+          const newBlock = shiftBlockBy(rawLines.slice(startIndex, blockEnd), 1);
+          const nextLines = [...rawLines];
+          nextLines.splice(startIndex, blockEnd - startIndex, ...newBlock);
+          commit(nextLines, startIndex, currentLevel + 1);
+          return;
+        }
+
+        // At max depth under prev — swap our block with the single prev
+        // line (preserving any blank lines between prev and us in place).
+        // Our new level = prev's level (so we slot in as a sibling of
+        // whatever prev was a sibling of).
+        const blockLines = shiftBlockBy(
+          rawLines.slice(startIndex, blockEnd),
+          prevLevel - currentLevel,
+        );
+        const prevLine = rawLines[prevIndex];
+        const nextLines = [
+          ...rawLines.slice(0, prevIndex),
+          ...blockLines,
+          ...rawLines.slice(prevIndex + 1, startIndex),
+          prevLine,
+          ...rawLines.slice(blockEnd),
+        ];
+        commit(nextLines, prevIndex, prevLevel);
+        return;
       }
-      if (targetIndex < 0 || targetIndex >= rawLines.length) return;
 
-      const nextLines = [...rawLines];
-      [nextLines[startIndex], nextLines[targetIndex]] = [
-        nextLines[targetIndex],
-        nextLines[startIndex],
-      ];
+      // DOWN
+      let nextIndex = blockEnd;
+      while (
+        nextIndex < rawLines.length &&
+        !rawLines[nextIndex].trim()
+      ) {
+        nextIndex += 1;
+      }
 
-      const selection = getOffsetsForLineSpan(
-        nextLines,
-        targetIndex,
-        targetIndex + 1,
+      if (nextIndex >= rawLines.length) {
+        // At the tail: just decrement indent by 1.
+        if (currentLevel <= 0) return;
+        const newBlock = shiftBlockBy(rawLines.slice(startIndex, blockEnd), -1);
+        const nextLines = [...rawLines];
+        nextLines.splice(startIndex, blockEnd - startIndex, ...newBlock);
+        commit(nextLines, startIndex, currentLevel - 1);
+        return;
+      }
+
+      // Swap with the single next line (preserving that line's subtree
+      // in place below).  New indent = nextLineLevel + 1 so we land as
+      // its deepest-valid child.
+      const nextLevel = getIndentLevel(rawLines[nextIndex]);
+      const newLoremLevel = nextLevel + 1;
+      const downBlockLines = shiftBlockBy(
+        rawLines.slice(startIndex, blockEnd),
+        newLoremLevel - currentLevel,
       );
-      applyTextareaUpdate(nextLines.join("\n"), selection, {
-        history: "push",
-        batchKind: null,
-      });
+      const nextLine = rawLines[nextIndex];
+      const nextLinesDown = [
+        ...rawLines.slice(0, startIndex),
+        nextLine,
+        ...rawLines.slice(blockEnd, nextIndex),
+        ...downBlockLines,
+        ...rawLines.slice(nextIndex + 1),
+      ];
+      // newBlockStart = startIndex (old) + 1 (for the moved next line)
+      // + (nextIndex - blockEnd) (for any blank lines preserved between).
+      const newBlockStart = startIndex + 1 + (nextIndex - blockEnd);
+      commit(nextLinesDown, newBlockStart, newLoremLevel);
     },
     [applyTextareaUpdate, redoTextareaHistory, undoTextareaHistory],
   );
@@ -1525,9 +1892,15 @@ export const HomeV2_4Page = ({
     textareaMirrorRef.current.scrollLeft = textareaRef.current.scrollLeft;
   }, []);
 
-  const renderMirrorSegment = useCallback((text: string) => {
+  const renderMirrorSegment = useCallback((text: string, bulletDisplay: string | null) => {
     if (!text) return null;
-    return text;
+    if (!bulletDisplay || !text.startsWith("* ")) return text;
+
+    return (
+      <>
+        {bulletDisplay}{" "}{text.slice(2)}
+      </>
+    );
   }, []);
 
   const textareaMirrorLines = useMemo(() => {
@@ -1547,7 +1920,9 @@ export const HomeV2_4Page = ({
       const selectedEnd = Math.min(selectionEnd, lineEnd);
       const hasSelection = selectedEnd > selectedStart;
       const cursorOffset =
-        cursorLineIndex === index ? cursorPos - lineStart : null;
+        cursorLineIndex === index
+          ? Math.max(0, cursorPos - lineStart - visual.hiddenPrefixLength)
+          : null;
 
       if (!hasSelection) {
         return {
@@ -1559,8 +1934,14 @@ export const HomeV2_4Page = ({
         };
       }
 
-      const localStart = Math.max(0, selectedStart - lineStart);
-      const localEnd = Math.max(0, selectedEnd - lineStart);
+      const localStart = Math.max(
+        0,
+        selectedStart - lineStart - visual.hiddenPrefixLength,
+      );
+      const localEnd = Math.max(
+        0,
+        selectedEnd - lineStart - visual.hiddenPrefixLength,
+      );
 
       return {
         ...visual,
@@ -1738,7 +2119,7 @@ export const HomeV2_4Page = ({
           )}
           <div
             className={cn(
-              "mt-10 overflow-hidden rounded-[20px] border border-neutral-200/80 bg-neutral-50/70 ring-1 ring-black/[0.02] backdrop-blur-[2px] dark:border-neutral-800 dark:bg-neutral-900/60 dark:ring-white/[0.03]",
+              "-mx-5 mt-10 overflow-hidden rounded-[20px] border border-neutral-200/80 bg-neutral-50/70 ring-1 ring-black/[0.02] backdrop-blur-[2px] sm:mx-0 dark:border-neutral-800 dark:bg-neutral-900/60 dark:ring-white/[0.03]",
               composerFullscreenOpen &&
                 "fixed inset-0 z-50 mt-0 flex h-dvh flex-col rounded-none border-0 md:inset-y-4 md:left-1/2 md:right-auto md:h-[calc(100dvh-2rem)] md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
               readerWindowShadowClass,
@@ -1746,8 +2127,8 @@ export const HomeV2_4Page = ({
             style={{ viewTransitionName: "reader-shell" }}
           >
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-2 border-b border-neutral-200/70 bg-white/80 px-3 py-2.5 backdrop-blur-sm sm:px-4 dark:border-neutral-800 dark:bg-neutral-900/70">
-              <div className={shellClass}>
+            <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-neutral-200/70 bg-white/80 px-3 py-2.5 backdrop-blur-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:px-4 dark:border-neutral-800 dark:bg-neutral-900/70">
+              <div className={cn(shellClass, "shrink-0")}>
                 <button
                   onClick={() => setMode("input")}
                   className={cn(pillButtonClass(mode === "input"), "w-[76px] text-center")}
@@ -1764,35 +2145,36 @@ export const HomeV2_4Page = ({
                 </button>
               </div>
 
-              <div className="ml-auto flex min-h-[34px] items-center justify-end gap-2">
+              <div className="ml-auto flex min-h-[34px] shrink-0 items-center justify-end gap-2">
                 {mode === "digtext" && (
-                  <div className={shellClass}>
-                    <button
-                      onClick={() => {
-                        const h = activePreviewHandle;
-                        if (!h) return;
-                        if (h.anyExpanded) {
-                          h.collapseAll();
-                        } else {
-                          h.expandAll();
-                        }
-                      }}
-                      className={cn(
-                        pillButtonClass(false),
-                        "inline-flex items-center gap-1.5",
-                      )}
-                      type="button"
-                    >
-                      {(activePreviewHandle?.anyExpanded ?? false) ? (
-                        <X size={14} strokeWidth={2.25} className="block" />
-                      ) : (
-                        <Plus size={14} strokeWidth={2.25} className="block" />
-                      )}
-                      <span className="hidden sm:inline">
-                        {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
-                      </span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      const h = activePreviewHandle;
+                      if (!h) return;
+                      if (h.anyExpanded) {
+                        h.collapseAll();
+                      } else {
+                        h.expandAll();
+                      }
+                    }}
+                    className={cn(
+                      "inline-flex shrink-0 items-center justify-center border transition-colors",
+                      "h-[34px] w-[34px] rounded-[18px]",
+                      "sm:w-auto sm:gap-1.5 sm:px-3 sm:rounded-[16px]",
+                      "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+                    )}
+                    type="button"
+                    aria-label={(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                  >
+                    {(activePreviewHandle?.anyExpanded ?? false) ? (
+                      <CollapseAllIcon />
+                    ) : (
+                      <ExpandAllIcon />
+                    )}
+                    <span className="hidden font-sans text-[14px] leading-none sm:inline">
+                      {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
+                    </span>
+                  </button>
                 )}
                 {mode === "digtext" && (
                   <button
@@ -1810,7 +2192,7 @@ export const HomeV2_4Page = ({
                   </button>
                 )}
                 {mode === "input" && inputMode === "textarea" && (
-                  <div className={shellClass}>
+                  <div className={cn(shellClass, "shrink-0")}>
                     <button
                       onClick={() =>
                         setTextareaValue(inputText.trim() ? "" : INITIAL_TEXT)
@@ -1863,7 +2245,7 @@ export const HomeV2_4Page = ({
                 composerFullscreenOpen && "h-auto flex-1 md:h-auto",
                 mode === "input" &&
                   inputMode === "textarea" &&
-                  "overflow-hidden",
+                  "overflow-hidden p-0 md:p-0",
                 composerFullscreenOpen &&
                   mode === "input" &&
                   inputMode === "textarea" &&
@@ -1887,7 +2269,7 @@ export const HomeV2_4Page = ({
                     <div
                       ref={textareaMirrorRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden leading-[1.85] text-neutral-700 dark:text-neutral-300"
+                      className="pointer-events-none absolute inset-0 overflow-hidden px-6 pt-6 pb-7 leading-[1.85] text-neutral-700 dark:text-neutral-300 md:px-10 md:pt-8 md:pb-9"
                       style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
                     >
                       <div
@@ -1901,6 +2283,7 @@ export const HomeV2_4Page = ({
                             return (
                               <div
                                 key={`${index}-${visual.text}`}
+                                data-mirror-line={index}
                                 className="whitespace-pre-wrap break-words"
                                 style={{
                                   paddingLeft: `${visual.paddingLeftCh}ch`,
@@ -1910,15 +2293,15 @@ export const HomeV2_4Page = ({
                               >
                                 {visual.selectedText ? (
                                   <>
-                                    {renderMirrorSegment(visual.beforeText)}
+                                    {renderMirrorSegment(visual.beforeText, visual.bulletDisplay)}
                                     <span className="bg-rose-200/70 dark:bg-rose-500/30">
-                                      {renderMirrorSegment(visual.selectedText)}
+                                      {renderMirrorSegment(visual.selectedText, visual.bulletDisplay)}
                                     </span>
-                                    {renderMirrorSegment(visual.afterText)}
+                                    {renderMirrorSegment(visual.afterText, visual.bulletDisplay)}
                                   </>
                                 ) : textareaFocused && visual.cursorOffset !== null ? (
                                   <>
-                                    {renderMirrorSegment(visual.text.slice(0, visual.cursorOffset))}
+                                    {renderMirrorSegment(visual.text.slice(0, visual.cursorOffset), visual.bulletDisplay)}
                                     <span
                                       aria-hidden="true"
                                       className="relative inline-block"
@@ -1929,10 +2312,10 @@ export const HomeV2_4Page = ({
                                         style={{ left: 0, top: "-0.8em", width: "1.5px", height: "1em", animation: "textarea-cursor-blink 1.2s step-end infinite" }}
                                       />
                                     </span>
-                                    {renderMirrorSegment(visual.text.slice(visual.cursorOffset))}
+                                    {renderMirrorSegment(visual.text.slice(visual.cursorOffset), visual.bulletDisplay)}
                                   </>
                                 ) : (
-                                  renderMirrorSegment(visual.text) || " "
+                                  renderMirrorSegment(visual.text, visual.bulletDisplay) || " "
                                 )}
                               </div>
                             );
@@ -1968,19 +2351,52 @@ export const HomeV2_4Page = ({
                     onChange={handleTextareaChange}
                     onPaste={handleTextareaPaste}
                     onKeyDown={handleTextareaKeyDown}
-                    onMouseDown={() => {
+                    onMouseDown={(event) => {
                       isTextareaSelectingRef.current = true;
+                      textareaMouseDownPointRef.current = {
+                        x: event.clientX,
+                        y: event.clientY,
+                        withShift: event.shiftKey,
+                      };
                       syncTextareaSelection();
                     }}
                     onFocus={() => { setTextareaFocused(true); syncTextareaSelection(); }}
                     onBlur={() => setTextareaFocused(false)}
                     onSelect={syncTextareaSelection}
                     onKeyUp={syncTextareaSelection}
-                    onMouseUp={syncTextareaSelection}
+                    onMouseUp={(event) => {
+                      const start = textareaMouseDownPointRef.current;
+                      textareaMouseDownPointRef.current = null;
+
+                      // Only remap simple single clicks.  Drag selections and
+                      // double/triple clicks keep native behavior so word and
+                      // line selection still work.
+                      const isSimpleClick =
+                        start !== null &&
+                        event.detail === 1 &&
+                        !start.withShift &&
+                        Math.abs(event.clientX - start.x) < 3 &&
+                        Math.abs(event.clientY - start.y) < 3;
+
+                      if (isSimpleClick) {
+                        const sourceOffset = computeSourceOffsetFromPoint(
+                          event.clientX,
+                          event.clientY,
+                        );
+                        if (sourceOffset !== null && textareaRef.current) {
+                          textareaRef.current.setSelectionRange(
+                            sourceOffset,
+                            sourceOffset,
+                          );
+                        }
+                      }
+
+                      syncTextareaSelection();
+                    }}
                     onScroll={syncTextareaMirrorScroll}
                     spellCheck={false}
                     placeholder={TEXTAREA_PLACEHOLDER}
-                    className="relative block h-full w-full resize-none bg-transparent leading-[1.85] text-transparent caret-transparent outline-none placeholder:text-neutral-400 selection:bg-transparent dark:placeholder:text-neutral-500 dark:selection:bg-transparent"
+                    className="relative block h-full w-full resize-none bg-transparent px-6 pt-6 pb-7 leading-[1.85] text-transparent caret-transparent outline-none placeholder:text-neutral-400 selection:bg-transparent dark:placeholder:text-neutral-500 dark:selection:bg-transparent md:px-10 md:pt-8 md:pb-9"
                     style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px", tabSize: 4 }}
                   />
                   </div>
@@ -2003,6 +2419,7 @@ export const HomeV2_4Page = ({
                         lineDigCollapsedIcon="enter"
                         inlineDigCollapsedIcon="plus"
                         paragraphBreakIds={paragraphBreakIds}
+                        paragraphBreakSpacing="0.5em"
                       />
                     ) : (
                       <div
@@ -2030,23 +2447,6 @@ export const HomeV2_4Page = ({
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 bg-white/60 px-4 py-2.5 font-sans text-[12px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
               <span className="tabular-nums">
                 {wordCount} words · {digSectionCount} dig sections
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <svg
-                  aria-hidden="true"
-                  className="h-3 w-3"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v4" />
-                  <path d="M12 16h.01" />
-                </svg>
-                Your text stays in your browser.
               </span>
             </div>
           </div>

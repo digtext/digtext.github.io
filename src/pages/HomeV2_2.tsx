@@ -13,15 +13,15 @@ Produce the following summaries:
 2. 3x the length of "1."
 3. 6x the length of "1."
 
-Now convert the original text into "digText" format — a progressive, collapsed-by-default reading layout. The digText syntax is simple. Wrap any block of text between << and >> markers to make it collapsible. Like this: <<this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.>> Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
+Now convert the original text into "digText" format — a progressive, collapsed-by-default reading layout. The digText syntax is simple. Wrap any block of text between (( and )) markers to make it collapsible. Like this: ((this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.)) Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
 
-1. Deconstruct the summaries you prepared in the 1st step in the "digText". The shortest summary stays at the top level (visible by default); all other summaries are nested inside << >> blocks.
+1. Deconstruct the summaries you prepared in the 1st step in the "digText". The shortest summary stays at the top level (visible by default); all other summaries are nested inside (( )) blocks.
 2. Roughly: the top level of dig-text should be the shortest summary you already prepared in the 1st step. 2nd level the 2nd longest summary. 3rd level the 3rd longest summary. And so on. Nest all all of the original information (not only summaries) in collapsed blocks. Nothing is cut — everything is preserved, just collapsed. Feel free to slightly restructure the original summaries so it information flows well for the dig text format.
 3. Use the progressive expansion principle. Spread collapsed blocks evenly throughout the text. Avoid clustering them at the ends of paragraphs or concentrating them in one part of the article.
 4. Use Markdown for headings, links, and any other formatting present in the original. When the source text has a title and subtitle, render the title as H1 (\`#\`) and the subtitle as italicized text.
-5. After you finish, re-read only the top-level visible text — everything outside any << >> markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
+5. After you finish, re-read only the top-level visible text — everything outside any (( )) markers. It must read as a coherent, complete summary of the original on its own. If it doesn't, rework it until it does.
 
-Output only the converted text in markdown (with Dig’s double chevron markers). The output should be ready to paste directly into dig text.
+Output only the converted text in markdown (with Dig's double-parenthesis markers). The output should be ready to paste directly into dig text.
 
 Now transform the following text:
 
