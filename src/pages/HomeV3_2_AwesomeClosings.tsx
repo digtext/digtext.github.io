@@ -740,7 +740,7 @@ const InlinePreviewBoundaryButton = ({
     className={cn(
       inlinePreviewBoundaryButtonClass,
       side === "start" ? "w-5" : "w-3",
-      side === "start" ? "relative -top-[0.07em]" : "relative top-0",
+      side === "start" ? "relative -top-[0.10em]" : "relative -top-[0.03em]",
     )}
   >
     {side === "start" ? <InlinePreviewDigCloseIcon /> : <InlinePreviewDigEndIcon />}
@@ -770,7 +770,7 @@ const InlineBulletRender = ({
       aria-label="Expand"
       className={cn(
         softDigIconButtonClass,
-        "relative top-0 cursor-pointer",
+        "relative -top-[0.03em] cursor-pointer",
       )}
     >
       <InlinePreviewDigPlusIcon />
@@ -2027,7 +2027,7 @@ export const HomeV2_4Page = ({
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 bg-white/60 px-4 py-2.5 font-sans text-[14px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 bg-white/60 px-4 py-2.5 font-sans text-[12px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
               <span className="tabular-nums">
                 {wordCount} words · {digSectionCount} dig sections
               </span>
@@ -2063,23 +2063,19 @@ export const HomeV2_4Page = ({
                 </span>
               </>
             ) : (
-              <span>Dig text: read the shortest version first.</span>
-            )}
-          </div>
-
-          <div className="mt-10">
-            <button
-              onClick={() => scrollTo("prompt")}
-              className="group inline-flex items-center gap-1.5 font-sans text-sm text-neutral-500 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50"
-            >
-              Get the prompt
-              <span
-                aria-hidden="true"
-                className="transition-transform group-hover:translate-y-0.5"
+              <button
+                onClick={() => scrollTo("prompt")}
+                className="group inline-flex items-center gap-1.5 font-sans text-sm text-neutral-500 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50"
               >
-                ↓
-              </span>
-            </button>
+                Get the prompt
+                <span
+                  aria-hidden="true"
+                  className="transition-transform group-hover:translate-y-0.5"
+                >
+                  ↓
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </section>
