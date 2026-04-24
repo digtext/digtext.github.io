@@ -76,6 +76,31 @@ const VISUAL_INDENT_UNIT = "    ";
 const TEXTAREA_HISTORY_BATCH_MS = 900;
 const BULLET_WIDTH_CH = 2;
 const COMPOSER_STORAGE_KEY = "digtext:home-composer:v2";
+
+const isSamePageHashHref = (href: string | undefined): href is string => {
+  if (!href || typeof window === "undefined") return false;
+  if (href.startsWith("#")) return href.length > 1;
+  try {
+    const url = new URL(href, window.location.href);
+    return (
+      url.origin === window.location.origin &&
+      url.pathname === window.location.pathname &&
+      url.hash.length > 1
+    );
+  } catch {
+    return false;
+  }
+};
+
+const scrollToHashHref = (href: string) => {
+  if (typeof window === "undefined") return;
+  const hash = href.includes("#") ? href.slice(href.indexOf("#") + 1) : "";
+  if (!hash) return;
+  const target = document.getElementById(hash);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.history.replaceState(null, "", `#${hash}`);
+};
 const PREVIEW_PARAGRAPH_BREAK_SPACING = "0.5em";
 const PREVIEW_LINE_HEIGHT_EM = 1.85;
 
@@ -700,16 +725,25 @@ const markdownComponents = {
   }: {
     href?: string;
     children?: React.ReactNode;
-  }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={linkClassName}
-    >
-      {children}
-    </a>
-  ),
+  }) => {
+    const samePageHash = isSamePageHashHref(href);
+    return (
+      <a
+        href={href}
+        {...(samePageHash
+          ? {
+              onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+                event.preventDefault();
+                scrollToHashHref(href!);
+              },
+            }
+          : { target: "_blank", rel: "noopener noreferrer" })}
+        className={linkClassName}
+      >
+        {children}
+      </a>
+    );
+  },
   code: ({ children }: { children?: React.ReactNode }) => (
     <code className="rounded bg-[#ECECEC] px-1 py-[1px] font-mono text-[0.9em] text-neutral-800 dark:bg-[#212121] dark:text-neutral-200">
       {children}
@@ -911,16 +945,25 @@ const InlineTextWithDig = ({
       }: {
         href?: string;
         children?: React.ReactNode;
-      }) => (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={linkClassName}
-        >
-          {replaceTokens(children)}
-        </a>
-      ),
+      }) => {
+        const samePageHash = isSamePageHashHref(href);
+        return (
+          <a
+            href={href}
+            {...(samePageHash
+              ? {
+                  onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+                    event.preventDefault();
+                    scrollToHashHref(href!);
+                  },
+                }
+              : { target: "_blank", rel: "noopener noreferrer" })}
+            className={linkClassName}
+          >
+            {replaceTokens(children)}
+          </a>
+        );
+      },
       code: ({ children }: { children?: React.ReactNode }) => (
         <code className={digTone
           ? "rounded bg-current/10 px-1 py-[1px] font-mono text-[0.9em] text-current"

@@ -18,6 +18,31 @@ import {
 } from "@/components/InlineDigMarkdown";
 import { cn } from "@/lib/utils";
 
+const isSamePageHash = (href: string | undefined): href is string => {
+  if (!href || typeof window === "undefined") return false;
+  if (href.startsWith("#")) return href.length > 1;
+  try {
+    const url = new URL(href, window.location.href);
+    return (
+      url.origin === window.location.origin &&
+      url.pathname === window.location.pathname &&
+      url.hash.length > 1
+    );
+  } catch {
+    return false;
+  }
+};
+
+const scrollToHash = (href: string) => {
+  if (typeof window === "undefined") return;
+  const hash = href.includes("#") ? href.slice(href.indexOf("#") + 1) : "";
+  if (!hash) return;
+  const target = document.getElementById(hash);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.history.replaceState(null, "", `#${hash}`);
+};
+
 // ── Data ──────────────────────────────────────────────────────────────
 
 const readOnlyLinkClassName =
@@ -999,16 +1024,25 @@ export const EditableLineView = React.forwardRef<
   const mdComponents = useMemo(
     () => ({
       p: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-      a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={readOnlyLinkClassName}
-        >
-          {children}
-        </a>
-      ),
+      a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
+        const samePageHash = isSamePageHash(href);
+        return (
+          <a
+            href={href}
+            {...(samePageHash
+              ? {
+                  onClick: (event) => {
+                    event.preventDefault();
+                    scrollToHash(href!);
+                  },
+                }
+              : { target: "_blank", rel: "noopener noreferrer" })}
+            className={readOnlyLinkClassName}
+          >
+            {children}
+          </a>
+        );
+      },
     }),
     [],
   );

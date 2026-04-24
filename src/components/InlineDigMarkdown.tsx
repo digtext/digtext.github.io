@@ -14,6 +14,31 @@ const TOKEN_PREFIX = "\uE000DIG";
 const TOKEN_SUFFIX = "\uE001";
 const TOKEN_RE = /\uE000DIG(\d+)\uE001/g;
 
+const isSamePageHash = (href: string | undefined): href is string => {
+  if (!href || typeof window === "undefined") return false;
+  if (href.startsWith("#")) return href.length > 1;
+  try {
+    const url = new URL(href, window.location.href);
+    return (
+      url.origin === window.location.origin &&
+      url.pathname === window.location.pathname &&
+      url.hash.length > 1
+    );
+  } catch {
+    return false;
+  }
+};
+
+const scrollToHash = (href: string) => {
+  if (typeof window === "undefined") return;
+  const hash = href.includes("#") ? href.slice(href.indexOf("#") + 1) : "";
+  if (!hash) return;
+  const target = document.getElementById(hash);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.history.replaceState(null, "", `#${hash}`);
+};
+
 export interface InlineDigExpandable {
   id: number;
   shadow: string;
@@ -508,16 +533,26 @@ export const InlineDigMarkdown = ({
       strong: ({ node: _node, children, ...props }) => (
         <strong {...props}>{replaceTokens(children)}</strong>
       ),
-      a: ({ node: _node, children, className, ...props }) => (
-        <a
-          {...props}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(linkClassName, className)}
-        >
-          {replaceTokens(children)}
-        </a>
-      ),
+      a: ({ node: _node, children, className, href, ...props }) => {
+        const samePageHash = isSamePageHash(href);
+        return (
+          <a
+            {...props}
+            href={href}
+            {...(samePageHash
+              ? {
+                  onClick: (event) => {
+                    event.preventDefault();
+                    scrollToHash(href!);
+                  },
+                }
+              : { target: "_blank", rel: "noopener noreferrer" })}
+            className={cn(linkClassName, className)}
+          >
+            {replaceTokens(children)}
+          </a>
+        );
+      },
       code: ({ node: _node, children, ...props }) => (
         <code {...props}>{replaceTokens(children)}</code>
       ),
