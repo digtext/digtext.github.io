@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code local state and worktrees
+.claude/launch.json
+.claude/worktrees/
+
+# Scratch / local-only files
+tmp/
+dig beforeApr24.md
