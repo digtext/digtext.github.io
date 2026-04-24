@@ -1,28 +1,27 @@
-- ~~It has been ridiculous, guys, that since writing was first invented~~
-    - ~~likely in Mesopotamia around 3400 BCE by Sumerian record-keepers developing early accounting methods, using these amazing clay tablets~~ 
-        - ~~What a photo from the British Museum of some of the earliest writing, [symbols pressed into clay](https://www.britishmuseum.org/collection/object/W_1989-0130-4).~~
-- ~~we've read text in its most expanded form by default. Dig Text is an open source standard and new writing norm that flips it. Wit Dig you can read the shortest version first and dig deeper only where it interests you.~~
-    - ~~Nesting has no limit,~~
-	    - ~~every layer is a choice the reader makes,~~
-		    - ~~down, down we go!~~
-- ~~You may be a master at skipping text, but it's a game of luck whether you missed important context.~~
-    - ~~In practice, the more you skip of a book, the less likely you'll have sufficient context to enjoy finishing it.~~
-~~//~~
-- ~~Write dig text in any editor, by using bulleted lists.~~ 
-- ~~(Why bulleted list? (( Actually you can also use double parenthesis like this `((text))`, but this works best as an exception. Bulleted lists are the best dig-writing-experience. They allow to see the entire structure clearly. Plus you can do it in any text editor. )) ).~~
-- ~~Every sub-bullet creates a dig.~~
-	- ~~To create an indent in a list just hit tab or shift tab to reverse indentation.~~ 
-- ~~To see it how it works hit “Input” on the top right.~~
-~~//~~
-- ~~You can work in your text editor and just paste bulleted lists here.~~
-	- ~~(You can paste any format ((It can be any bullet type for example  `-`, `*`, or `+`, also indented text works)) )~~
-- ~~You can write with Markdown~~
-	- ~~[Markdown](https://www.markdownguide.org/basic-syntax/) works so things like **Bold**, *italics*, and `code` all show up in the Dig preview.~~
-- ~~Use our prompt to convert any text into Dig text with AI.~~
-    - ~~Find it below or just include it your prompt by pasting this url digtext.github.io/prompt.md before the text. If you want to build with Dig text, tell your LLM about it by sharing this URL digtext.github.io/llms.txt~~
-- ~~Read any write dig text with this reader. Click the full-screen icon to do it without distractions.~~ 
-- ~~There are also a lot of cool, more advanced features you can learn about here~~
-	- ~~Hit bulleted list icon to see text stacked vertically.~~
-	- ~~If you want to write an inline dig use double parenthesis  `((text))`.~~
-	- ~~Dig text is an open source and its dream is to be included in major Markdown syntax. (Here is how this can work ((Any list between `:::dig` and `:::` tags creates a preview with [+] icons to dig into more)) )~~
-- ~~The creative possibility are endless. Drop~~ 
+- It has been ridiculous, guys, that since writing was first invented
+    - likely in Mesopotamia around 3400 BCE by Sumerian record-keepers developing early accounting methods, using these amazing clay tablets
+        - What a photo from the British Museum of some of the earliest writing, [symbols pressed into clay](https://www.britishmuseum.org/collection/object/W_1989-0130-4).
+- we've read text in its most expanded form by default. You may be a master at skipping, but it's a game of luck whether you missed important context.
+    - In practice, the more you skip of a book, the less likely you'll have sufficient context to enjoy finishing it.
+- Dig Text is an open source standard and a new writing norm that flips it. With Dig you read the shortest version first, and dig deeper only where it interests you.
+    - Nesting has no limit,
+        - every layer is a choice the reader makes,
+            - down, down we go!
+
+- Writing dig text is simple: use bulleted lists and every sub-bullet creates a dig.
+    - Hit tab or shift tab to indent or outdent text.
+- You can work in your own editor and just paste the bulleted list here.
+    - You can paste any bullet format, for example `-`, `*`, or `+`, also indented text works
+- ( Why bulleted list? (( Bulleted lists are the best dig-writing experience. They let you see the entire structure clearly. Plus you can do it in any text editor. )) ).
+- Markdown works too.
+    - [Markdown](https://www.markdownguide.org/basic-syntax/) means Bold, *italics*, and `code`, and other .md syntax all show up in the Dig preview.
+- To see how it works hit “Input” on the top left.
+
+- Use our prompt to convert any text into Dig text with AI.
+    - Find it below or just include it in your prompt by pasting this url [digtext.github.io/prompt.md](http://digtext.github.io/prompt.md) before the text. If you want to build with Dig text, tell your AI about it by sharing this URL [digtext.github.io/llms.txt](http://digtext.github.io/llms.txt)
+- Read or write dig text with this reader. Click the full-screen icon to do it without distractions.
+- There are also a lot of cool, more advanced features you can learn about here
+    - Hit the bulleted list icon to see text stacked vertically. / 
+    - If you want to write an inline dig use double parenthesis `((text))`. / 
+    - Dig text is open source and its dream is to be included in major Markdown syntax. (Here is how this can work ((Any list between `:::dig` and `:::` tags creates a preview with [+] icons to dig into more)) )
+- Dig text is as much technology as a new approach to writing. I would love to get your [feedback](https://www.notion.so/v2-2-2-ai-restructured-34c7d72d06408065acaec04e8424026b?pvs=21)

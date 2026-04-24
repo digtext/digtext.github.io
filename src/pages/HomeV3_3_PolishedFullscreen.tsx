@@ -3281,18 +3281,14 @@ export const HomeV2_4Page = ({
           >
           digtext.github.io/prompt.md
           </Link>{" "}
-          before your text. This is still a work in progress, but it works fine right now with Claude Opus 4.7, especially if you run it as two prompts.
-          <span className="block mt-[0.25em]">
-            If you want to build with Dig text, tell your LLM about it by sharing this URL {" "}
-            <Link
-              to="/llms.txt"
-              className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
-            >
-            digtext.github.io/llms.txt
-            </Link>{" "}
-          </span>
-          
-           
+          before your text and AI will grab the newest prompt for you. This is still a work in progress, but it works fine right now with Claude Opus 4.7, especially if you run it as two prompts.
+          If you want to build with Dig text, tell your LLM about it by sharing this URL {" "}
+          <Link
+            to="/llms.txt"
+            className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
+          >
+          digtext.github.io/llms.txt
+          </Link>{" "}
 
           </p>
 
@@ -3337,7 +3333,7 @@ export const HomeV2_4Page = ({
           </div>
 
           <p className="mt-8 font-serif text-sm italic text-neutral-500 dark:text-neutral-400">
-            Then read Dig, collapsed first.
+            Then read text, collapsed first.
           </p>
         </div>
       </section>
