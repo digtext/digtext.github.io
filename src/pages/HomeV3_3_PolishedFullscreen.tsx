@@ -16,7 +16,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Archive, Check, ChevronLeft, CirclePlus, Copy, Github, Mail, Maximize2, Plus, X } from "lucide-react";
+import { Archive, Check, ChevronLeft, CirclePlus, Copy, Github, Mail, Maximize2, Minimize2, Plus, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -2987,14 +2987,18 @@ export const HomeV2_4Page = ({
                     <Copy size={16} strokeWidth={1.85} />
                   )}
                 </button>
-                {!articleMode && (composerFullscreenOpen ? (
+                {composerFullscreenOpen ? (
                   <button
                     type="button"
                     onClick={() => setComposerFullscreen(false)}
                     className={iconButtonClass}
-                    aria-label="Close composer"
+                    aria-label={articleMode ? "Exit full screen" : "Close composer"}
                   >
-                    <X size={16} strokeWidth={2} />
+                    {articleMode ? (
+                      <Minimize2 size={16} strokeWidth={1.75} />
+                    ) : (
+                      <X size={16} strokeWidth={2} />
+                    )}
                   </button>
                 ) : (
                   <button
@@ -3005,7 +3009,7 @@ export const HomeV2_4Page = ({
                   >
                     <Maximize2 size={16} strokeWidth={1.75} />
                   </button>
-                ))}
+                )}
               </div>
             </div>
             {mode === "digtext" && (
