@@ -23,5 +23,6 @@
 - There are also a lot of cool, more advanced features you can learn about here
     - Hit the bulleted list icon to see text stacked vertically. / 
     - If you want to write an inline dig use double parenthesis `((text))`. / 
-    - Dig text is open source and its dream is to be included in major Markdown syntax. (Here is how this can work ((Any list between `:::dig` and `:::` tags creates a preview with [+] icons to dig into more)) )
+    - Dig text is open source and its dream is to be included in major Markdown syntax. Here is how this can work.
+	    - Any list between `:::dig` and `:::` tags creates a preview with [+] icons to dig into more.
 - Dig text is as much technology as a new approach to writing. I would love to get your [feedback](#feedback)
