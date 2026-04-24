@@ -3255,7 +3255,7 @@ export const HomeV2_4Page = ({
         <div className="mx-auto max-w-[59rem] px-6 py-20">
           <span className={eyebrowClass}>
             <span aria-hidden="true" className={eyebrowRuleClass} />
-            A new paradigm of using text
+            Dig text with LLMs
           </span>
 
           <h2
