@@ -1800,17 +1800,6 @@ export const HomeV2_4Page = ({
   };
 
   const setComposerFullscreen = useCallback((open: boolean) => {
-    const doc = document as Document & {
-      startViewTransition?: (callback: () => void) => void;
-    };
-
-    if (typeof doc.startViewTransition === "function") {
-      doc.startViewTransition(() => {
-        setComposerFullscreenOpen(open);
-      });
-      return;
-    }
-
     setComposerFullscreenOpen(open);
   }, []);
 
