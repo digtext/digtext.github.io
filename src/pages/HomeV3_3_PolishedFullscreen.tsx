@@ -1645,6 +1645,8 @@ interface HomeV2_4PageProps {
   articleInitialText?: string;
   articleBackTo?: string;
   articleBackLabel?: string;
+  hideSiteHeader?: boolean;
+  hideFullscreenToggle?: boolean;
 }
 
 export const HomeV2_4Page = ({
@@ -1659,6 +1661,8 @@ export const HomeV2_4Page = ({
   articleInitialText,
   articleBackTo = "/library",
   articleBackLabel = "Library",
+  hideSiteHeader = false,
+  hideFullscreenToggle = false,
 }: HomeV2_4PageProps) => {
   const persistComposerContent = !articleMode && digSourceUrl !== DIG_SOURCE_URL;
   const [copied, setCopied] = useState(false);
@@ -2769,7 +2773,7 @@ export const HomeV2_4Page = ({
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
-      <SiteHeader onOpenComposer={() => setComposerFullscreen(true)} />
+      {!hideSiteHeader && <SiteHeader onOpenComposer={() => setComposerFullscreen(true)} />}
 
       {/* ── HERO ── */}
       <section className="relative overflow-hidden">
@@ -2987,7 +2991,7 @@ export const HomeV2_4Page = ({
                     <Copy size={16} strokeWidth={1.85} />
                   )}
                 </button>
-                {composerFullscreenOpen ? (
+                {hideFullscreenToggle ? null : composerFullscreenOpen ? (
                   <button
                     type="button"
                     onClick={() => setComposerFullscreen(false)}
@@ -3525,6 +3529,8 @@ interface HomeV3_3_PolishedFullscreenProps {
   articleInitialText?: string;
   articleBackTo?: string;
   articleBackLabel?: string;
+  hideSiteHeader?: boolean;
+  hideFullscreenToggle?: boolean;
 }
 
 const HomeV3_3_PolishedFullscreen = ({
@@ -3533,6 +3539,8 @@ const HomeV3_3_PolishedFullscreen = ({
   articleInitialText,
   articleBackTo,
   articleBackLabel,
+  hideSiteHeader,
+  hideFullscreenToggle,
 }: HomeV3_3_PolishedFullscreenProps) => (
   <HomeV2_4Page
     inputMode="textarea"
@@ -3542,6 +3550,8 @@ const HomeV3_3_PolishedFullscreen = ({
     articleInitialText={articleInitialText}
     articleBackTo={articleBackTo}
     articleBackLabel={articleBackLabel}
+    hideSiteHeader={hideSiteHeader}
+    hideFullscreenToggle={hideFullscreenToggle}
   />
 );
 
