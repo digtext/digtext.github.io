@@ -6,7 +6,6 @@ const Reader = () => (
     articleInitialText=""
     articleBackTo="/"
     articleBackLabel="Home"
-    hideSiteHeader
     hideFullscreenToggle
   />
 );
