@@ -2850,7 +2850,7 @@ export const HomeV2_4Page = ({
                   className="max-w-2xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300"
                   style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                 >
-                  You got it! This is mostly how dig text works. Read below more below
+                  You got it! This is mostly how dig text works. Read more below.
                 </p>
               </div>
             </div>

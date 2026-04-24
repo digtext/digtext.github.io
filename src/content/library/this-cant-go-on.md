@@ -28,9 +28,10 @@ Holden Karnofsky · August 3, 2021 · [cold-takes.com](https://www.cold-takes.co
             - 8200 years is less time than agricultural human civilization has already lasted. The current regime, only a couple of centuries old, cannot keep running for another few thousand. A parallel calculation framed in energy rather than economics hits the wall even sooner: ~2.3% annual growth in energy use would consume the full stellar output of the galaxy within about 2500 years.
 
 - Three possible successors to this regime deserve serious attention: stagnation, explosion, and collapse.
-    - Stagnation means expansion gradually slows and ends. The economy reaches whatever its physical maximum size turns out to be, and from then on the central question is how to divide a fixed pie, with the dynamic growing-pie world gone for good.
-        - It seems likely we'll eventually run out of new scientific insights, technological innovations, and accessible resources, and the few-percent-a-year regime will come to an end.
-            - This is the conservative reading of the math — no dramatic event, just deceleration back toward zero.
+
+- Stagnation means expansion gradually slows and ends. The economy reaches whatever its physical maximum size turns out to be, and from then on the central question is how to divide a fixed pie, with the dynamic growing-pie world gone for good.
+    - It seems likely we'll eventually run out of new scientific insights, technological innovations, and accessible resources, and the few-percent-a-year regime will come to an end.
+        - This is the conservative reading of the math — no dramatic event, just deceleration back toward zero.
 
     - Explosion means growth accelerates further, potentially to extreme rates, before slamming into physical limits.
         - David Roodman of Open Philanthropy fit a curve to the long-run historical pattern, and the extrapolation implies *infinite growth* this century — which reads as: the fastest growth physically possible before hitting the ceiling.
