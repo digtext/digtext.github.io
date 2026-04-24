@@ -2969,9 +2969,28 @@ export const HomeV2_4Page = ({
                 {mode === "input" && inputMode === "textarea" && (
                   <div className={cn(shellClass, "shrink-0")}>
                     <button
-                      onClick={() =>
-                        setTextareaValue(inputText.trim() ? "" : INITIAL_TEXT)
-                      }
+                      onClick={async () => {
+                        if (inputText.trim()) {
+                          setTextareaValue("");
+                          return;
+                        }
+                        try {
+                          const response = await fetch(
+                            `${digSourceUrl}${digSourceUrl.includes("?") ? "&" : "?"}t=${Date.now()}`,
+                            { cache: "no-store" },
+                          );
+                          if (response.ok) {
+                            const text = await response.text();
+                            if (text) {
+                              setTextareaValue(normalizePastedListText(text.trim()));
+                              return;
+                            }
+                          }
+                        } catch {
+                          /* fall through to embedded fallback */
+                        }
+                        setTextareaValue(INITIAL_TEXT);
+                      }}
                       className={pillButtonClass(false)}
                       type="button"
                     >
