@@ -1,0 +1,22 @@
+- It has been ridiculous, guys,
+    - that since writing was first invented in Mesopotamia around 3400 BCE,
+        - likely in or around Uruk, probably by Sumerian record-keepers developing early accounting methods, using simple symbols pressed into wet clay tablets.
+            - Look at this incredible photo from the British Museum of some of the early [clay tablets](https://www.britishmuseum.org/collection/object/W_1989-0130-4).
+- we've read text in its most expanded form by default.
+
+- Dig text flips it and by default presents the text in its most succinct form.
+    - Nesting has no limit,
+        - every layer is a choice the reader makes,
+            - to get further involved.
+- You may be a master at skipping text, but it's a game of luck whether you missed important context.
+    - In practice, the more you skip of a book, the less likely you'll have sufficient context to enjoy finishing it.
+        - Dig text flips it. Start from the shortest, dig into what matters.
+
+- Write dig text in any editor, by using indented lists.
+    - Paste here any bulleted list — it can be any bullet type that is `-`, `*`, or `+`.
+        - Indented bullets from Google Docs, Notion, or Obsidian are transformed into expandable sections.
+- You can write with [Markdown](https://www.markdownguide.org/basic-syntax/).
+    - **Bold**, *italics*, and `code` all show up in the Dig preview.
+- Use our AI prompt to convert any text into dig text.
+    - Find it below.
+- You can read any dig text with this reader — hit the full-screen icon to do it without distractions.

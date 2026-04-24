@@ -3275,20 +3275,20 @@ export const HomeV2_4Page = ({
 
           <p className="mt-6 mb-10 max-w-xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300">
           Paste this prompt to format any text as Dig text. You can also paste this URL {" "}
-          <Link
-            to="/prompt.md"
+          <a
+            href="/prompt.md"
             className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
           >
           digtext.github.io/prompt.md
-          </Link>{" "}
+          </a>{" "}
           before your text and AI will grab the newest prompt for you. This is still a work in progress, but it works fine right now with Claude Opus 4.7, especially if you run it as two prompts.
           If you want to build with Dig text, tell your LLM about it by sharing this URL {" "}
-          <Link
-            to="/llms.txt"
+          <a
+            href="/llms.txt"
             className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
           >
           digtext.github.io/llms.txt
-          </Link>{" "}
+          </a>{" "}
 
           </p>
 

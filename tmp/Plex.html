@@ -1,0 +1,757 @@
+<!DOCTYPE html><html lang="en" style="--accent: #f43f5e;"><head>
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dig text — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500;1,6..72,600&amp;family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=Inter:wght@400;500;600&amp;family=Roboto+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          serif: ['Newsreader', 'Georgia', 'serif'],
+          sans:  ['Inter', 'system-ui', 'sans-serif'],
+          mono:  ['Roboto Mono', 'ui-monospace', 'monospace'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html, body { font-family: var(--hero-serif, 'Newsreader'), Georgia, serif; }
+  :root { --hero-serif: 'Newsreader'; }
+  .font-plex { font-family: 'IBM Plex Serif', Georgia, serif; }
+  .font-sans-ui { font-family: 'Inter', system-ui, sans-serif; }
+  /* subtle blink for composer cursor when empty */
+  @keyframes blink { 0%,49%{opacity:1}50%,100%{opacity:0} }
+  .caret::after { content:""; display:inline-block; width:2px; height:1.1em; background:currentColor; vertical-align:-2px; margin-left:2px; animation: blink 1s steps(1) infinite; opacity:.5 }
+
+  /* grain-free soft orbs */
+  .orb { pointer-events:none; position:absolute; border-radius:9999px; filter:blur(90px); }
+
+  /* Hero variant C — type specimen dividers */
+  .rule-dot::before{content:"·"; margin:0 .45em; color:rgb(163 163 163)}
+
+  /* embed preview chip */
+  .digtext-btn-preview {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:1.1em; height:1.1em; border-radius:9999px;
+    border:1.5px solid currentColor; opacity:.55;
+    font-size:.8em; line-height:1; vertical-align:middle;
+    position:relative; top:-.08em; margin:0 .1em;
+  }
+  .digtext-btn-preview.open {
+    opacity:.75; background: currentColor;
+  }
+  .digtext-btn-preview.open svg { color: var(--_bg, #fff); }
+  .digtext-expanded-preview {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-radius:3px; padding:.05em .25em;
+  }
+
+  /* Tweaks panel */
+  .tweaks { position:fixed; right:16px; bottom:16px; z-index:50;
+    font-family:'Inter', system-ui, sans-serif; font-size:12px;
+    background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+    border:1px solid rgb(229 229 229); border-radius:14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+    padding:12px; width: 260px; display:none;
+  }
+  .tweaks.on { display:block }
+  .tweaks h4 { font-weight:600; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+               color:#737373; margin:0 0 8px }
+  .tweaks .row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px }
+  .tweaks button.opt {
+    border:1px solid rgb(229 229 229); background:#fff; border-radius:999px;
+    padding:5px 10px; cursor:pointer; color:#525252; font-size:11px;
+  }
+  .tweaks button.opt[data-on="1"] { background:#171717; border-color:#171717; color:#fff }
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Inter, system-ui, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:Roboto Mono, ui-monospace, monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.relative{position:relative}.sticky{position:sticky}.-top-\[3px\]{top:-3px}.left-\[1px\]{left:1px}.top-0{top:0px}.z-20{z-index:20}.m-0{margin:0px}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-1\.5{margin-bottom:0.375rem}.mb-3{margin-bottom:0.75rem}.ml-1{margin-left:0.25rem}.ml-2{margin-left:0.5rem}.mt-10{margin-top:2.5rem}.mt-3{margin-top:0.75rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.mt-7{margin-top:1.75rem}.mt-8{margin-top:2rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.h-1\.5{height:0.375rem}.h-2{height:0.5rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.max-h-\[420px\]{max-height:420px}.min-h-\[260px\]{min-height:260px}.w-1\.5{width:0.375rem}.w-2{width:0.5rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-full{width:100%}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-xl{max-width:36rem}.cursor-pointer{cursor:pointer}.resize-y{resize:vertical}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-6{gap:1.5rem}.gap-x-5{column-gap:1.25rem}.gap-y-1{row-gap:0.25rem}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.overflow-auto{overflow:auto}.overflow-hidden{overflow:hidden}.whitespace-pre-wrap{white-space:pre-wrap}.break-words{overflow-wrap:break-word}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-neutral-100{--tw-border-opacity:1;border-color:rgb(245 245 245 / var(--tw-border-opacity, 1))}.border-neutral-200{--tw-border-opacity:1;border-color:rgb(229 229 229 / var(--tw-border-opacity, 1))}.border-neutral-400{--tw-border-opacity:1;border-color:rgb(163 163 163 / var(--tw-border-opacity, 1))}.bg-amber-400\/70{background-color:rgb(251 191 36 / 0.7)}.bg-emerald-400\/70{background-color:rgb(52 211 153 / 0.7)}.bg-neutral-200\/60{background-color:rgb(229 229 229 / 0.6)}.bg-neutral-50{--tw-bg-opacity:1;background-color:rgb(250 250 250 / var(--tw-bg-opacity, 1))}.bg-neutral-50\/50{background-color:rgb(250 250 250 / 0.5)}.bg-neutral-50\/60{background-color:rgb(250 250 250 / 0.6)}.bg-neutral-900{--tw-bg-opacity:1;background-color:rgb(23 23 23 / var(--tw-bg-opacity, 1))}.bg-rose-400\/70{background-color:rgb(251 113 133 / 0.7)}.bg-rose-500{--tw-bg-opacity:1;background-color:rgb(244 63 94 / var(--tw-bg-opacity, 1))}.bg-transparent{background-color:transparent}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/50{background-color:rgb(255 255 255 / 0.5)}.bg-white\/60{background-color:rgb(255 255 255 / 0.6)}.bg-white\/70{background-color:rgb(255 255 255 / 0.7)}.bg-white\/80{background-color:rgb(255 255 255 / 0.8)}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-rose-500{--tw-gradient-from:#f43f5e var(--tw-gradient-from-position);--tw-gradient-to:rgb(244 63 94 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-orange-400{--tw-gradient-to:#fb923c var(--tw-gradient-to-position)}.bg-clip-text{-webkit-background-clip:text;background-clip:text}.p-0\.5{padding:0.125rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-20{padding-top:5rem;padding-bottom:5rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.pb-10{padding-bottom:2.5rem}.pb-12{padding-bottom:3rem}.pb-14{padding-bottom:3.5rem}.pb-6{padding-bottom:1.5rem}.pt-10{padding-top:2.5rem}.pt-16{padding-top:4rem}.pt-20{padding-top:5rem}.pt-4{padding-top:1rem}.align-baseline{vertical-align:baseline}.align-middle{vertical-align:middle}.font-mono{font-family:Roboto Mono, ui-monospace, monospace}.font-serif{font-family:Newsreader, Georgia, serif}.text-\[\.9em\]{font-size:.9em}.text-\[1\.05rem\]{font-size:1.05rem}.text-\[10\.5px\]{font-size:10.5px}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12\.5px\]{font-size:12.5px}.text-\[12px\]{font-size:12px}.text-\[13px\]{font-size:13px}.text-\[16px\]{font-size:16px}.text-\[17px\]{font-size:17px}.text-\[clamp\(1\.8rem\2c 4\.8vw\2c 2\.8rem\)\]{font-size:clamp(1.8rem,4.8vw,2.8rem)}.text-\[clamp\(1\.9rem\2c 4\.6vw\2c 2\.8rem\)\]{font-size:clamp(1.9rem,4.6vw,2.8rem)}.text-\[clamp\(2\.4rem\2c 6\.2vw\2c 3\.6rem\)\]{font-size:clamp(2.4rem,6.2vw,3.6rem)}.text-\[clamp\(2\.6rem\2c 7vw\2c 4\.4rem\)\]{font-size:clamp(2.6rem,7vw,4.4rem)}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-medium{font-weight:500}.uppercase{text-transform:uppercase}.italic{font-style:italic}.not-italic{font-style:normal}.leading-\[\.98\]{line-height:.98}.leading-\[1\.02\]{line-height:1.02}.leading-\[1\.05\]{line-height:1.05}.leading-\[1\.65\]{line-height:1.65}.leading-\[1\.6\]{line-height:1.6}.leading-\[1\.7\]{line-height:1.7}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.tracking-\[-0\.02em\]{letter-spacing:-0.02em}.tracking-\[0\.22em\]{letter-spacing:0.22em}.tracking-\[0\.25em\]{letter-spacing:0.25em}.tracking-\[0\.2em\]{letter-spacing:0.2em}.tracking-\[0\.3em\]{letter-spacing:0.3em}.tracking-tight{letter-spacing:-0.025em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-neutral-300{--tw-text-opacity:1;color:rgb(212 212 212 / var(--tw-text-opacity, 1))}.text-neutral-400{--tw-text-opacity:1;color:rgb(163 163 163 / var(--tw-text-opacity, 1))}.text-neutral-500{--tw-text-opacity:1;color:rgb(115 115 115 / var(--tw-text-opacity, 1))}.text-neutral-600{--tw-text-opacity:1;color:rgb(82 82 82 / var(--tw-text-opacity, 1))}.text-neutral-700{--tw-text-opacity:1;color:rgb(64 64 64 / var(--tw-text-opacity, 1))}.text-neutral-800{--tw-text-opacity:1;color:rgb(38 38 38 / var(--tw-text-opacity, 1))}.text-neutral-900{--tw-text-opacity:1;color:rgb(23 23 23 / var(--tw-text-opacity, 1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72 / var(--tw-text-opacity, 1))}.text-transparent{color:transparent}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.underline{-webkit-text-decoration-line:underline;text-decoration-line:underline}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-40{opacity:0.4}.shadow-\[0_1px_0_rgba\(0\2c 0\2c 0\2c \.02\)\2c 0_8px_24px_-12px_rgba\(0\2c 0\2c 0\2c \.08\)\]{--tw-shadow:0 1px 0 rgba(0,0,0,.02),0 8px 24px -12px rgba(0,0,0,.08);--tw-shadow-colored:0 1px 0 var(--tw-shadow-color), 0 8px 24px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.placeholder\:text-neutral-400::placeholder{--tw-text-opacity:1;color:rgb(163 163 163 / var(--tw-text-opacity, 1))}.hover\:border-neutral-300:hover{--tw-border-opacity:1;border-color:rgb(212 212 212 / var(--tw-border-opacity, 1))}.hover\:border-neutral-700:hover{--tw-border-opacity:1;border-color:rgb(64 64 64 / var(--tw-border-opacity, 1))}.hover\:bg-neutral-100:hover{--tw-bg-opacity:1;background-color:rgb(245 245 245 / var(--tw-bg-opacity, 1))}.hover\:bg-neutral-700:hover{--tw-bg-opacity:1;background-color:rgb(64 64 64 / var(--tw-bg-opacity, 1))}.hover\:text-neutral-900:hover{--tw-text-opacity:1;color:rgb(23 23 23 / var(--tw-text-opacity, 1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}@media (min-width: 640px){.sm\:flex{display:flex}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}}@media (min-width: 768px){.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}</style><link id="gfont-Lato" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700&amp;display=swap"></head>
+<body class="bg-white text-neutral-900 antialiased" data-cc-id="cc-1" style="cursor: crosshair; font-family: Lato;">
+
+<!-- ============================================================= -->
+<!-- NOTES / ASSUMPTIONS (read me first, then scroll to the design)  -->
+<!-- ============================================================= -->
+<section class="max-w-3xl mx-auto px-6 pt-10 pb-6 font-sans-ui text-sm text-neutral-600 border-b border-neutral-100">
+  <details open="">
+    <summary class="cursor-pointer font-medium text-neutral-900 text-[13px] tracking-wide uppercase">
+      Design notes · click to collapse
+    </summary>
+    <div class="mt-4 space-y-3 leading-relaxed">
+      <p><span class="font-medium text-neutral-900">Scope.</span> Improved Home page only.
+      Composer kept high on the page. One new section added: <em class="font-serif">Embed</em>.
+      No other features introduced. Product name is <em class="font-serif">Dig text</em> (not dig.txt).</p>
+
+      <p><span class="font-medium text-neutral-900">Hero direction.</span>
+      Modern · functionalist · quick · kind. I pulled back from the heavy multi‑color gradient of About
+      and leaned into a calmer specimen‑style hero: big Newsreader type, a single warm accent,
+      plenty of white, and one small friendly signal (a live little expander beside the
+      word <em class="font-serif">deeper</em>) so the mechanic is visible in the first glance.</p>
+
+      <p><span class="font-medium text-neutral-900">Composer high.</span>
+      The paste area sits right under the hero — no scroll required on laptops. Tabs
+      (<em class="font-serif">Raw · Dig</em>) match the existing header pill style.</p>
+
+      <p><span class="font-medium text-neutral-900">Tweaks.</span>
+      Bottom‑right panel cycles three hero variants (A quiet, B accent, C specimen) and toggles
+      the friendly micro‑demo. Turn <em class="font-serif">Tweaks</em> on to try.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============================================================= -->
+<!-- HEADER (matches SiteHeader.tsx)                                 -->
+<!-- ============================================================= -->
+<header class="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-neutral-100">
+  <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+    <a href="#" class="flex items-center gap-2 text-neutral-900">
+      <!-- Dig text logo mark -->
+      <svg aria-hidden="" viewBox="0 0 15 15" class="h-5 w-5 relative -top-[3px] left-[1px]" fill="currentColor">
+        <path opacity=".05" fill-rule="evenodd" clip-rule="evenodd" d="M12.1399 3.88623C13.8554 4.94166 15.0001 6.83707 15.0001 9.00007C15.0001 12.3137 12.3138 15.0001 9.00008 15.0001C6.84357 15.0001 4.95302 13.8622 3.89575 12.1553L4.32082 11.892C5.29075 13.4579 7.02382 14.5001 9.00008 14.5001C12.0376 14.5001 14.5001 12.0376 14.5001 9.00007C14.5001 7.01787 13.4516 5.28033 11.8779 4.31209L12.1399 3.88623Z"></path>
+        <path opacity=".2" fill-rule="evenodd" clip-rule="evenodd" d="M12.851 5.07324C13.8684 6.07109 14.5 7.46203 14.5 9.00003C14.5 12.0376 12.0376 14.5 9.00004 14.5C7.46215 14.5 6.07132 13.8685 5.07349 12.8513L5.43043 12.5011C6.3381 13.4265 7.60186 14 9.00004 14C11.7614 14 14 11.7614 14 9.00003C14 7.60174 13.4264 6.33789 12.5009 5.4302L12.851 5.07324Z"></path>
+        <path opacity=".35" fill-rule="evenodd" clip-rule="evenodd" d="M13.3022 6.45081C13.7456 7.19747 14.0001 8.06945 14.0001 9.0001C14.0001 11.7615 11.7615 14.0001 9.00008 14.0001C8.04874 14.0001 7.15874 13.7342 6.40125 13.2724L6.66148 12.8455C7.34281 13.2608 8.14312 13.5001 9.00008 13.5001C11.4853 13.5001 13.5001 11.4854 13.5001 9.0001C13.5001 8.16174 13.2711 7.37763 12.8723 6.70609L13.3022 6.45081Z"></path>
+        <path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="M13.3745 7.94031C13.4566 8.28041 13.5 8.63535 13.5 9.0001C13.5 11.4854 11.4853 13.5001 9.00003 13.5001C8.61104 13.5001 8.23323 13.4507 7.87268 13.3577L7.99759 12.8735C8.31768 12.9561 8.65353 13.0001 9.00003 13.0001C11.2091 13.0001 13 11.2092 13 9.0001C13 8.67518 12.9613 8.35962 12.8884 8.05766L13.3745 7.94031Z"></path>
+        <path opacity=".65" fill-rule="evenodd" clip-rule="evenodd" d="M12.9156 9.82142C12.5899 11.3814 11.3563 12.6073 9.79211 12.9216L9.6936 12.4314C11.0614 12.1566 12.1413 11.0835 12.4261 9.71924L12.9156 9.82142Z"></path>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M1.2771 7.50259C1.2771 4.06462 4.06413 1.27759 7.5021 1.27759C10.94 1.27759 13.7271 4.06462 13.7271 7.50259C13.7271 10.9405 10.94 13.7276 7.5021 13.7276C4.06413 13.7276 1.2771 10.9405 1.2771 7.50259ZM7.5021 2.22759C4.5888 2.22759 2.2271 4.58929 2.2271 7.50259C2.2271 10.4159 4.5888 12.7776 7.5021 12.7776C10.4154 12.7776 12.7771 10.4159 12.7771 7.50259C12.7771 4.58929 10.4154 2.22759 7.5021 2.22759Z"></path>
+        <path d="M6.77218 10.1736C6.60522 10.1736 6.48627 10.1339 6.41531 10.0546C6.34435 9.97112 6.32348 9.87303 6.3527 9.76034L7.68001 4.87686C7.7134 4.76833 7.79061 4.67651 7.91166 4.60138C8.0327 4.52207 8.1767 4.48242 8.34366 4.48242C8.51479 4.4866 8.63374 4.52834 8.70053 4.60764C8.76731 4.68694 8.78401 4.78086 8.75061 4.88938L7.42957 9.77912C7.39618 9.88764 7.32105 9.98155 7.20418 10.0609C7.08731 10.1402 6.94331 10.1777 6.77218 10.1736ZM4.65601 7.3186C4.69774 7.16416 4.77496 7.04312 4.88766 6.95547C5.00453 6.86781 5.12557 6.82399 5.25079 6.82399H10.1969C10.3221 6.82399 10.4139 6.86781 10.4724 6.95547C10.5308 7.04312 10.5391 7.16416 10.4974 7.3186C10.4515 7.47303 10.3617 7.59199 10.2282 7.67547C10.0946 7.75894 9.95896 7.80068 9.82122 7.80068H5.04418C4.88974 7.80068 4.77496 7.75894 4.69983 7.67547C4.6247 7.59199 4.61009 7.47303 4.65601 7.3186Z"></path>
+      </svg>
+      <span class="font-serif italic text-xl leading-none">Dig text</span>
+    </a>
+
+    <div class="flex items-center gap-2">
+      <nav class="flex items-center gap-1 font-sans-ui">
+        <span class="px-3 py-1.5 rounded-full text-sm font-medium text-neutral-900">Home</span>
+        <a href="#" class="px-3 py-1.5 rounded-full text-sm text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-all">Articles</a>
+        <a href="#" class="px-3 py-1.5 rounded-full text-sm text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-all">Pages</a>
+      </nav>
+      <button class="ml-1 inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-1.5 font-sans-ui text-sm text-white hover:bg-neutral-700 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+        Share
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================= -->
+<!-- HERO (variant-switched)                                         -->
+<!-- ============================================================= -->
+<main>
+
+<!-- ---------- HERO A — quiet / functionalist (default) ---------- -->
+<section data-hero="A" class="relative overflow-hidden">
+  <!-- one warm, quiet orb — friendly, not loud -->
+  <div aria-hidden="" class="orb" style="top:-220px; right:-160px; width:560px; height:560px; opacity:.35;
+       background: radial-gradient(circle, rgba(251,191,36,.35) 0%, rgba(244,114,182,.18) 45%, transparent 75%);"></div>
+
+  <div class="relative max-w-3xl mx-auto px-6 pt-16 pb-10">
+    <!-- eyebrow -->
+    <div class="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1">
+      <span class="h-1.5 w-1.5 rounded-full bg-rose-500" style="background: rgb(244, 63, 94);"></span>
+      <span class="font-sans-ui text-[10px] tracking-[0.22em] uppercase text-neutral-500">a new interface for text</span>
+    </div>
+
+    <!-- headline -->
+    <h1 class="mt-8 font-serif tracking-tight text-neutral-900
+               text-[clamp(2.4rem,6.2vw,3.6rem)] leading-[1.02]" style="text-wrap: balance; font-family: Newsreader, Georgia, serif;">
+      Read the shortest version first.<br>
+      <span class="text-neutral-500">Dig
+        <span class="relative inline-block align-baseline">
+          <span class="italic">deeper</span>
+          <!-- friendly living expander next to the word -->
+          <button id="hero-demo-btn" aria-label="Expand" class="align-middle ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full border border-neutral-400 text-neutral-500 hover:text-neutral-900 hover:border-neutral-700 transition-colors" onclick="toggleHeroDemo()" style="">
+            <svg id="hero-demo-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </span>
+        only where it matters.</span>
+    </h1>
+
+    <!-- live expanding example — the mechanic in one glance -->
+    <div id="hero-demo" class="grid" style="grid-template-rows: 0fr; transition: grid-template-rows .5s cubic-bezier(.2,.8,.2,1), margin .5s cubic-bezier(.2,.8,.2,1); margin-top:0;">
+      <div class="overflow-hidden">
+        <p class="mt-6 font-serif text-[1.05rem] leading-relaxed text-neutral-600 max-w-2xl">
+          <span style="background: color-mix(in srgb, currentColor 8%, transparent); border-radius:3px; padding:.05em .25em;">
+            Most interfaces hand you <em>everything at once</em> — long articles, dense docs, AI walls of text.
+            Dig text arrives <span class="text-rose-600">collapsed</span>, with the most important things first,
+            and you choose where to go deeper.
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- HERO B — accent (warm coral, bolder) ---------- -->
+<section data-hero="B" class="relative overflow-hidden hidden">
+  <div aria-hidden="" class="orb" style="top:-180px; right:-120px; width:520px; height:520px; opacity:.55;
+       background: radial-gradient(circle, rgba(244,114,122,.55) 0%, rgba(251,146,60,.3) 50%, transparent 75%);"></div>
+  <div aria-hidden="" class="orb" style="bottom:-160px; left:-120px; width:360px; height:360px; opacity:.28;
+       background: radial-gradient(circle, rgba(168,162,255,.55) 0%, transparent 70%);"></div>
+
+  <div class="relative max-w-3xl mx-auto px-6 pt-16 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/70 backdrop-blur-sm px-3 py-1">
+      <span class="h-1.5 w-1.5 rounded-full bg-rose-500" style="background: rgb(244, 63, 94);"></span>
+      <span class="font-sans-ui text-[10px] tracking-[0.22em] uppercase text-neutral-500">a new interface for text</span>
+    </div>
+
+    <h1 class="mt-8 font-serif tracking-tight text-[clamp(2.4rem,6.2vw,3.6rem)] leading-[1.02]" style="text-wrap: balance; font-family: Newsreader, Georgia, serif;">
+      Read the
+      <em class="not-italic bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">shortest</em>
+      version first.<br>
+      Dig <em class="italic">deeper</em> only where it matters.
+    </h1>
+
+    <p class="mt-7 max-w-xl font-serif text-[1.05rem] leading-relaxed text-neutral-600">
+      A kind way to read — collapsed first, expanded only where it matters to you.
+    </p>
+  </div>
+</section>
+
+<!-- ---------- HERO C — specimen / editorial ---------- -->
+<section data-hero="C" class="relative overflow-hidden hidden">
+  <div class="relative max-w-3xl mx-auto px-6 pt-20 pb-12 border-t border-b border-neutral-200">
+    <div class="flex items-baseline justify-between">
+      <span class="font-sans-ui text-[10px] tracking-[0.3em] uppercase text-neutral-400">a new interface for text</span>
+      <span class="font-sans-ui text-[10px] tracking-[0.2em] uppercase text-neutral-300">v 0.1</span>
+    </div>
+
+    <h1 class="mt-10 font-serif tracking-[-0.02em] text-[clamp(2.6rem,7vw,4.4rem)] leading-[.98]" style="text-wrap: balance; font-family: Newsreader, Georgia, serif;">
+      Read the shortest<br>
+      version first.
+    </h1>
+    <h2 class="mt-3 font-serif italic text-neutral-400 text-[clamp(1.8rem,4.8vw,2.8rem)] leading-[1.05]" style="font-family: Newsreader, Georgia, serif;">
+      Dig deeper only where it matters.
+    </h2>
+
+    <div class="mt-8 font-sans-ui text-[11px] tracking-wider uppercase text-neutral-400 flex flex-wrap">
+      <span>Collapsed by default</span>
+      <span class="rule-dot"></span>
+      <span>Reader‑controlled depth</span>
+      <span class="rule-dot"></span>
+      <span>Works anywhere text lives</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- COMPOSER — high on page, right under hero                       -->
+<!-- ============================================================= -->
+<section id="composer" class="relative">
+  <div class="max-w-3xl mx-auto px-6 pt-4 pb-14">
+
+    <div class="flex items-center justify-between mb-3">
+      <!-- tab pill (matches header/site style) -->
+      <div role="tablist" aria-label="Compose view" class="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white p-0.5">
+        <button id="tab-raw" class="tab-btn px-4 py-1.5 rounded-full font-sans-ui text-sm font-medium bg-neutral-900 text-white transition-colors" data-tab="raw">Raw text</button>
+        <button id="tab-dig" class="tab-btn px-4 py-1.5 rounded-full font-sans-ui text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors" data-tab="dig">Dig text</button>
+      </div>
+
+      <div class="font-sans-ui text-[11px] text-neutral-400 hidden sm:flex items-center gap-3">
+        <span><kbd class="font-mono text-[10px] px-1.5 py-0.5 border border-neutral-200 rounded">⌘</kbd>
+              <kbd class="font-mono text-[10px] px-1.5 py-0.5 border border-neutral-200 rounded">V</kbd>
+              to paste</span>
+      </div>
+    </div>
+
+    <!-- paste card -->
+    <div class="rounded-2xl border border-neutral-200 bg-neutral-50/60 overflow-hidden shadow-[0_1px_0_rgba(0,0,0,.02),0_8px_24px_-12px_rgba(0,0,0,.08)]">
+
+      <!-- top bar -->
+      <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 bg-white/60">
+        <div class="flex items-center gap-1.5">
+          <span class="h-2 w-2 rounded-full bg-rose-400/70"></span>
+          <span class="h-2 w-2 rounded-full bg-amber-400/70"></span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400/70"></span>
+          <span class="ml-2 font-sans-ui text-[11px] tracking-widest uppercase text-neutral-400" id="composer-label">Paste your text</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="btn-sample" class="font-sans-ui text-[11px] text-neutral-500 hover:text-neutral-900 transition-colors px-2 py-1 rounded">Try a sample</button>
+          <button id="btn-clear" class="font-sans-ui text-[11px] text-neutral-400 hover:text-neutral-900 transition-colors px-2 py-1 rounded">Clear</button>
+        </div>
+      </div>
+
+      <!-- Raw pane -->
+      <div id="pane-raw" class="relative">
+        <textarea id="raw-input" spellcheck="false" placeholder="Paste anything here.
+
+Wrap a block in  &lt;&lt; and &gt;&gt;  to make it collapsible.
+Then switch to Dig text above to read it collapsed‑first." class="block w-full min-h-[260px] bg-transparent px-5 py-5 font-mono text-[13px] leading-[1.65] text-neutral-800 placeholder:text-neutral-400 focus:outline-none resize-y"></textarea>
+      </div>
+
+      <!-- Dig pane -->
+      <div id="pane-dig" class="hidden px-5 py-5 min-h-[260px] font-serif text-[17px] leading-[1.6] text-neutral-800"></div>
+
+      <!-- footer row -->
+      <div class="flex items-center justify-between px-4 py-2.5 border-t border-neutral-100 bg-white/50 font-sans-ui text-[11px] text-neutral-400">
+        <span id="meta-left">0 words · 0 dig blocks</span>
+        <span class="flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+          Your text stays in your browser.
+        </span>
+      </div>
+    </div>
+
+    <!-- quick help row under composer -->
+    <div class="mt-3 font-sans-ui text-[12px] text-neutral-400 flex flex-wrap items-center gap-x-5 gap-y-1">
+      <span class="inline-flex items-center gap-1.5">
+        <span class="font-mono text-neutral-500">&lt;&lt; hidden &gt;&gt;</span>
+        = collapsible block
+      </span>
+      <span class="inline-flex items-center gap-1.5">
+        Nest freely — deeper <code class="font-mono text-neutral-500">&lt;&lt; &gt;&gt;</code> means deeper detail
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- PROMPT — new section: convert any text to Dig text with an LLM  -->
+<!-- ============================================================= -->
+<section id="prompt" class="relative border-t border-neutral-100">
+  <div class="max-w-3xl mx-auto px-6 py-20">
+
+    <div class="flex items-baseline justify-between gap-6 flex-wrap">
+      <div>
+        <span class="font-sans-ui text-[10px] tracking-[0.25em] uppercase text-neutral-400">Don’t have Dig text yet?</span>
+        <h2 class="mt-3 font-serif text-[clamp(1.9rem,4.6vw,2.8rem)] leading-[1.05] tracking-tight" style="text-wrap: balance">
+          Turn any text into Dig text<br>with one prompt.
+        </h2>
+      </div>
+    </div>
+
+    <p class="mt-6 max-w-xl font-serif text-[1.05rem] leading-relaxed text-neutral-600">
+      Paste this into your favorite LLM with the text you want converted. It’ll return a
+      collapsed‑first version you can drop into the composer above.
+    </p>
+
+    <!-- prompt card — same visual grammar as About/embed cards -->
+    <div class="mt-8 rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-[0_1px_0_rgba(0,0,0,.02),0_8px_24px_-12px_rgba(0,0,0,.08)]">
+      <div class="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
+        <div class="flex items-center gap-1.5">
+          <span class="h-2 w-2 rounded-full bg-rose-400/70"></span>
+          <span class="h-2 w-2 rounded-full bg-amber-400/70"></span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400/70"></span>
+          <span class="ml-2 font-sans-ui text-[11px] tracking-widest uppercase text-neutral-400">Dig text prompt</span>
+        </div>
+        <button id="btn-copy-prompt" class="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-sans-ui text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span id="copy-prompt-label">Copy prompt</span>
+        </button>
+      </div>
+<pre id="prompt-body" class="px-5 py-5 font-mono text-[12.5px] leading-[1.65] text-neutral-700 whitespace-pre-wrap break-words max-h-[420px] overflow-auto">Summarize the following text using what I call the Quote summary approach. Use as many original fragments as possible (with quote symbols) and stitch the quotes together with your own writing to create a comprehensive and precise summary.
+
+Produce the following summaries:
+
+1. 1 min summary ***[note for humans: This is the most important setting in this prompt. Consider changing this number.]***
+2. 3x the length of "1."
+3. 6x the length of "1."
+
+Now convert the original text into “Dig text” format — a progressive, collapsed‑by‑default reading layout. The Dig text syntax is simple. Wrap any block of text between &lt;&lt; and &gt;&gt; markers to make it collapsible. Like this: &lt;&lt;this entire sentence is hidden by default, and the reader sees only a [+] button that they can click to dig in.&gt;&gt; Each level of nesting adds more detail about its parent. If a reader skips a collapsed block, the surrounding text still makes complete sense on its own.
+
+1. Deconstruct the summaries you prepared in the 1st step in the “Dig text”. The shortest summary stays at the top level (visible by default); all other summaries are nested inside &lt;&lt; &gt;&gt; blocks.
+2. Roughly: the top level of Dig text should be the shortest summary you already prepared in the 1st step. 2nd level the 2nd longest summary. 3rd level the 3rd longest summary. And so on. Nest all of the original information (not only summaries) in collapsed blocks. Nothing is cut — everything is preserved, just collapsed. Feel free to slightly restructure the original summaries so information flows well for the Dig text format.
+3. Use the progressive expansion principle. Spread collapsed blocks evenly throughout the text. Avoid clustering them at the ends of paragraphs or concentrating them in one part of the article.
+4. Use Markdown for headings, links, and any other formatting present in the original. When the source text has a title and subtitle, render the title as H1 (#) and the subtitle as italicized text.
+5. After you finish, re-read only the top-level visible text — everything outside any &lt;&lt; &gt;&gt; markers. It must read as a coherent, complete summary of the original on its own. If it doesn’t, rework it until it does.
+
+Output only the converted text in markdown (with Dig’s double chevron markers). The output should be ready to paste directly into Dig text.
+
+Now transform the following text:
+
+[paste your text here]</pre>
+    </div>
+
+    <p class="mt-6 font-sans-ui text-[12px] text-neutral-400">
+      Then paste the output into the composer above and switch to
+      <span class="text-neutral-600">Dig text</span> to read it collapsed‑first.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- EMBED — new section                                             -->
+<!-- ============================================================= -->
+<section id="embed" class="relative border-t border-neutral-100 bg-neutral-50/50">
+  <div class="max-w-3xl mx-auto px-6 py-20">
+
+    <div class="flex items-baseline justify-between gap-6 flex-wrap">
+      <div>
+        <span class="font-sans-ui text-[10px] tracking-[0.25em] uppercase text-neutral-400">Use it anywhere</span>
+        <h2 class="mt-3 font-serif text-[clamp(1.9rem,4.6vw,2.8rem)] leading-[1.05] tracking-tight" style="text-wrap: balance">
+          Drop Dig text into any<br>page you already write.
+        </h2>
+      </div>
+      <a href="#" class="font-sans-ui text-sm text-neutral-500 hover:text-neutral-900 transition-colors inline-flex items-center gap-1">
+        See it live →
+      </a>
+    </div>
+
+    <p class="mt-6 max-w-xl font-serif text-[1.05rem] leading-relaxed text-neutral-600">
+      One script, no dependencies. Wrap any passage in
+      <code class="font-mono text-[.9em] text-neutral-800 bg-neutral-200/60 rounded px-1.5 py-0.5">&lt;&lt;…&gt;&gt;</code>
+      and readers get a gentle <span class="text-neutral-900">+</span> to dig when they want more.
+    </p>
+
+    <!-- 2-col: snippet + live preview -->
+    <div class="mt-10 grid md:grid-cols-2 gap-5">
+
+      <!-- snippet -->
+      <div class="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100">
+          <span class="font-sans-ui text-[11px] tracking-widest uppercase text-neutral-400">html</span>
+          <button id="btn-copy-embed" class="font-sans-ui text-[11px] text-neutral-500 hover:text-neutral-900 transition-colors inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span id="copy-embed-label">Copy</span>
+          </button>
+        </div>
+<pre id="embed-snippet" class="px-5 py-5 font-mono text-[12.5px] leading-[1.7] text-neutral-700 whitespace-pre-wrap break-words overflow-auto">&lt;p data-digtext&gt;
+  Dig text is a new way to read.
+  &lt;&lt;Readers see the shortest version first, then
+  dig deeper only where it matters.&gt;&gt;
+&lt;/p&gt;
+
+&lt;script src="https://digtext.github.io/embed.js"&gt;&lt;/script&gt;</pre>
+      </div>
+
+      <!-- live preview of the embed behavior -->
+      <div class="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100">
+          <span class="font-sans-ui text-[11px] tracking-widest uppercase text-neutral-400">preview · your blog</span>
+          <span class="font-sans-ui text-[10px] text-neutral-300">live</span>
+        </div>
+        <div class="px-5 py-6 font-serif text-[16px] leading-[1.65] text-neutral-800" style="--_bg:#fff">
+          <p id="embed-preview" class="m-0">
+            Dig text is a new way to read.
+            <span class="dig-inline">
+              <button class="digtext-btn-preview" aria-label="Expand" onclick="toggleInline(this)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button><span class="digtext-expanded-preview" style="display: none;">Readers see the shortest version first, then dig deeper only where it matters.</span>
+            </span>
+          </p>
+          <p class="mt-4 font-sans-ui text-[10.5px] opacity-40">powered by <a href="#" class="underline underline-offset-2">Dig text</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 quiet bullets -->
+    <div class="mt-10 grid sm:grid-cols-3 gap-6 font-sans-ui text-[13px] text-neutral-600">
+      <div>
+        <div class="text-neutral-900 font-medium mb-1">Zero dependencies</div>
+        <p class="leading-relaxed text-neutral-500">No React, no build step, ~8kB. Drop the script in and you're done.</p>
+      </div>
+      <div>
+        <div class="text-neutral-900 font-medium mb-1">Inherits your type</div>
+        <p class="leading-relaxed text-neutral-500">Fonts, colors, sizes come from your page. It reads native to your site.</p>
+      </div>
+      <div>
+        <div class="text-neutral-900 font-medium mb-1">Respects the reader</div>
+        <p class="leading-relaxed text-neutral-500">Collapsed by default, no tracking, no layout shift, keyboard friendly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= -->
+<!-- FOOTER                                                          -->
+<!-- ============================================================= -->
+<footer class="border-t border-neutral-100">
+  <div class="max-w-3xl mx-auto px-6 py-10 font-sans-ui text-[12px] text-neutral-400 flex items-center justify-between">
+    <span>Dig text — read the shortest version first.</span>
+    <span>© 2026</span>
+  </div>
+</footer>
+
+</main>
+
+<!-- ============================================================= -->
+<!-- TWEAKS PANEL                                                    -->
+<!-- ============================================================= -->
+<div class="tweaks on" id="tweaks">
+  <h4>Tweaks</h4>
+
+  <div class="text-[10px] uppercase tracking-wider text-neutral-400 mb-1.5">Hero variant</div>
+  <div class="row" id="tweak-hero">
+    <button class="opt" data-hero-opt="A" data-on="1">A · quiet</button>
+    <button class="opt" data-hero-opt="B" data-on="0">B · warm</button>
+    <button class="opt" data-hero-opt="C" data-on="0">C · specimen</button>
+  </div>
+
+  <div class="text-[10px] uppercase tracking-wider text-neutral-400 mb-1.5">Hero typeface</div>
+  <div class="row" id="tweak-font">
+    <button class="opt" data-font="Newsreader" data-on="1">Newsreader</button>
+    <button class="opt" data-font="'IBM Plex Serif'" data-on="0">IBM Plex Serif</button>
+  </div>
+
+  <div class="text-[10px] uppercase tracking-wider text-neutral-400 mb-1.5">Hero micro‑demo (A)</div>
+  <div class="row" id="tweak-demo">
+    <button class="opt" data-demo="1" data-on="1">On</button>
+    <button class="opt" data-demo="0" data-on="0">Off</button>
+  </div>
+
+  <div class="text-[10px] uppercase tracking-wider text-neutral-400 mb-1.5">Accent</div>
+  <div class="row" id="tweak-accent">
+    <button class="opt" data-accent="rose" data-on="1">Rose</button>
+    <button class="opt" data-accent="amber" data-on="0">Amber</button>
+    <button class="opt" data-accent="violet" data-on="0">Violet</button>
+    <button class="opt" data-accent="neutral" data-on="0">None</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Composer — tabs, sample, and mini DigText renderer
+   ============================================================ */
+const SAMPLE =
+`# A kind way to read
+
+Dig text arrives collapsed first. Readers see only what matters most. <<They can dig deeper into any passage with a single click — nesting supported, so deeper means more detail.>>
+
+Most of the web hands you everything at once. <<Dense docs, 4,000‑word blog posts, walls of AI output. Dig text flips it: <<the shortest complete version is the default, and detail is opt‑in.>> Everything is preserved, nothing is cut — just collapsed until you want it.>>
+
+Try editing this text, then switch to the Dig text tab.`;
+
+const raw     = document.getElementById('raw-input');
+const paneRaw = document.getElementById('pane-raw');
+const paneDig = document.getElementById('pane-dig');
+const tabRaw  = document.getElementById('tab-raw');
+const tabDig  = document.getElementById('tab-dig');
+const meta    = document.getElementById('meta-left');
+const composerLabel = document.getElementById('composer-label');
+
+function setTab(which){
+  const onRaw = which === 'raw';
+  paneRaw.classList.toggle('hidden', !onRaw);
+  paneDig.classList.toggle('hidden',  onRaw);
+  [tabRaw, tabDig].forEach(b=>{
+    const active = b.dataset.tab === which;
+    b.classList.toggle('bg-neutral-900', active);
+    b.classList.toggle('text-white', active);
+    b.classList.toggle('text-neutral-500', !active);
+  });
+  composerLabel.textContent = onRaw ? 'Paste your text' : 'Reader view';
+  if (!onRaw) renderDig();
+}
+
+tabRaw.onclick = ()=> setTab('raw');
+tabDig.onclick = ()=> setTab('dig');
+
+document.getElementById('btn-sample').onclick = ()=>{ raw.value = SAMPLE; updateMeta(); };
+document.getElementById('btn-clear').onclick  = ()=>{ raw.value = ''; updateMeta(); };
+
+raw.addEventListener('input', updateMeta);
+
+function updateMeta(){
+  const t = raw.value;
+  const words = (t.trim().match(/\S+/g)||[]).length;
+  const blocks = (t.match(/<<[\s\S]*?>>/g)||[]).length;
+  meta.textContent = `${words} words · ${blocks} dig blocks`;
+}
+updateMeta();
+
+/* tiny parser (mirrors DigText.tsx behavior) */
+function parseDig(str){
+  const out=[]; let i=0, buf='';
+  while(i<str.length){
+    if(str[i]==='<' && str[i+1]==='<'){
+      let nest=1,j=i+2,matched=false;
+      while(j<str.length){
+        if(str[j]==='<' && str[j+1]==='<'){ nest++; j+=2; }
+        else if(str[j]==='>' && str[j+1]==='>'){ nest--; if(nest===0){matched=true;break;} j+=2; }
+        else j++;
+      }
+      if(!matched){ buf+='<<'; i+=2; continue; }
+      if(buf){ out.push({type:'t',v:buf}); buf=''; }
+      out.push({type:'x', c: parseDig(str.slice(i+2,j))});
+      i=j+2;
+    } else if(str[i]==='>' && str[i+1]==='>'){ i+=2; }
+    else { buf+=str[i]; i++; }
+  }
+  if(buf) out.push({type:'t',v:buf});
+  return out;
+}
+function renderTo(nodes, host){
+  nodes.forEach(n=>{
+    if(n.type==='t'){
+      host.appendChild(document.createTextNode(n.v));
+    } else {
+      const wrap = document.createElement('span');
+      const btn  = document.createElement('button');
+      btn.className = 'digtext-btn-preview';
+      btn.setAttribute('aria-label','Expand');
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      const body = document.createElement('span');
+      body.className = 'digtext-expanded-preview';
+      body.style.display = 'none';
+      renderTo(n.c, body);
+      btn.addEventListener('click', ()=>{
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : '';
+        btn.classList.toggle('open', !open);
+        btn.innerHTML = open
+          ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      });
+      wrap.appendChild(btn);
+      wrap.appendChild(body);
+      host.appendChild(wrap);
+    }
+  });
+}
+function renderDig(){
+  paneDig.innerHTML = '';
+  if(!raw.value.trim()){
+    paneDig.innerHTML = '<div class="font-serif text-neutral-400 italic">Nothing to dig into yet. Switch to <button onclick="setTab(\'raw\')" class="underline underline-offset-2 hover:text-neutral-900">Raw text</button> and paste something.</div>';
+    return;
+  }
+  const host = document.createElement('div');
+  host.className = 'max-w-none';
+  renderTo(parseDig(raw.value), host);
+  paneDig.appendChild(host);
+}
+window.setTab = setTab;
+
+/* ============================================================
+   Embed snippet — inline toggle + copy
+   ============================================================ */
+function toggleInline(btn){
+  const body = btn.nextElementSibling;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  btn.classList.toggle('open', !open);
+  btn.innerHTML = open
+    ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+    : '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+}
+window.toggleInline = toggleInline;
+
+document.getElementById('btn-copy-prompt').onclick = async ()=>{
+  const el = document.getElementById('prompt-body');
+  const text = el.innerText
+    .replace(/&lt;&lt;/g, '<<')
+    .replace(/&gt;&gt;/g, '>>');
+  try{
+    await navigator.clipboard.writeText(text);
+    const l = document.getElementById('copy-prompt-label');
+    l.textContent = 'Copied!';
+    setTimeout(()=> l.textContent='Copy prompt', 1600);
+  }catch(e){}
+};
+
+document.getElementById('btn-copy-embed').onclick = async ()=>{
+  const text = document.getElementById('embed-snippet').innerText;
+  try{ await navigator.clipboard.writeText(text);
+       const l = document.getElementById('copy-embed-label');
+       l.textContent = 'Copied!';
+       setTimeout(()=> l.textContent='Copy', 1500);
+  }catch(e){}
+};
+
+/* ============================================================
+   Hero demo reveal
+   ============================================================ */
+let heroDemoOpen = false;
+function toggleHeroDemo(){
+  heroDemoOpen = !heroDemoOpen;
+  const box = document.getElementById('hero-demo');
+  box.style.gridTemplateRows = heroDemoOpen ? '1fr' : '0fr';
+  box.style.marginTop = heroDemoOpen ? '12px' : '0px';
+  const btn = document.getElementById('hero-demo-btn');
+  btn.style.background = heroDemoOpen ? '#171717' : '';
+  btn.style.color      = heroDemoOpen ? '#fff'    : '';
+  btn.style.borderColor= heroDemoOpen ? '#171717' : '';
+  btn.setAttribute('aria-label', heroDemoOpen ? 'Collapse' : 'Expand');
+  document.getElementById('hero-demo-icon').outerHTML = heroDemoOpen
+    ? '<svg id="hero-demo-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    : '<svg id="hero-demo-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+}
+window.toggleHeroDemo = toggleHeroDemo;
+
+/* ============================================================
+   Tweaks: host messaging + UI
+   ============================================================ */
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "hero": "A",
+  "demo": 1,
+  "accent": "rose",
+  "font": "'IBM Plex Serif'"
+}/*EDITMODE-END*/;
+
+function applyTweaks(){
+  // hero variant
+  document.querySelectorAll('[data-hero]').forEach(s=>{
+    s.classList.toggle('hidden', s.dataset.hero !== TWEAKS.hero);
+  });
+  // hero micro-demo visible only on A
+  const demoBtn = document.getElementById('hero-demo-btn');
+  if(demoBtn){
+    demoBtn.style.display = (TWEAKS.hero==='A' && TWEAKS.demo) ? '' : 'none';
+  }
+  // accent
+  const map = {
+    rose:    '#f43f5e',
+    amber:   '#f59e0b',
+    violet:  '#8b5cf6',
+    neutral: '#737373'
+  };
+  document.documentElement.style.setProperty('--accent', map[TWEAKS.accent] || map.rose);
+  document.querySelectorAll('.bg-rose-500').forEach(el=>{
+    el.style.background = map[TWEAKS.accent] || map.rose;
+  });
+  // tweak buttons
+  document.querySelectorAll('#tweak-hero [data-hero-opt]').forEach(b=>{
+    b.dataset.on = (b.dataset.heroOpt === TWEAKS.hero) ? '1' : '0';
+  });
+  document.querySelectorAll('#tweak-demo [data-demo]').forEach(b=>{
+    b.dataset.on = (Number(b.dataset.demo) === Number(TWEAKS.demo)) ? '1' : '0';
+  });
+  document.querySelectorAll('#tweak-accent [data-accent]').forEach(b=>{
+    b.dataset.on = (b.dataset.accent === TWEAKS.accent) ? '1' : '0';
+  });
+  // hero font — applied only to hero <h1>/<h2>
+  const heroSerif = TWEAKS.font === "'IBM Plex Serif'" ? "'IBM Plex Serif'" : 'Newsreader';
+  document.querySelectorAll('[data-hero] h1, [data-hero] h2').forEach(el=>{
+    el.style.fontFamily = `${heroSerif}, Georgia, serif`;
+  });
+  document.querySelectorAll('#tweak-font [data-font]').forEach(b=>{
+    b.dataset.on = (b.dataset.font === TWEAKS.font) ? '1' : '0';
+  });
+}
+
+function setTweak(k, v){
+  TWEAKS[k] = v;
+  applyTweaks();
+  window.parent && window.parent.postMessage({type:'__edit_mode_set_keys', edits:{[k]: v}}, '*');
+}
+
+document.querySelectorAll('#tweak-hero [data-hero-opt]').forEach(b=>{
+  b.onclick = ()=> setTweak('hero', b.dataset.heroOpt);
+});
+document.querySelectorAll('#tweak-demo [data-demo]').forEach(b=>{
+  b.onclick = ()=> setTweak('demo', Number(b.dataset.demo));
+});
+document.querySelectorAll('#tweak-accent [data-accent]').forEach(b=>{
+  b.onclick = ()=> setTweak('accent', b.dataset.accent);
+});
+document.querySelectorAll('#tweak-font [data-font]').forEach(b=>{
+  b.onclick = ()=> setTweak('font', b.dataset.font);
+});
+
+applyTweaks();
+
+/* edit-mode protocol */
+window.addEventListener('message', (e)=>{
+  const d = e.data || {};
+  if(d.type === '__activate_edit_mode'){
+    document.getElementById('tweaks').classList.add('on');
+  } else if(d.type === '__deactivate_edit_mode'){
+    document.getElementById('tweaks').classList.remove('on');
+  }
+});
+window.parent && window.parent.postMessage({type:'__edit_mode_available'}, '*');
+</script>
+
+
+
+</body></html>
