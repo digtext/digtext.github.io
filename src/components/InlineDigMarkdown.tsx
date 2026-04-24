@@ -30,12 +30,83 @@ export function extractParenthesisExpandables(raw: string): InlineDigExtractResu
   const map = new Map<number, InlineDigExpandable>();
   let nextId = 0;
 
+  const getBacktickRunLength = (text: string, start: number) => {
+    let length = 0;
+    while (text[start + length] === "`") length += 1;
+    return length;
+  };
+
+  const getFenceAt = (
+    text: string,
+    start: number,
+    marker?: "`" | "~",
+  ): { marker: "`" | "~"; length: number } | null => {
+    let lineStart = start;
+    while (lineStart > 0 && text[lineStart - 1] !== "\n") lineStart -= 1;
+    if (!/^[ \t]{0,3}$/.test(text.slice(lineStart, start))) return null;
+
+    const char = text[start];
+    if ((char !== "`" && char !== "~") || (marker && char !== marker)) return null;
+
+    let length = 0;
+    while (text[start + length] === char) length += 1;
+    return length >= 3 ? { marker: char, length } : null;
+  };
+
   const process = (text: string): string => {
     let out = "";
     let i = 0;
     let markdownLinkDepth = 0;
+    let activeInlineCodeTicks: number | null = null;
+    let activeFence: { marker: "`" | "~"; length: number } | null = null;
 
     while (i < text.length) {
+      if (activeFence) {
+        const closingFence = getFenceAt(text, i, activeFence.marker);
+        if (closingFence && closingFence.length >= activeFence.length) {
+          out += text.slice(i, i + closingFence.length);
+          i += closingFence.length;
+          activeFence = null;
+          continue;
+        }
+
+        out += text[i];
+        i += 1;
+        continue;
+      }
+
+      if (activeInlineCodeTicks !== null) {
+        if (text[i] === "`") {
+          const tickLength = getBacktickRunLength(text, i);
+          out += text.slice(i, i + tickLength);
+          i += tickLength;
+          if (tickLength === activeInlineCodeTicks) activeInlineCodeTicks = null;
+          continue;
+        }
+
+        out += text[i];
+        i += 1;
+        continue;
+      }
+
+      if (markdownLinkDepth === 0) {
+        const fence = getFenceAt(text, i);
+        if (fence) {
+          activeFence = fence;
+          out += text.slice(i, i + fence.length);
+          i += fence.length;
+          continue;
+        }
+
+        if (text[i] === "`") {
+          const tickLength = getBacktickRunLength(text, i);
+          activeInlineCodeTicks = tickLength;
+          out += text.slice(i, i + tickLength);
+          i += tickLength;
+          continue;
+        }
+      }
+
       if (markdownLinkDepth === 0 && text[i] === "]" && text[i + 1] === "(") {
         out += "](";
         markdownLinkDepth = 1;
@@ -58,8 +129,49 @@ export function extractParenthesisExpandables(raw: string): InlineDigExtractResu
         let j = i + 2;
         let matched = false;
         let nestedMarkdownLinkDepth = 0;
+        let nestedInlineCodeTicks: number | null = null;
+        let nestedFence: { marker: "`" | "~"; length: number } | null = null;
 
         while (j < text.length) {
+          if (nestedFence) {
+            const closingFence = getFenceAt(text, j, nestedFence.marker);
+            if (closingFence && closingFence.length >= nestedFence.length) {
+              j += closingFence.length;
+              nestedFence = null;
+              continue;
+            }
+
+            j += 1;
+            continue;
+          }
+
+          if (nestedInlineCodeTicks !== null) {
+            if (text[j] === "`") {
+              const tickLength = getBacktickRunLength(text, j);
+              j += tickLength;
+              if (tickLength === nestedInlineCodeTicks) nestedInlineCodeTicks = null;
+              continue;
+            }
+
+            j += 1;
+            continue;
+          }
+
+          if (nestedMarkdownLinkDepth === 0) {
+            const fence = getFenceAt(text, j);
+            if (fence) {
+              nestedFence = fence;
+              j += fence.length;
+              continue;
+            }
+
+            if (text[j] === "`") {
+              nestedInlineCodeTicks = getBacktickRunLength(text, j);
+              j += nestedInlineCodeTicks;
+              continue;
+            }
+          }
+
           if (
             nestedMarkdownLinkDepth === 0 &&
             text[j] === "]" &&

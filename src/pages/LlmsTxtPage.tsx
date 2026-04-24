@@ -59,14 +59,14 @@ const markdownComponents: Components = {
     ) : (
       <code
         {...props}
-        className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.9em] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
+        className="rounded bg-[#ECECEC] px-1 py-0.5 font-mono text-[0.9em] text-neutral-800 dark:bg-[#212121] dark:text-neutral-200"
       >
         {children}
       </code>
     );
   },
   pre: ({ children }) => (
-    <pre className="mb-6 overflow-x-auto rounded-md border border-neutral-200 bg-neutral-50 p-4 text-left dark:border-neutral-800 dark:bg-neutral-900">
+    <pre className="mb-6 overflow-x-auto rounded-md border border-neutral-200 bg-[#F0F0F0] p-4 text-left dark:border-neutral-800 dark:bg-[#1B1B1B]">
       {children}
     </pre>
   ),

@@ -312,12 +312,13 @@ interface EditableLineViewProps {
   inlineDigIcons?: InlineDigIconSet;
   paragraphBreakIds?: ReadonlySet<number>;
   paragraphBreakSpacing?: string;
+  paragraphBreakSpacingById?: ReadonlyMap<number, string>;
 }
 
 export const EditableLineView = React.forwardRef<
   EditableLineViewHandle,
   EditableLineViewProps
->(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, lineDigIcons, inlineDigCollapsedIcon, inlineDigIcons, paragraphBreakIds, paragraphBreakSpacing = "0.75em" }, fwdRef) => {
+>(({ lines, onLinesChange, onCollapseChange, onUndo, onRedo, className = "", emptyStateMessage, variant = "lines", readOnly = false, readOnlyInlineDigSyntax, readOnlyTextClassName = "", readOnlyTextStyle, defaultCollapsed = false, readOnlyEndControlsOnly = false, lineDigCollapsedIcon, lineDigIcons, inlineDigCollapsedIcon, inlineDigIcons, paragraphBreakIds, paragraphBreakSpacing = "0.75em", paragraphBreakSpacingById }, fwdRef) => {
   const [collapsed, setCollapsed] = useState<Set<number>>(
     () => new Set(defaultCollapsed ? collectExpandableIds(lines) : []),
   );
@@ -1021,8 +1022,8 @@ export const EditableLineView = React.forwardRef<
     "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-neutral-500 [&_a]:decoration-neutral-400 [&_a:hover]:text-neutral-700 [&_a:hover]:decoration-neutral-500 dark:[&_a]:text-neutral-400 dark:[&_a]:decoration-neutral-500 dark:[&_a:hover]:text-neutral-200 dark:[&_a:hover]:decoration-neutral-300 " +
     "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 " +
     "[&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-neutral-200 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-neutral-500 dark:[&_blockquote]:border-neutral-800 dark:[&_blockquote]:text-neutral-400 " +
-    "[&_code]:rounded [&_code]:bg-neutral-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-neutral-800 " +
-    "[&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-neutral-100 [&_pre]:p-4 dark:[&_pre]:bg-neutral-800 " +
+    "[&_code]:rounded [&_code]:bg-[#ECECEC] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-mono dark:[&_code]:bg-[#212121] " +
+    "[&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-[#ECECEC] [&_pre]:p-4 dark:[&_pre]:bg-[#212121] " +
     "[&_pre_code]:bg-transparent [&_pre_code]:p-0 " +
     "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse " +
     "[&_th]:border [&_th]:border-neutral-200 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold dark:[&_th]:border-neutral-800 " +
@@ -1063,12 +1064,19 @@ export const EditableLineView = React.forwardRef<
             const inlineDigExpandedIds =
               expandedInlineDigIdsByLine.get(line.id) ?? new Set<number>();
             const hasParagraphBreak = paragraphBreakIds?.has(line.id) ?? false;
+            const paragraphSpacing = paragraphBreakSpacingById?.get(line.id);
 
             return (
               <div
                 key={line.id}
                 className={cn("relative group/row", !readOnly && allSelected && "bg-blue-500/15 dark:bg-blue-400/15")}
-                style={hasParagraphBreak ? { marginTop: paragraphBreakSpacing } : undefined}
+                style={
+                  paragraphSpacing
+                    ? { marginTop: paragraphSpacing }
+                    : hasParagraphBreak
+                      ? { marginTop: paragraphBreakSpacing }
+                      : undefined
+                }
               >
                 {/* Gutter */}
                 <div

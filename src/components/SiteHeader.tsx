@@ -20,7 +20,6 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
     pathname.startsWith("/article/");
   const isHome =
     pathname === "/" || pathname.startsWith("/reader");
-  const isPages = pathname === "/p";
 
   const headerMaterial = "bg-white/80 backdrop-blur-md dark:bg-neutral-950/80";
   const linkBase =
@@ -58,7 +57,7 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
   };
 
   const handleSectionClick =
-    (id: "prompt" | "embed") =>
+    (id: "prompt" | "embed" | "feedback") =>
     (event: MouseEvent<HTMLAnchorElement>) => {
       if (pathname !== "/") return;
       event.preventDefault();
@@ -82,9 +81,10 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
   return (
     <>
       <header
-        className={`sticky top-0 z-30 ${headerMaterial}`}
+        className="sticky top-0 z-30"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
+      <div className={headerMaterial}>
       <div className="mx-auto max-w-[59rem] px-3 py-4 flex items-center justify-between gap-4 sm:px-6">
         <Link
           to="/"
@@ -108,6 +108,12 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
           </svg>
           <span className="font-serif italic text-xl leading-none">
             Dig text
+          </span>
+          <span
+            aria-label="Beta"
+            className="ml-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] font-sans text-[10px] font-medium uppercase tracking-wider text-neutral-600 ring-1 ring-inset ring-neutral-300 dark:text-neutral-400 dark:ring-neutral-700"
+          >
+            Beta
           </span>
         </Link>
 
@@ -135,8 +141,14 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
             >
               Embed
             </Link>
+            <Link
+              to="/#feedback"
+              onClick={handleSectionClick("feedback")}
+              className={`${linkBase} ${inactive}`}
+            >
+              Feedback
+            </Link>
             {navItem("/library", "Library", isLibrary)}
-            {navItem("/p", "Pages", isPages)}
           </nav>
 
           <button type="button" onClick={handleOpenComposer} className={ctaClass}>
@@ -155,10 +167,11 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
           </button>
         </div>
       </div>
+      </div>
 
       <div
         aria-hidden={!menuOpen}
-        className={`absolute inset-x-0 top-full origin-top border-y border-neutral-100 ${headerMaterial} transition-[opacity,transform] duration-150 ease-out md:hidden dark:border-neutral-800 ${
+        className={`absolute inset-x-0 top-full origin-top border-y border-neutral-100 bg-white/80 backdrop-blur-md transition-[opacity,transform] duration-150 ease-out md:hidden dark:border-neutral-800 dark:bg-neutral-950/80 ${
           menuOpen
             ? "pointer-events-auto opacity-100 translate-y-0"
             : "pointer-events-none opacity-0 -translate-y-1"
@@ -197,20 +210,22 @@ const SiteHeader = ({ onOpenComposer }: SiteHeaderProps) => {
             Embed
           </Link>
           <Link
+            to="/#feedback"
+            onClick={(event) => {
+              handleSectionClick("feedback")(event);
+              setMenuOpen(false);
+            }}
+            className={`rounded-lg px-3 py-2.5 font-sans text-sm ${inactive}`}
+          >
+            Feedback
+          </Link>
+          <Link
             to="/library"
             onClick={() => setMenuOpen(false)}
             aria-current={isLibrary ? "page" : undefined}
             className={`rounded-lg px-3 py-2.5 font-sans text-sm ${isLibrary ? active : inactive}`}
           >
             Library
-          </Link>
-          <Link
-            to="/p"
-            onClick={() => setMenuOpen(false)}
-            aria-current={isPages ? "page" : undefined}
-            className={`rounded-lg px-3 py-2.5 font-sans text-sm ${isPages ? active : inactive}`}
-          >
-            Pages
           </Link>
         </nav>
       </div>

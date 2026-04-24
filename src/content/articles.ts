@@ -7,53 +7,108 @@ export interface Article {
   readTime?: string;
   active: boolean;
   content?: string;
+  externalUrl?: string;
 }
 
-const chinaGayRightsContent = `In the context of the recent legal changes in Taiwan, ((On May 24th Taiwan's highest court ruled in favour of guy rights and marriage equality. ((The court ruled on that marriage should not be limited to a man and a woman and ordered parliament either to change the law or award marriage rights to gay couples within two years.)) China reacted with surprising indifference and only one newspaper took notice. ((English-language newspaper took notice of a decision that would be the first to legalise gay marriage in an Asian country (not counting New Zealand). The more widely read Chinese version ignored it, as did television and other news outlets.)))) China proved once more that it's reluctant to embrace gay rights. ((Homosexuality was removed from the health ministry's list of mental disorders only in 2001. Additionally China recently banned the depiction of homosexuals on television — not that there were many in the first place.)) This is perplexing because Chinese spiritual ((Taoism regarded sex as neither good nor bad, while Confucianism, by encouraging close relations between master and pupils, is sometimes thought to have indirectly encouraged it.)) and artistic tradition ((In poetry of the 9th century, usually held to be the golden age of Chinese literature, it is sometimes hard to tell whether a love poem is addressed to a woman or a man. Also China's greatest novel, "The Dream of the Red Chamber", written in the late 18th century, includes both heterosexual and same-sex relations. Among literate elites, China does not seem to have shared the strong bias evident elsewhere.)) has long been relaxed about homosexuality. Two factors contribute to this lingering disdain. 1) Traditional family values remain strong. Sons are expected to represent family's good name, and are supposed to marry and have sons. ((In 2016 Peking University's sociology department carried out the largest survey of attitudes to, and among, homosexuals and other sexual minorities on behalf of the UN Development Programme. It found that 58% of respondents (gay and straight) agreed with the statement that gays are rejected by their families a higher level of rejection than occurs at work or school. Fewer than 15% of homosexuals said they had come out to their families, and more than half of those who did said they had experienced discrimination as a result.)) 2) China's not a democracy and forbids protest and activism, that helped establish gay rights in most countries. ((In most countries, gays have had to establish their rights by holding meetings and marches, arguing their case in the media. China's Communist Party does not like the public expression of rights of any kind and has squelched most discussion of gay concerns.)) However, Chinese attitudes are also changing. Young people are much more tolerant, which may in some time bring official perspective to the change. ((The Peking University survey revealed a big generation gap: 35% of those born before 1970 said they would reject a child who was gay; only 9% born after 1990 agreed. ((Though official media suppressed discussion of the pro gay-rights ruling in Taiwan, Weibo, China's Twitter, lit up with millions of reactions, most of them positive. Li Yinhe, a sociologist at the Chinese Academy of Social Sciences, pointed out that the average age of members of China's National People's Congress — the rubber-stamp parliament that would have to change marriage laws — is 49, at a time when the majority of people under the age of 35 approve of gay marriage. "Due to the influence of Taiwan, we're 14 years away from legalising it," she concluded.))))`;
+// Frontmatter parser — supports simple `key: value` lines between `---` fences.
+// Kept small on purpose; avoid adding a dependency.
+const parseFrontmatter = (raw: string): { data: Record<string, string>; body: string } => {
+  const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+  if (!match) return { data: {}, body: raw };
+  const data: Record<string, string> = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const m = line.match(/^([a-zA-Z_][\w-]*):\s*(.*)$/);
+    if (m) data[m[1]] = m[2].trim();
+  }
+  return { data, body: match[2] };
+};
 
-export const articles: Article[] = [
+const slugFromPath = (path: string) => {
+  const file = path.split("/").pop() ?? "";
+  return file.replace(/\.md$/, "");
+};
+
+// Auto-discover articles from src/content/library/*.md.
+// The archive subfolder is intentionally excluded from the glob so archived
+// articles don't appear in the library UI.
+const libraryModules = import.meta.glob(
+  "/src/content/library/*.md",
+  { eager: true, query: "?raw", import: "default" },
+) as Record<string, string>;
+
+const loadedArticles: Article[] = Object.entries(libraryModules).map(
+  ([path, raw]) => {
+    const { data, body } = parseFrontmatter(raw);
+    return {
+      id: (data.id ?? slugFromPath(path)).trim(),
+      title: data.title ?? slugFromPath(path),
+      subtitle: data.subtitle ?? "",
+      source: data.source ?? "",
+      date: data.date ?? "",
+      readTime: data.readTime,
+      active: true,
+      content: body.trim(),
+    };
+  },
+);
+
+// Grayed-out library entries — references the reader can explore elsewhere.
+// Order controls how they appear in the library below featured articles.
+const grayedOutArticles: Article[] = [
   {
-    id: "china-gay-rights",
-    title: "China's reluctance to gay rights",
-    subtitle: "Despite a historically relaxed view of homosexuality, China seems reluctant to embrace gay rights",
-    source: "The Economist explains",
-    date: "Jun 6th 2017",
-    active: true,
-    content: chinaGayRightsContent,
+    id: "augmenting-long-term-memory",
+    title: "Augmenting Long-term Memory",
+    subtitle:
+      "How to use spaced repetition systems like Anki to remember almost anything",
+    source: "Michael Nielsen",
+    date: "",
+    active: false,
+    externalUrl: "https://augmentingcognition.com/ltm.html",
   },
   {
-    id: "future-of-work",
-    title: "The future of remote work after the pandemic",
-    subtitle: "How companies are rethinking office culture and what it means for employees worldwide",
-    source: "Harvard Business Review",
-    date: "Mar 15th 2023",
+    id: "happiness-and-life-satisfaction",
+    title: "Happiness and Life Satisfaction",
+    subtitle:
+      "Cross-country data on self-reported life satisfaction and the link between income and happiness",
+    source: "Esteban Ortiz-Ospina, Max Roser",
+    date: "",
     active: false,
+    externalUrl: "https://ourworldindata.org/happiness-and-life-satisfaction",
   },
   {
-    id: "ocean-cleanup",
-    title: "Can we really clean up the oceans?",
-    subtitle: "New technologies promise to tackle plastic pollution, but the scale of the problem remains daunting",
-    source: "Nature",
-    date: "Sep 2nd 2022",
+    id: "aligning-recommender-systems",
+    title: "Aligning Recommender Systems as Cause Area",
+    subtitle:
+      "Improving the alignment of recommender systems with user values as an EA cause area",
+    source: "Ivan Vendrov",
+    date: "",
     active: false,
+    externalUrl:
+      "https://forum.effectivealtruism.org/posts/xzjQvqDYahigHcwgQ/aligning-recommender-systems-as-cause-area",
   },
   {
-    id: "ai-creativity",
-    title: "When machines learn to create",
-    subtitle: "Artificial intelligence is producing art, music, and literature - raising questions about authorship",
-    source: "The Atlantic",
-    date: "Nov 20th 2023",
+    id: "meditations-on-moloch",
+    title: "Meditations On Moloch",
+    subtitle:
+      "Multipolar traps, coordination failures, and the forces that prevent humanity from optimizing for what it actually wants",
+    source: "Scott Alexander",
+    date: "",
     active: false,
+    externalUrl: "https://www.slatestarcodexabridged.com/Meditations-On-Moloch",
   },
   {
-    id: "urban-farming",
-    title: "The rise of vertical farms in megacities",
-    subtitle: "Urban agriculture could transform how cities feed themselves in an era of climate uncertainty",
-    source: "Wired",
-    date: "Jan 8th 2024",
+    id: "democracy",
+    title: "Democracy",
+    subtitle:
+      "How democracy has spread across countries and whether we are moving towards a more democratic world",
+    source: "Bastian Herre, Max Roser",
+    date: "",
     active: false,
+    externalUrl: "https://ourworldindata.org/democracy",
   },
 ];
+
+export const articles: Article[] = [...loadedArticles, ...grayedOutArticles];
 
 export function getArticleById(articleId?: string) {
   return articles.find((article) => article.id === articleId);

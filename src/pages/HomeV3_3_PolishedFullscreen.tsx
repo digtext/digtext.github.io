@@ -1,10 +1,12 @@
 import {
+  Children,
   Fragment,
   forwardRef,
   useCallback,
   useEffect,
   useImperativeHandle,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -14,7 +16,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Check, Copy, Maximize2, Plus, X } from "lucide-react";
+import { Archive, Check, ChevronLeft, CirclePlus, Copy, Github, Mail, Maximize2, Plus, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -23,6 +25,11 @@ import {
   EditableLineViewHandle,
   parseToEditableLines,
 } from "@/components/EditableLineView";
+import { extractParenthesisExpandables } from "@/components/InlineDigMarkdown";
+import {
+  parseInlineDocument,
+  getParagraphBreakCountsByLineId,
+} from "@/pages/home-v3-3/previewSpacing";
 import SiteHeader from "@/components/SiteHeader";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +60,7 @@ const DEMO_CONTENT = `- It has been ridiculous, guys,
 // edited without touching the React source. Archived routes should pass a
 // versioned source URL so their copy remains frozen.
 const DIG_SOURCE_URL = "/dig.md";
+const DIG_SOURCE_UPDATED_EVENT = "dig:source-updated";
 
 // The prompt shown below is loaded from /public/prompt.md so it stays in sync
 // with the standalone /prompt.md URL that users can hand directly to an LLM.
@@ -67,7 +75,9 @@ const INDENT_TOKEN = "\t";
 const VISUAL_INDENT_UNIT = "    ";
 const TEXTAREA_HISTORY_BATCH_MS = 900;
 const BULLET_WIDTH_CH = 2;
-const COMPOSER_STORAGE_KEY = "digtext:home-composer";
+const COMPOSER_STORAGE_KEY = "digtext:home-composer:v2";
+const PREVIEW_PARAGRAPH_BREAK_SPACING = "0.5em";
+const PREVIEW_LINE_HEIGHT_EM = 1.85;
 
 const shellClass =
   "inline-flex items-center rounded-[18px] border border-neutral-200 bg-white p-0.5 dark:border-neutral-800 dark:bg-neutral-900";
@@ -83,11 +93,22 @@ const pillButtonClass = (active = false) =>
 const iconButtonClass =
   "inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[18px] border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50";
 
+const expandAllButtonClass = (showLabel: boolean) =>
+  cn(
+    "inline-flex shrink-0 items-center justify-center border transition-colors",
+    showLabel
+      ? "h-[34px] gap-1.5 rounded-[16px] px-3"
+      : "h-[34px] w-[34px] rounded-[18px]",
+    "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+  );
+
+const expandAllButtonLabelClass = "font-sans text-[14px] leading-none";
+
 const layoutIconButtonClass = (active = false) =>
   cn(
     "inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[18px] border transition-colors",
     active
-      ? "border-neutral-300 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-50"
+      ? "border-[#BDB7EF] bg-[#EEECFF] text-[#6155F5] hover:border-[#BDB7EF] hover:bg-[#EEECFF] hover:text-[#6155F5] dark:border-[#5A5398] dark:bg-[#302A63] dark:text-[#DCD8FF] dark:hover:border-[#5A5398] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]"
       : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
   );
 
@@ -172,6 +193,32 @@ const eyebrowRuleClass =
 
 const shortcutKeyClass =
   "rounded border border-neutral-200 px-1.5 py-[1px] font-mono text-[12px] text-neutral-600 dark:border-neutral-800 dark:text-neutral-400";
+
+const INLINE_DIG_TOKEN_RE = /\uE000DIG(\d+)\uE001/g;
+
+export const shouldShowExpandAllLabel = ({
+  toolbarClientWidth,
+  occupiedToolbarWidth,
+  currentButtonWidth,
+  expandedButtonWidth,
+}: {
+  toolbarClientWidth: number;
+  occupiedToolbarWidth: number;
+  currentButtonWidth: number;
+  expandedButtonWidth: number;
+}) => {
+  if (
+    toolbarClientWidth <= 0 ||
+    occupiedToolbarWidth <= 0 ||
+    currentButtonWidth <= 0 ||
+    expandedButtonWidth <= 0
+  ) {
+    return false;
+  }
+
+  const extraWidthNeeded = Math.max(0, expandedButtonWidth - currentButtonWidth);
+  return toolbarClientWidth + 1 >= occupiedToolbarWidth + extraWidthNeeded;
+};
 
 const getIndentWidth = (line: string) =>
   (line.match(/^[\t ]*/) ?? [""])[0].replace(/\t/g, VISUAL_INDENT_UNIT).length;
@@ -508,67 +555,12 @@ interface VisualLineData {
   bulletDisplay: string | null;
 }
 
-interface InlineBulletNode {
-  id: string;
-  text: string;
-  children: InlineBulletNode[];
-}
-
-interface InlineParagraphNode {
-  id: string;
-  bullets: InlineBulletNode[];
-}
-
 type PreviewLayout = "inline" | "list";
 
-const parseInlineDocument = (text: string): InlineParagraphNode[] => {
-  const lines = text.split("\n");
-  const paragraphs: InlineParagraphNode[] = [];
-  let currentBullets: InlineBulletNode[] = [];
-  let stack: InlineBulletNode[] = [];
-  let nodeCounter = 0;
-  let paraCounter = 0;
-
-  const flush = () => {
-    if (currentBullets.length > 0) {
-      paragraphs.push({ id: `para-${paraCounter++}`, bullets: currentBullets });
-      currentBullets = [];
-    }
-    stack = [];
-  };
-
-  for (const rawLine of lines) {
-    if (!rawLine.trim()) {
-      flush();
-      continue;
-    }
-
-    const indentMatch = rawLine.match(/^[\t ]*/)?.[0] ?? "";
-    const normalizedIndent = indentMatch.replace(/\t/g, VISUAL_INDENT_UNIT);
-    const depth = Math.floor(normalizedIndent.length / VISUAL_INDENT_UNIT.length);
-
-    const rest = rawLine.slice(indentMatch.length);
-    const bulletMatch = rest.match(/^[-*+•]\s+(.*)$/);
-    const bodyText = (bulletMatch ? bulletMatch[1] : rest).trim();
-    if (!bodyText) continue;
-
-    const node: InlineBulletNode = {
-      id: `node-${nodeCounter++}`,
-      text: bodyText,
-      children: [],
-    };
-
-    while (stack.length > depth) stack.pop();
-    if (stack.length === 0) {
-      currentBullets.push(node);
-    } else {
-      stack[stack.length - 1].children.push(node);
-    }
-    stack.push(node);
-  }
-
-  flush();
-  return paragraphs;
+const getPreviewParagraphSpacing = (blankLinesBefore: number) => {
+  if (blankLinesBefore <= 0) return undefined;
+  if (blankLinesBefore === 1) return PREVIEW_PARAGRAPH_BREAK_SPACING;
+  return `calc(${PREVIEW_PARAGRAPH_BREAK_SPACING} + ${(blankLinesBefore - 1) * PREVIEW_LINE_HEIGHT_EM}em)`;
 };
 
 const collectExpandableIds = (bullets: InlineBulletNode[]): string[] => {
@@ -581,11 +573,77 @@ const collectExpandableIds = (bullets: InlineBulletNode[]): string[] => {
   return ids;
 };
 
+const getInlineDigKey = (bulletId: string, inlineId: number) =>
+  `${bulletId}:inline-${inlineId}`;
+
+const countInlineDigExpandables = (bullets: InlineBulletNode[]): number => {
+  let count = 0;
+
+  const walk = (bullet: InlineBulletNode) => {
+    count += extractParenthesisExpandables(bullet.text).map.size;
+    bullet.children.forEach(walk);
+  };
+
+  bullets.forEach(walk);
+  return count;
+};
+
+const collectInlineDigKeys = (bullets: InlineBulletNode[]): string[] => {
+  const keys: string[] = [];
+
+  const walk = (bullet: InlineBulletNode) => {
+    extractParenthesisExpandables(bullet.text).map.forEach((_value, inlineId) => {
+      keys.push(getInlineDigKey(bullet.id, inlineId));
+    });
+    bullet.children.forEach(walk);
+  };
+
+  bullets.forEach(walk);
+  return keys;
+};
+
 const countExpandableBullets = (paragraphs: InlineParagraphNode[]): number =>
   paragraphs.reduce(
-    (total, paragraph) => total + collectExpandableIds(paragraph.bullets).length,
+    (total, paragraph) => (
+      total +
+      collectExpandableIds(paragraph.bullets).length +
+      countInlineDigExpandables(paragraph.bullets)
+    ),
     0,
   );
+
+const READING_WPM = 200;
+
+const countWords = (text: string): number => {
+  const trimmed = text.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+};
+
+const minutesForWords = (words: number): number =>
+  words === 0 ? 0 : Math.max(1, Math.round(words / READING_WPM));
+
+const computeBulletWordStats = (
+  paragraphs: InlineParagraphNode[],
+  expandedSourceIndices: Set<number>,
+): { total: number; visible: number } => {
+  let total = 0;
+  let visible = 0;
+  const walk = (bullet: InlineBulletNode, ancestorsVisible: boolean) => {
+    const words = countWords(bullet.text);
+    total += words;
+    if (ancestorsVisible) visible += words;
+    const idxMatch = bullet.id.match(/^node-(\d+)$/);
+    const selfIndex = idxMatch ? parseInt(idxMatch[1], 10) : -1;
+    const selfExpanded = selfIndex >= 0 && expandedSourceIndices.has(selfIndex);
+    bullet.children.forEach((child) =>
+      walk(child, ancestorsVisible && selfExpanded),
+    );
+  };
+  paragraphs.forEach((paragraph) =>
+    paragraph.bullets.forEach((bullet) => walk(bullet, true)),
+  );
+  return { total, visible };
+};
 
 const linkClassName =
   "text-neutral-500 underline underline-offset-2 decoration-neutral-300 transition-colors hover:text-neutral-700 hover:decoration-neutral-400 dark:text-neutral-400 dark:decoration-neutral-600 dark:hover:text-neutral-200 dark:hover:decoration-neutral-500";
@@ -653,7 +711,7 @@ const markdownComponents = {
     </a>
   ),
   code: ({ children }: { children?: React.ReactNode }) => (
-    <code className="rounded bg-neutral-100 px-1 py-[1px] font-mono text-[0.9em] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+    <code className="rounded bg-[#ECECEC] px-1 py-[1px] font-mono text-[0.9em] text-neutral-800 dark:bg-[#212121] dark:text-neutral-200">
       {children}
     </code>
   ),
@@ -661,22 +719,6 @@ const markdownComponents = {
 
 const inlineDigMarkdownComponents = {
   ...markdownComponents,
-  a: ({
-    href,
-    children,
-  }: {
-    href?: string;
-    children?: React.ReactNode;
-  }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-current no-underline transition-colors hover:text-current"
-    >
-      {children}
-    </a>
-  ),
   code: ({ children }: { children?: React.ReactNode }) => (
     <code className="rounded bg-current/10 px-1 py-[1px] font-mono text-[0.9em] text-current">
       {children}
@@ -684,23 +726,222 @@ const inlineDigMarkdownComponents = {
   ),
 };
 
-const InlineMarkdown = ({
-  text,
-  digTone = false,
-}: {
+interface InlineTextWithDigProps {
   text: string;
   digTone?: boolean;
-}) => (
-  <ReactMarkdown
-    remarkPlugins={[remarkGfm]}
-    components={digTone ? inlineDigMarkdownComponents : markdownComponents}
-  >
-    {text}
-  </ReactMarkdown>
-);
+  bulletId: string;
+  expandedInlineDigIds: Set<string>;
+  hoverLockedIds: Set<string>;
+  toggleInlineDig: (id: string, options?: { lockHoverUntilExit?: boolean }) => void;
+  unlockHover: (id: string) => void;
+}
+
+interface InlineDigSegmentProps {
+  inlineKey: string;
+  innerShadow: string;
+  expandedInlineDigIds: Set<string>;
+  hoverLockedIds: Set<string>;
+  toggleInlineDig: (id: string, options?: { lockHoverUntilExit?: boolean }) => void;
+  unlockHover: (id: string) => void;
+}
+
+const InlineDigSegment = ({
+  inlineKey,
+  innerShadow,
+  expandedInlineDigIds,
+  hoverLockedIds,
+  toggleInlineDig,
+  unlockHover,
+}: InlineDigSegmentProps) => {
+  const isExpanded = expandedInlineDigIds.has(inlineKey);
+
+  if (!isExpanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => toggleInlineDig(inlineKey, { lockHoverUntilExit: true })}
+        aria-label="Expand"
+        className={cn(
+          softDigIconButtonClass,
+          "relative -top-[0.03em] cursor-pointer",
+        )}
+      >
+        <InlinePreviewDigPlusIcon />
+      </button>
+    );
+  }
+
+  const isHoverLocked = hoverLockedIds.has(inlineKey);
+
+  return (
+    <span
+      className={inlineDigExpandedLineClass}
+      data-hover-armed={isHoverLocked ? "false" : "true"}
+    >
+      <span className="inline-dig-start-wrap" style={{ whiteSpace: "nowrap" }}>
+        <InlinePreviewBoundaryButton
+          side="start"
+          onClick={() => toggleInlineDig(inlineKey)}
+          onHoverReady={() => unlockHover(inlineKey)}
+        />
+      </span>
+      {"\u2009"}
+      <span className="inline-dig-text transition-colors">
+        <InlineTextWithDig
+          text={innerShadow}
+          digTone
+          bulletId={inlineKey}
+          expandedInlineDigIds={expandedInlineDigIds}
+          hoverLockedIds={hoverLockedIds}
+          toggleInlineDig={toggleInlineDig}
+          unlockHover={unlockHover}
+        />
+      </span>
+      <span className="inline-dig-end-wrap" style={{ whiteSpace: "nowrap" }}>
+        <InlinePreviewBoundaryButton
+          side="end"
+          onClick={() => toggleInlineDig(inlineKey)}
+          onHoverReady={() => unlockHover(inlineKey)}
+        />
+      </span>
+    </span>
+  );
+};
+
+const InlineTextWithDig = ({
+  text,
+  digTone = false,
+  bulletId,
+  expandedInlineDigIds,
+  hoverLockedIds,
+  toggleInlineDig,
+  unlockHover,
+}: InlineTextWithDigProps) => {
+  const { shadow, map } = useMemo(
+    () => extractParenthesisExpandables(text),
+    [text],
+  );
+
+  const replaceTokens = useCallback(
+    (children: React.ReactNode): React.ReactNode =>
+      Children.map(children, (child, idx) => {
+        if (typeof child !== "string") return child;
+
+        const parts: React.ReactNode[] = [];
+        let last = 0;
+        INLINE_DIG_TOKEN_RE.lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        while ((match = INLINE_DIG_TOKEN_RE.exec(child)) !== null) {
+          if (match.index > last) parts.push(child.slice(last, match.index));
+
+          const inlineId = Number(match[1]);
+          const expandable = map.get(inlineId);
+          if (expandable) {
+            parts.push(
+              <InlineDigSegment
+                key={`inline-dig-${bulletId}-${inlineId}-${idx}`}
+                inlineKey={getInlineDigKey(bulletId, inlineId)}
+                innerShadow={expandable.shadow}
+                expandedInlineDigIds={expandedInlineDigIds}
+                hoverLockedIds={hoverLockedIds}
+                toggleInlineDig={toggleInlineDig}
+                unlockHover={unlockHover}
+              />,
+            );
+          }
+
+          last = INLINE_DIG_TOKEN_RE.lastIndex;
+        }
+
+        if (last < child.length) parts.push(child.slice(last));
+        return parts.length > 0 ? parts : child;
+      }),
+    [bulletId, digTone, expandedInlineDigIds, hoverLockedIds, map, toggleInlineDig, unlockHover],
+  );
+
+  const components = useMemo(
+    () => ({
+      ...(digTone ? inlineDigMarkdownComponents : markdownComponents),
+      p: ({ children }: { children?: React.ReactNode }) => <>{replaceTokens(children)}</>,
+      h1: ({ children }: { children?: React.ReactNode }) => (
+        <span className="mt-2 mb-1 block text-[1.6em] font-semibold leading-[1.2]">
+          {replaceTokens(children)}
+        </span>
+      ),
+      h2: ({ children }: { children?: React.ReactNode }) => (
+        <span className="mt-2 mb-1 block text-[1.35em] font-semibold leading-[1.25]">
+          {replaceTokens(children)}
+        </span>
+      ),
+      h3: ({ children }: { children?: React.ReactNode }) => (
+        <span className="mt-1.5 mb-1 block text-[1.15em] font-semibold leading-[1.3]">
+          {replaceTokens(children)}
+        </span>
+      ),
+      h4: ({ children }: { children?: React.ReactNode }) => (
+        <span className="mt-1.5 mb-1 block text-[1.05em] font-semibold leading-[1.35]">
+          {replaceTokens(children)}
+        </span>
+      ),
+      h5: ({ children }: { children?: React.ReactNode }) => (
+        <span className="mt-1 mb-1 block text-[1em] font-semibold leading-[1.4]">
+          {replaceTokens(children)}
+        </span>
+      ),
+      h6: ({ children }: { children?: React.ReactNode }) => (
+        <span className="mt-1 mb-1 block text-[0.95em] font-semibold uppercase tracking-wide">
+          {replaceTokens(children)}
+        </span>
+      ),
+      strong: ({ children }: { children?: React.ReactNode }) => (
+        <strong className="font-semibold">{replaceTokens(children)}</strong>
+      ),
+      em: ({ children }: { children?: React.ReactNode }) => (
+        <em className="italic">{replaceTokens(children)}</em>
+      ),
+      blockquote: ({ children }: { children?: React.ReactNode }) => (
+        <span className="my-1 block border-l-2 border-neutral-300 pl-3 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
+          {replaceTokens(children)}
+        </span>
+      ),
+      a: ({
+        href,
+        children,
+      }: {
+        href?: string;
+        children?: React.ReactNode;
+      }) => (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClassName}
+        >
+          {replaceTokens(children)}
+        </a>
+      ),
+      code: ({ children }: { children?: React.ReactNode }) => (
+        <code className={digTone
+          ? "rounded bg-current/10 px-1 py-[1px] font-mono text-[0.9em] text-current"
+          : "rounded bg-[#ECECEC] px-1 py-[1px] font-mono text-[0.9em] text-neutral-800 dark:bg-[#212121] dark:text-neutral-200"}>
+          {replaceTokens(children)}
+        </code>
+      ),
+      li: ({ children }: { children?: React.ReactNode }) => <>{replaceTokens(children)}</>,
+    }),
+    [digTone, replaceTokens],
+  );
+
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      {shadow}
+    </ReactMarkdown>
+  );
+};
 
 const softDigIconButtonClass =
-  "inline-dig-expand-icon group inline-flex h-5 w-5 flex-none items-center justify-center rounded-[7px] align-middle text-[#6155F5] transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-[#C7C2FF] dark:hover:bg-neutral-800 dark:hover:text-neutral-200";
+  "inline-dig-expand-icon group inline-flex h-5 w-5 flex-none items-center justify-center rounded-[7px] align-middle text-[#6155F5] transition-colors hover:bg-[#EEECFF] hover:text-[#6155F5] dark:text-[#B8B0FF] dark:hover:bg-[#302A63] dark:hover:text-[#DCD8FF]";
 
 const inlineDigExpandedLineClass =
   "inline-dig-branch inline text-inherit no-underline decoration-transparent transition-colors";
@@ -710,52 +951,52 @@ const inlinePreviewBoundaryButtonClass =
 
 const inlinePreviewHoverStyles = `
   @media (hover: hover) and (pointer: fine) {
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
       color: #404040;
     }
 
-    .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
-    .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
-    .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
-    .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
+    .dark .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .dark .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary,
+    .dark .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary,
+    .dark .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary {
       color: #E5E5E5;
     }
 
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-default,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-default {
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-default,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-default,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-default {
       opacity: 0;
     }
 
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-hover {
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-start-wrap > .inline-dig-boundary .inline-dig-boundary-hover,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) > .inline-dig-end-wrap > .inline-dig-boundary .inline-dig-boundary-hover {
       opacity: 1;
     }
 
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #6B6B6B;
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #8A8A8A;
     }
 
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #6B6B6B;
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #8A8A8A;
     }
 
-    .dark .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #6B6B6B;
+    .dark .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #8F8F8F;
     }
 
-    .dark .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
-      color: #6B6B6B;
+    .dark .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-text {
+      color: #8F8F8F;
     }
 
-    .inline-dig-branch:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-expand-icon,
-    .inline-dig-branch:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-expand-icon {
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-start-wrap > .inline-dig-boundary:hover) .inline-dig-expand-icon,
+    .inline-dig-branch[data-hover-armed="true"]:has(> .inline-dig-end-wrap > .inline-dig-boundary:hover) .inline-dig-expand-icon {
       opacity: 0.45;
     }
   }
@@ -779,7 +1020,7 @@ const InlinePreviewDigPlusIcon = () => (
       height="19"
       rx="6.5"
       stroke="currentColor"
-      strokeOpacity="0.4"
+      strokeOpacity="0.6"
     />
     <path
       fill="currentColor"
@@ -811,6 +1052,32 @@ const InlinePreviewDigNewlineIcon = () => (
     <path
       d="M10.0781 13.9072L11.4453 12.3496L12.9004 10.8896C12.9557 10.8343 13.0192 10.7904 13.0908 10.7578C13.1657 10.722 13.2471 10.7041 13.335 10.7041C13.501 10.7041 13.6393 10.7611 13.75 10.875C13.8607 10.9857 13.916 11.1289 13.916 11.3047C13.916 11.4609 13.8525 11.6042 13.7256 11.7344L10.5225 14.9375C10.3988 15.0645 10.249 15.1279 10.0732 15.1279C9.89746 15.1279 9.74772 15.0645 9.62402 14.9375L6.4209 11.7344C6.2972 11.6042 6.23535 11.4609 6.23535 11.3047C6.23535 11.1289 6.28906 10.9857 6.39648 10.875C6.50716 10.7611 6.64551 10.7041 6.81152 10.7041C6.89941 10.7041 6.98079 10.722 7.05566 10.7578C7.13053 10.7904 7.19564 10.8343 7.25098 10.8896L8.69629 12.3496L10.0781 13.9072ZM7.40723 5.82129C8.49447 5.82129 9.31152 6.06706 9.8584 6.55859C10.4085 7.04688 10.6836 7.83789 10.6836 8.93164V12.0127L10.6348 13.8682C10.6283 14.0212 10.5713 14.153 10.4639 14.2637C10.3564 14.3743 10.2279 14.4297 10.0781 14.4297C9.92188 14.4297 9.79004 14.3743 9.68262 14.2637C9.5752 14.153 9.51986 14.0212 9.5166 13.8682L9.46289 12.0127L9.46777 9.01953C9.47103 8.52474 9.39941 8.13249 9.25293 7.84277C9.10645 7.55306 8.87858 7.34473 8.56934 7.21777C8.26335 7.09082 7.86621 7.02734 7.37793 7.02734C7.24121 7.02734 7.11263 7.0306 6.99219 7.03711C6.875 7.04036 6.77083 7.04362 6.67969 7.04688C6.50065 7.04688 6.35579 6.99479 6.24512 6.89062C6.13444 6.78646 6.0791 6.64648 6.0791 6.4707C6.0791 6.34375 6.10677 6.23958 6.16211 6.1582C6.2207 6.07357 6.29232 6.00846 6.37695 5.96289C6.46484 5.91732 6.55436 5.88639 6.64551 5.87012C6.75944 5.85059 6.87826 5.83757 7.00195 5.83105C7.12891 5.82454 7.264 5.82129 7.40723 5.82129Z"
       fill="currentColor"
+    />
+  </svg>
+);
+
+const LinePreviewDigCloseIcon = () => (
+  <svg
+    aria-hidden="true"
+    className="block h-5 w-5"
+    fill="none"
+    focusable="false"
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      x="0.5"
+      y="0.5"
+      width="19"
+      height="19"
+      rx="6.5"
+      className="stroke-[#C2C1C1] transition-colors group-hover:stroke-[#A3A3A3] dark:stroke-[#66666F] dark:group-hover:stroke-[#8B8B95]"
+    />
+    <path
+      d="M12.459 7.16406C12.5345 7.09115 12.6217 7.04297 12.7207 7.01953C12.8223 6.99349 12.9238 6.99349 13.0254 7.01953C13.127 7.04557 13.2155 7.09635 13.291 7.17188C13.3665 7.2474 13.4173 7.33594 13.4434 7.4375C13.4694 7.53906 13.4694 7.64062 13.4434 7.74219C13.4199 7.84115 13.3717 7.92839 13.2988 8.00391L8.00195 13.3008C7.93164 13.3711 7.8457 13.418 7.74414 13.4414C7.64258 13.4674 7.53971 13.4674 7.43555 13.4414C7.33398 13.418 7.24544 13.3685 7.16992 13.293C7.0944 13.2174 7.04362 13.1289 7.01758 13.0273C6.99414 12.9258 6.99414 12.8242 7.01758 12.7227C7.04362 12.6211 7.0918 12.5352 7.16211 12.4648L12.459 7.16406ZM13.2988 12.4609C13.3717 12.5339 13.4199 12.6211 13.4434 12.7227C13.4694 12.8242 13.4694 12.9258 13.4434 13.0273C13.4173 13.1289 13.3665 13.2174 13.291 13.293C13.2155 13.3685 13.127 13.418 13.0254 13.4414C12.9238 13.4674 12.8223 13.4688 12.7207 13.4453C12.6217 13.4219 12.5345 13.3724 12.459 13.2969L7.16211 8C7.0918 7.92969 7.04492 7.84375 7.02148 7.74219C6.99805 7.64062 6.99805 7.53906 7.02148 7.4375C7.04492 7.33594 7.0944 7.2474 7.16992 7.17188C7.24544 7.09375 7.33398 7.04297 7.43555 7.01953C7.53971 6.99609 7.64258 6.99609 7.74414 7.01953C7.8457 7.04297 7.93164 7.09115 8.00195 7.16406L13.2988 12.4609Z"
+      className="fill-[#363636] transition-colors group-hover:fill-[#262626] dark:fill-[#E5E5E5] dark:group-hover:fill-[#F5F5F5]"
     />
   </svg>
 );
@@ -849,7 +1116,7 @@ const InlinePreviewDigCloseIcon = () => {
             y2="10"
             gradientUnits="userSpaceOnUse"
           >
-            <stop offset="0.163462" stopColor="currentColor" stopOpacity="0.45" />
+            <stop offset="0.163462" stopColor="currentColor" stopOpacity="0.6" />
             <stop offset="1" stopColor="currentColor" stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -924,7 +1191,7 @@ const InlinePreviewDigEndIcon = () => {
             y2="10"
             gradientUnits="userSpaceOnUse"
           >
-            <stop offset="0.163462" stopColor="currentColor" stopOpacity="0.4" />
+            <stop offset="0.163462" stopColor="currentColor" stopOpacity="0.6" />
             <stop offset="1" stopColor="currentColor" stopOpacity="0" />
           </linearGradient>
           <clipPath id={defaultClipPathId}>
@@ -982,13 +1249,16 @@ const InlinePreviewDigEndIcon = () => {
 const InlinePreviewBoundaryButton = ({
   side,
   onClick,
+  onHoverReady,
 }: {
   side: "start" | "end";
   onClick: () => void;
+  onHoverReady: () => void;
 }) => (
   <button
     type="button"
     onClick={onClick}
+    onMouseLeave={onHoverReady}
     aria-label={side === "start" ? "Collapse section from start" : "Collapse section from end"}
     className={cn(
       inlinePreviewBoundaryButtonClass,
@@ -1003,23 +1273,32 @@ const InlinePreviewBoundaryButton = ({
 interface InlineBulletRenderProps {
   bullet: InlineBulletNode;
   expandedIds: Set<string>;
-  toggle: (id: string) => void;
+  expandedInlineDigIds: Set<string>;
+  hoverLockedIds: Set<string>;
+  toggle: (id: string, options?: { lockHoverUntilExit?: boolean }) => void;
+  toggleInlineDig: (id: string) => void;
+  unlockHover: (id: string) => void;
   digTone?: boolean;
 }
 
 const InlineBulletRender = ({
   bullet,
   expandedIds,
+  expandedInlineDigIds,
+  hoverLockedIds,
   toggle,
+  toggleInlineDig,
+  unlockHover,
   digTone = false,
 }: InlineBulletRenderProps) => {
   const hasChildren = bullet.children.length > 0;
   const isExpanded = expandedIds.has(bullet.id);
+  const isHoverLocked = hoverLockedIds.has(bullet.id);
 
   const expandButton = hasChildren && !isExpanded ? (
     <button
       type="button"
-      onClick={() => toggle(bullet.id)}
+      onClick={() => toggle(bullet.id, { lockHoverUntilExit: true })}
       aria-label="Expand"
       className={cn(
         softDigIconButtonClass,
@@ -1033,14 +1312,29 @@ const InlineBulletRender = ({
   return (
     <>
       <span className={digTone ? "inline-dig-text transition-colors" : undefined}>
-        <InlineMarkdown text={bullet.text} digTone={digTone} />
+        <InlineTextWithDig
+          text={bullet.text}
+          digTone={digTone}
+          bulletId={bullet.id}
+          expandedInlineDigIds={expandedInlineDigIds}
+          hoverLockedIds={hoverLockedIds}
+          toggleInlineDig={toggleInlineDig}
+          unlockHover={unlockHover}
+        />
       </span>
       {expandButton && <span style={{ whiteSpace: "nowrap" }}>{"\u00A0"}{expandButton}</span>}
       {isExpanded && (
-        <span className={inlineDigExpandedLineClass}>
+        <span
+          className={inlineDigExpandedLineClass}
+          data-hover-armed={isHoverLocked ? "false" : "true"}
+        >
           <span className="inline-dig-start-wrap" style={{ whiteSpace: "nowrap" }}>
             {"\u00A0"}
-            <InlinePreviewBoundaryButton side="start" onClick={() => toggle(bullet.id)} />
+            <InlinePreviewBoundaryButton
+              side="start"
+              onClick={() => toggle(bullet.id)}
+              onHoverReady={() => unlockHover(bullet.id)}
+            />
           </span>
           {bullet.children.map((child, childIndex) => (
             <Fragment key={child.id}>
@@ -1048,13 +1342,21 @@ const InlineBulletRender = ({
               <InlineBulletRender
                 bullet={child}
                 expandedIds={expandedIds}
+                expandedInlineDigIds={expandedInlineDigIds}
+                hoverLockedIds={hoverLockedIds}
                 toggle={toggle}
+                toggleInlineDig={toggleInlineDig}
+                unlockHover={unlockHover}
                 digTone
               />
             </Fragment>
           ))}
           <span className="inline-dig-end-wrap" style={{ whiteSpace: "nowrap" }}>
-            <InlinePreviewBoundaryButton side="end" onClick={() => toggle(bullet.id)} />
+            <InlinePreviewBoundaryButton
+              side="end"
+              onClick={() => toggle(bullet.id)}
+              onHoverReady={() => unlockHover(bullet.id)}
+            />
           </span>
         </span>
       )}
@@ -1077,11 +1379,14 @@ interface InlineParagraphPreviewProps {
   style?: CSSProperties;
 }
 
-const InlineParagraphPreview = forwardRef<
+export const InlineParagraphPreview = forwardRef<
   InlineParagraphPreviewHandle,
   InlineParagraphPreviewProps
 >(({ text, onExpandedChange, className, style }, ref) => {
-  const paragraphs = useMemo(() => parseInlineDocument(text), [text]);
+  const paragraphs = useMemo(
+    () => parseInlineDocument(text, VISUAL_INDENT_UNIT),
+    [text],
+  );
 
   const allExpandableIds = useMemo(() => {
     const ids: string[] = [];
@@ -1090,8 +1395,27 @@ const InlineParagraphPreview = forwardRef<
     });
     return ids;
   }, [paragraphs]);
+  const allInlineDigIds = useMemo(() => {
+    const ids: string[] = [];
+    paragraphs.forEach((paragraph) => {
+      ids.push(...collectInlineDigKeys(paragraph.bullets));
+    });
+    return ids;
+  }, [paragraphs]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [expandedInlineDigIds, setExpandedInlineDigIds] = useState<Set<string>>(() => new Set());
+  const [hoverLockedIds, setHoverLockedIds] = useState<Set<string>>(() => new Set());
+  const expandedIdsRef = useRef(expandedIds);
+  const expandedInlineDigIdsRef = useRef(expandedInlineDigIds);
+
+  useEffect(() => {
+    expandedIdsRef.current = expandedIds;
+  }, [expandedIds]);
+
+  useEffect(() => {
+    expandedInlineDigIdsRef.current = expandedInlineDigIds;
+  }, [expandedInlineDigIds]);
 
   useEffect(() => {
     setExpandedIds((prev) => {
@@ -1103,19 +1427,79 @@ const InlineParagraphPreview = forwardRef<
       if (valid.size === prev.size) return prev;
       return valid;
     });
-  }, [allExpandableIds]);
+    setExpandedInlineDigIds((prev) => {
+      const valid = new Set<string>();
+      const known = new Set(allInlineDigIds);
+      prev.forEach((id) => {
+        if (known.has(id)) valid.add(id);
+      });
+      if (valid.size === prev.size) return prev;
+      return valid;
+    });
+    setHoverLockedIds((prev) => {
+      const valid = new Set<string>();
+      const known = new Set([...allExpandableIds, ...allInlineDigIds]);
+      prev.forEach((id) => {
+        if (known.has(id)) valid.add(id);
+      });
+      if (valid.size === prev.size) return prev;
+      return valid;
+    });
+  }, [allExpandableIds, allInlineDigIds]);
 
   const onExpandedChangeRef = useRef(onExpandedChange);
   useEffect(() => { onExpandedChangeRef.current = onExpandedChange; });
   useEffect(() => {
     onExpandedChangeRef.current?.();
-  }, [expandedIds]);
+  }, [expandedIds, expandedInlineDigIds]);
 
-  const toggle = useCallback((id: string) => {
+  const unlockHover = useCallback((id: string) => {
+    setHoverLockedIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const toggle = useCallback((id: string, options?: { lockHoverUntilExit?: boolean }) => {
+    const willExpand = !expandedIdsRef.current.has(id);
+
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+
+    setHoverLockedIds((prev) => {
+      const next = new Set(prev);
+      if (!willExpand || !options?.lockHoverUntilExit) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleInlineDig = useCallback((id: string, options?: { lockHoverUntilExit?: boolean }) => {
+    const willExpand = !expandedInlineDigIdsRef.current.has(id);
+
+    setExpandedInlineDigIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+    setHoverLockedIds((prev) => {
+      const next = new Set(prev);
+      if (!willExpand || !options?.lockHoverUntilExit) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }, []);
@@ -1125,12 +1509,16 @@ const InlineParagraphPreview = forwardRef<
     () => ({
       expandAll: () => {
         setExpandedIds(new Set(allExpandableIds));
+        setExpandedInlineDigIds(new Set(allInlineDigIds));
+        setHoverLockedIds(new Set());
       },
       collapseAll: () => {
         setExpandedIds(new Set());
+        setExpandedInlineDigIds(new Set());
+        setHoverLockedIds(new Set());
       },
       get anyExpanded() {
-        return expandedIds.size > 0;
+        return expandedIds.size > 0 || expandedInlineDigIds.size > 0;
       },
       getExpandedSourceIndices: () => {
         const indices = new Set<number>();
@@ -1149,9 +1537,11 @@ const InlineParagraphPreview = forwardRef<
           }
         });
         setExpandedIds(newExpanded);
+        setExpandedInlineDigIds(new Set());
+        setHoverLockedIds(new Set());
       },
     }),
-    [allExpandableIds, expandedIds],
+    [allExpandableIds, allInlineDigIds, expandedIds, expandedInlineDigIds],
   );
 
   if (paragraphs.length === 0) {
@@ -1166,14 +1556,25 @@ const InlineParagraphPreview = forwardRef<
     <div className={className} style={style}>
       <style>{inlinePreviewHoverStyles}</style>
       {paragraphs.map((paragraph, pIdx) => (
-        <div key={paragraph.id} className={pIdx === 0 ? "" : "mt-[0.5em]"}>
+        <div
+          key={paragraph.id}
+          style={
+            pIdx === 0
+              ? undefined
+              : { marginTop: getPreviewParagraphSpacing(paragraph.blankLinesBefore) }
+          }
+        >
           {paragraph.bullets.map((bullet, bIdx) => (
             <Fragment key={bullet.id}>
               {bIdx > 0 ? " " : ""}
               <InlineBulletRender
                 bullet={bullet}
                 expandedIds={expandedIds}
+                expandedInlineDigIds={expandedInlineDigIds}
+                hoverLockedIds={hoverLockedIds}
                 toggle={toggle}
+                toggleInlineDig={toggleInlineDig}
+                unlockHover={unlockHover}
               />
             </Fragment>
           ))}
@@ -1193,6 +1594,14 @@ interface HomeV2_4PageProps {
   heroHeadingStyle?: CSSProperties;
   topHeroHeadingClassName?: string;
   topHeroHeadingStyle?: CSSProperties;
+  // Article mode — reuses the same composer/reader UI but without the home
+  // marketing chrome. When on, hides hero/prompt/embed/footer, skips
+  // localStorage persistence, shows a back link, and seeds the composer from
+  // `articleInitialText`.
+  articleMode?: boolean;
+  articleInitialText?: string;
+  articleBackTo?: string;
+  articleBackLabel?: string;
 }
 
 export const HomeV2_4Page = ({
@@ -1203,32 +1612,52 @@ export const HomeV2_4Page = ({
   heroHeadingStyle = { lineHeight: 1 },
   topHeroHeadingClassName = "mt-3 tracking-tight text-[clamp(2.4rem,6.2vw,3.6rem)] leading-[1.02]",
   topHeroHeadingStyle = {},
+  articleMode = false,
+  articleInitialText,
+  articleBackTo = "/library",
+  articleBackLabel = "Library",
 }: HomeV2_4PageProps) => {
+  const persistComposerContent = !articleMode && digSourceUrl !== DIG_SOURCE_URL;
   const [copied, setCopied] = useState(false);
   const [composerCopied, setComposerCopied] = useState(false);
   const [promptText, setPromptText] = useState<string | null>(null);
-  const [mode, setMode] = useState<"digtext" | "input">(
-    () => getStoredComposerMode() as "digtext" | "input",
+  const [mode, setMode] = useState<"digtext" | "input">(() =>
+    articleMode ? "digtext" : (getStoredComposerMode() as "digtext" | "input"),
   );
   const [previewLayout, setPreviewLayout] = useState<PreviewLayout>(
     () => getStoredPreviewLayout(),
   );
-  const [composerFullscreenOpen, setComposerFullscreenOpen] = useState(false);
+  const [composerFullscreenOpen, setComposerFullscreenOpen] =
+    useState(articleMode);
   const [heroDemoOpen, setHeroDemoOpen] = useState(false);
   const [inputText, setInputText] = useState(() =>
-    getStoredComposerText(digSourceUrl),
+    articleMode
+      ? articleInitialText ?? ""
+      : persistComposerContent
+        ? getStoredComposerText(digSourceUrl)
+        : INITIAL_TEXT,
   );
   const [textareaSelection, setTextareaSelection] = useState<TextAreaSelection>({
     start: 0,
     end: 0,
   });
   const [textareaFocused, setTextareaFocused] = useState(false);
+  const [showExpandAllLabel, setShowExpandAllLabel] = useState(false);
   const [lines, setLines] = useState<EditableLine[]>(() =>
-    parseToEditableLines(getStoredComposerText(digSourceUrl)),
+    parseToEditableLines(
+      articleMode
+        ? articleInitialText ?? ""
+        : persistComposerContent
+          ? getStoredComposerText(digSourceUrl)
+          : INITIAL_TEXT,
+    ),
   );
   const editorRef = useRef<EditableLineViewHandle>(null);
   const inlinePreviewRef = useRef<InlineParagraphPreviewHandle>(null);
   const listPreviewRef = useRef<EditableLineViewHandle>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const expandAllButtonRef = useRef<HTMLButtonElement>(null);
+  const expandAllButtonSizerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textareaMirrorRef = useRef<HTMLDivElement>(null);
   const isTextareaSelectingRef = useRef(false);
@@ -1245,7 +1674,11 @@ export const HomeV2_4Page = ({
   const futureRef = useRef<EditableLine[][]>([]);
   const applyingHistoryRef = useRef(false);
   const composerSourceBackedRef = useRef(
-    getStoredComposerSourceBacked(digSourceUrl),
+    articleMode
+      ? false
+      : persistComposerContent
+        ? getStoredComposerSourceBacked(digSourceUrl)
+        : true,
   );
   const [, forceUpdate] = useState(0);
   const handlePreviewUpdate = useCallback(() => forceUpdate((n) => n + 1), []);
@@ -1257,21 +1690,28 @@ export const HomeV2_4Page = ({
   }, [lines]);
 
   useEffect(() => {
+    if (articleMode) return;
     try {
+      const storedState = {
+        mode,
+        previewLayout,
+        sourceUrl: digSourceUrl,
+        ...(persistComposerContent
+          ? {
+              inputText,
+              sourceBacked: composerSourceBackedRef.current,
+            }
+          : {}),
+      };
+
       window.localStorage.setItem(
         COMPOSER_STORAGE_KEY,
-        JSON.stringify({
-          inputText,
-          mode,
-          previewLayout,
-          sourceUrl: digSourceUrl,
-          sourceBacked: composerSourceBackedRef.current,
-        }),
+        JSON.stringify(storedState),
       );
     } catch {
       /* ignore */
     }
-  }, [digSourceUrl, inputText, mode, previewLayout]);
+  }, [articleMode, digSourceUrl, inputText, mode, persistComposerContent, previewLayout]);
 
   const cloneLines = useCallback(
     (value: EditableLine[]) => value.map((line) => ({ ...line })),
@@ -1426,32 +1866,69 @@ export const HomeV2_4Page = ({
     pendingSelectionRef.current = entry.selection;
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch(digSourceUrl)
-      .then((response) => (response.ok ? response.text() : null))
-      .then((text) => {
-        if (cancelled || !text || !composerSourceBackedRef.current) return;
+  const reloadDigSource = useCallback(async (timestamp?: number) => {
+    if (articleMode || !composerSourceBackedRef.current) return;
 
-        const nextText = normalizePastedListText(text.trim());
-        const nextEntry = {
-          value: nextText,
-          selection: { start: 0, end: 0 },
-        };
-        textAreaPastRef.current = [];
-        textAreaFutureRef.current = [];
-        textAreaBatchRef.current = null;
-        pastRef.current = [];
-        futureRef.current = [];
-        commitTextareaEntry(nextEntry, { sourceBacked: true });
-      })
-      .catch(() => {
-        /* keep the embedded fallback */
-      });
-    return () => {
-      cancelled = true;
+    const url = timestamp
+      ? `${digSourceUrl}${digSourceUrl.includes("?") ? "&" : "?"}t=${timestamp}`
+      : digSourceUrl;
+
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) return;
+
+      const text = await response.text();
+      if (!text || !composerSourceBackedRef.current) return;
+
+      const nextText = normalizePastedListText(text.trim());
+      const nextEntry = {
+        value: nextText,
+        selection: { start: 0, end: 0 },
+      };
+      textAreaPastRef.current = [];
+      textAreaFutureRef.current = [];
+      textAreaBatchRef.current = null;
+      pastRef.current = [];
+      futureRef.current = [];
+      commitTextareaEntry(nextEntry, { sourceBacked: true });
+    } catch {
+      /* keep the embedded fallback */
+    }
+  }, [articleMode, commitTextareaEntry, digSourceUrl]);
+
+  useEffect(() => {
+    void reloadDigSource();
+  }, [reloadDigSource]);
+
+  useEffect(() => {
+    if (articleMode || !import.meta.hot) return;
+
+    const handleDigSourceUpdated = (data?: { url?: string; timestamp?: number }) => {
+      if (data?.url !== digSourceUrl) return;
+      void reloadDigSource(data.timestamp);
     };
-  }, [commitTextareaEntry, digSourceUrl]);
+
+    import.meta.hot.on(DIG_SOURCE_UPDATED_EVENT, handleDigSourceUpdated);
+    return () => {
+      import.meta.hot?.off(DIG_SOURCE_UPDATED_EVENT, handleDigSourceUpdated);
+    };
+  }, [articleMode, digSourceUrl, reloadDigSource]);
+
+  // Article mode: when the article prop changes (navigating to a different
+  // article), reset the composer with the new article's content.
+  useEffect(() => {
+    if (!articleMode) return;
+    const nextText = articleInitialText ?? "";
+    textAreaPastRef.current = [];
+    textAreaFutureRef.current = [];
+    textAreaBatchRef.current = null;
+    pastRef.current = [];
+    futureRef.current = [];
+    commitTextareaEntry(
+      { value: nextText, selection: { start: 0, end: 0 } },
+      { sourceBacked: false },
+    );
+  }, [articleMode, articleInitialText, commitTextareaEntry]);
 
   const pushTextareaHistory = useCallback((entry: TextAreaHistoryEntry) => {
     textAreaPastRef.current.push({
@@ -2148,47 +2625,85 @@ export const HomeV2_4Page = ({
     });
   }, [inputText, textareaSelection]);
 
-  const wordCount = useMemo(() => {
-    const trimmed = inputText.trim();
-    return trimmed ? trimmed.split(/\s+/).length : 0;
-  }, [inputText]);
-
   const previewParagraphs = useMemo(
-    () => parseInlineDocument(inputText),
+    () => parseInlineDocument(inputText, VISUAL_INDENT_UNIT),
     [inputText],
   );
 
-  const digSectionCount = useMemo(
-    () => countExpandableBullets(previewParagraphs),
-    [previewParagraphs],
-  );
+  const paragraphBreakSpacingById = useMemo(() => {
+    const counts = getParagraphBreakCountsByLineId(
+      inputText,
+      lines.map((line) => line.id),
+    );
 
-  const paragraphBreakIds = useMemo(() => {
-    const ids = new Set<number>();
-    const rawLines = inputText.split("\n");
-    let lineIndex = 0;
-    let prevWasBlank = false;
-
-    for (const rawLine of rawLines) {
-      const m = rawLine.match(/^(\s*)(?:[-*+•]\s+)?(.*)/);
-      const text = m ? m[2].trim() : "";
-      if (!text) {
-        prevWasBlank = true;
-        continue;
-      }
-      if (prevWasBlank && lineIndex > 0 && lineIndex < lines.length) {
-        ids.add(lines[lineIndex].id);
-      }
-      prevWasBlank = false;
-      lineIndex++;
-    }
-
-    return ids;
+    return new Map(
+      Array.from(counts.entries()).map(([lineId, blankLinesBefore]) => [
+        lineId,
+        getPreviewParagraphSpacing(blankLinesBefore) ?? PREVIEW_PARAGRAPH_BREAK_SPACING,
+      ]),
+    );
   }, [inputText, lines]);
   const activePreviewHandle =
     previewLayout === "list"
       ? listPreviewRef.current
       : inlinePreviewRef.current;
+
+  useLayoutEffect(() => {
+    if (mode !== "digtext") {
+      setShowExpandAllLabel(false);
+      return;
+    }
+
+    let frameId = 0;
+
+    const updateVisibility = () => {
+      const toolbar = toolbarRef.current;
+      const button = expandAllButtonRef.current;
+      const sizer = expandAllButtonSizerRef.current;
+      const toolbarStyle = toolbar ? window.getComputedStyle(toolbar) : null;
+      const toolbarGap = toolbarStyle
+        ? Number.parseFloat(toolbarStyle.columnGap || toolbarStyle.gap || "0")
+        : 0;
+      const occupiedToolbarWidth = toolbar
+        ? Array.from(toolbar.children).reduce((sum, child) => (
+            sum + (child as HTMLElement).getBoundingClientRect().width
+          ), 0) + Math.max(0, toolbar.children.length - 1) * toolbarGap
+        : 0;
+
+      const nextValue = shouldShowExpandAllLabel({
+        toolbarClientWidth: toolbar?.clientWidth ?? 0,
+        occupiedToolbarWidth,
+        currentButtonWidth: button?.getBoundingClientRect().width ?? 0,
+        expandedButtonWidth: sizer?.getBoundingClientRect().width ?? 0,
+      });
+
+      setShowExpandAllLabel((current) => (
+        current === nextValue ? current : nextValue
+      ));
+    };
+
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(updateVisibility);
+    };
+
+    scheduleUpdate();
+
+    const resizeObserver = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(() => {
+          scheduleUpdate();
+        });
+
+    if (toolbarRef.current) {
+      resizeObserver?.observe(toolbarRef.current);
+    }
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+    };
+  }, [articleMode, mode, showExpandAllLabel]);
 
   const handleLayoutToggle = useCallback(() => {
     setPreviewLayout((current) => {
@@ -2209,6 +2724,16 @@ export const HomeV2_4Page = ({
       }
     });
   }, [forceUpdate]);
+
+  const expandedSourceIndices =
+    activePreviewHandle?.getExpandedSourceIndices() ?? new Set<number>();
+  const { total: totalWords, visible: visibleWords } = computeBulletWordStats(
+    previewParagraphs,
+    expandedSourceIndices,
+  );
+  const totalMinutes = minutesForWords(totalWords);
+  const visibleMinutes = minutesForWords(visibleWords);
+  const digSectionCount = countExpandableBullets(previewParagraphs);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
@@ -2234,12 +2759,13 @@ export const HomeV2_4Page = ({
         />
 
         <div className="relative mx-auto max-w-[59rem] px-6 pt-16 pb-16">
+          {!articleMode && (
           <div className="max-w-3xl">
             {/* Eyebrow */}
             <div className="mb-4">
               <span className={eyebrowClass}>
                 <span aria-hidden="true" className={eyebrowRuleClass} />
-                A new interface for text
+                A new standard for text
               </span>
             </div>
 
@@ -2263,7 +2789,7 @@ export const HomeV2_4Page = ({
                     aria-label={heroDemoOpen ? "Collapse" : "Expand"}
                     onClick={() => setHeroDemoOpen((v) => !v)}
                     className={cn(
-                      "align-middle ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full border transition-colors",
+                      "relative left-[0.08em] align-middle ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full border transition-colors",
                       heroDemoOpen
                         ? "bg-neutral-900 border-neutral-900 text-white dark:bg-neutral-50 dark:border-neutral-50 dark:text-neutral-900"
                         : "border-neutral-400 text-neutral-500 hover:text-neutral-900 hover:border-neutral-700 dark:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:border-neutral-400",
@@ -2292,16 +2818,23 @@ export const HomeV2_4Page = ({
                   className="max-w-2xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300"
                   style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}
                 >
-                  Dig text is a new way to read text. You see the shortest
-                  version first, then dig deeper only where it matters to you.
+                  You got it! This is mostly how dig text works. Read below more below
                 </p>
               </div>
             </div>
           </div>
+          )}
 
           {/* ── Reader box ── */}
           {composerFullscreenOpen && (
-            <div className="fixed inset-0 z-40 overflow-hidden bg-white dark:bg-neutral-950">
+            <div
+              className={cn(
+                "fixed overflow-hidden bg-white dark:bg-neutral-950",
+                articleMode
+                  ? "left-0 right-0 bottom-0 top-[68px] z-10"
+                  : "inset-0 z-40",
+              )}
+            >
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-40 -top-[220px] h-[560px] w-[560px] rounded-full opacity-[0.35] blur-[90px] dark:opacity-[0.22]"
@@ -2316,14 +2849,28 @@ export const HomeV2_4Page = ({
             className={cn(
               "mt-10 overflow-hidden rounded-[20px] border border-neutral-200/80 bg-neutral-50/70 ring-1 ring-black/[0.02] backdrop-blur-[2px] dark:border-neutral-800 dark:bg-neutral-900/60 dark:ring-white/[0.03]",
               !composerFullscreenOpen && "-mx-5 sm:mx-0",
-              composerFullscreenOpen &&
+              composerFullscreenOpen && !articleMode &&
                 "fixed inset-0 z-50 mt-0 flex h-dvh flex-col rounded-none border-0 md:inset-y-4 md:left-1/2 md:right-auto md:h-[calc(100dvh-2rem)] md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
+              composerFullscreenOpen && articleMode &&
+                "fixed left-0 right-0 bottom-0 top-[68px] z-20 mt-0 flex flex-col rounded-none border-0 md:top-[calc(68px+1rem)] md:bottom-4 md:left-1/2 md:right-auto md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
               readerWindowShadowClass,
             )}
             style={{ viewTransitionName: "reader-shell" }}
           >
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-neutral-200/70 bg-white/80 px-3 py-2.5 backdrop-blur-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:px-4 dark:border-neutral-800 dark:bg-neutral-900/70">
+            <div
+              ref={toolbarRef}
+              className="flex items-center justify-between gap-2 overflow-x-auto border-b border-neutral-200/70 bg-white/80 px-3 py-2.5 backdrop-blur-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] sm:px-4 dark:border-neutral-800 dark:bg-neutral-900/70"
+            >
+              {articleMode && (
+                <Link
+                  to={articleBackTo}
+                  className={cn(iconButtonClass, "shrink-0")}
+                  aria-label={`Back to ${articleBackLabel}`}
+                >
+                  <ChevronLeft size={20} strokeWidth={1.85} className="relative -left-px" />
+                </Link>
+              )}
               <div className={cn(shellClass, "shrink-0")}>
                 <button
                   onClick={() => setMode("input")}
@@ -2344,6 +2891,7 @@ export const HomeV2_4Page = ({
               <div className="ml-auto flex min-h-[34px] shrink-0 items-center justify-end gap-2">
                 {mode === "digtext" && (
                   <button
+                    ref={expandAllButtonRef}
                     onClick={() => {
                       const h = activePreviewHandle;
                       if (!h) return;
@@ -2353,12 +2901,7 @@ export const HomeV2_4Page = ({
                         h.expandAll();
                       }
                     }}
-                    className={cn(
-                      "inline-flex shrink-0 items-center justify-center border transition-colors",
-                      "h-[34px] w-[34px] rounded-[18px]",
-                      "sm:w-auto sm:gap-1.5 sm:px-3 sm:rounded-[16px]",
-                      "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-                    )}
+                    className={expandAllButtonClass(showExpandAllLabel)}
                     type="button"
                     aria-label={(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
                   >
@@ -2367,7 +2910,7 @@ export const HomeV2_4Page = ({
                     ) : (
                       <ExpandAllIcon />
                     )}
-                    <span className="hidden font-sans text-[14px] leading-none sm:inline">
+                    <span className={cn(expandAllButtonLabelClass, !showExpandAllLabel && "hidden")}>
                       {(activePreviewHandle?.anyExpanded ?? false) ? "Collapse all" : "Expand all"}
                     </span>
                   </button>
@@ -2412,7 +2955,7 @@ export const HomeV2_4Page = ({
                     <Copy size={16} strokeWidth={1.85} />
                   )}
                 </button>
-                {composerFullscreenOpen ? (
+                {!articleMode && (composerFullscreenOpen ? (
                   <button
                     type="button"
                     onClick={() => setComposerFullscreen(false)}
@@ -2430,9 +2973,20 @@ export const HomeV2_4Page = ({
                   >
                     <Maximize2 size={16} strokeWidth={1.75} />
                   </button>
-                )}
+                ))}
               </div>
             </div>
+            {mode === "digtext" && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none fixed left-[-9999px] top-0 opacity-0"
+              >
+                <div ref={expandAllButtonSizerRef} className={expandAllButtonClass(true)}>
+                  <CollapseAllIcon />
+                  <span className={expandAllButtonLabelClass}>Collapse all</span>
+                </div>
+              </div>
+            )}
 
             {/* Content */}
             <div
@@ -2620,15 +3174,14 @@ export const HomeV2_4Page = ({
                         lineDigCollapsedIcon="enter"
                         lineDigIcons={{
                           collapsed: <InlinePreviewDigNewlineIcon />,
-                          expanded: <InlinePreviewDigCloseIcon />,
+                          expanded: <LinePreviewDigCloseIcon />,
                         }}
                         inlineDigCollapsedIcon="plus"
                         inlineDigIcons={{
                           collapsed: <InlinePreviewDigPlusIcon />,
                           expanded: <InlinePreviewDigCloseIcon />,
                         }}
-                        paragraphBreakIds={paragraphBreakIds}
-                        paragraphBreakSpacing="0.5em"
+                        paragraphBreakSpacingById={paragraphBreakSpacingById}
                       />
                     ) : (
                       <div
@@ -2655,7 +3208,10 @@ export const HomeV2_4Page = ({
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 bg-white/60 px-4 py-2.5 font-sans text-[12px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
               <span className="tabular-nums">
-                {wordCount} words · {digSectionCount} dig sections
+                {visibleWords} of {totalWords} words · {visibleMinutes} of {totalMinutes} min
+              </span>
+              <span className="tabular-nums">
+                {digSectionCount} dig {digSectionCount === 1 ? "section" : "sections"}
               </span>
             </div>
           </div>
@@ -2671,7 +3227,7 @@ export const HomeV2_4Page = ({
                   <kbd className={shortcutKeyClass}>Command+Shift+Down</kbd>
                 </span>
               </>
-            ) : (
+            ) : !articleMode ? (
               <button
                 onClick={() => scrollTo("prompt")}
                 className="group inline-flex items-center gap-1.5 font-sans text-sm text-neutral-500 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50"
@@ -2684,11 +3240,13 @@ export const HomeV2_4Page = ({
                   ↓
                 </span>
               </button>
-            )}
+            ) : null}
           </div>
         </div>
       </section>
 
+      {!articleMode && (
+      <>
       {/* ── PROMPT ── */}
       <section
         id="prompt"
@@ -2716,29 +3274,26 @@ export const HomeV2_4Page = ({
           </h2>
 
           <p className="mt-6 mb-10 max-w-xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300">
-            Paste this into your favorite AI with any text you want converted.
-            Or just hand your AI two URLs:{" "}
+          Paste this prompt to format any text as Dig text. You can also paste this URL {" "}
+          <Link
+            to="/prompt.md"
+            className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
+          >
+          digtext.github.io/prompt.md
+          </Link>{" "}
+          before your text. This is still a work in progress, but it works fine right now with Claude Opus 4.7, especially if you run it as two prompts.
+          <span className="block mt-[0.25em]">
+            If you want to build with Dig text, tell your LLM about it by sharing this URL {" "}
             <Link
-              to="/llms"
+              to="/llms.txt"
               className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
             >
-              /llms.txt
+            digtext.github.io/llms.txt
             </Link>{" "}
-            for the format and syntax, and{" "}
-            <Link
-              to="/prompt"
-              className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
-            >
-              /prompt.md
-            </Link>{" "}
-            for this exact prompt. Then drop the output on the{" "}
-            <Link
-              to="/"
-              className="underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-500 hover:text-neutral-900 transition-colors dark:decoration-neutral-600 dark:hover:decoration-neutral-400 dark:hover:text-neutral-50"
-            >
-              dig text homepage
-            </Link>{" "}
-            to read it collapsed-first.
+          </span>
+          
+           
+
           </p>
 
           {/* Prompt box */}
@@ -2782,7 +3337,7 @@ export const HomeV2_4Page = ({
           </div>
 
           <p className="mt-8 font-serif text-sm italic text-neutral-500 dark:text-neutral-400">
-            Then read the text, collapsed first.
+            Then read Dig, collapsed first.
           </p>
         </div>
       </section>
@@ -2811,16 +3366,70 @@ export const HomeV2_4Page = ({
           </h2>
 
           <p className="mt-6 max-w-xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300">
-            I am developing a script which will enable you to embed on any
-            website. If you need it, give me feedback.
+            I am developing a script which will enable you to embed Dig on any
+            website. If you need it, drop me a line.
           </p>
 
           <div className="mt-8">
             <a
-              href="mailto:pawsyshq@gmail.com?subject=Dig%20text%20embed%20feedback"
+              href="#feedback"
+              onClick={(event) => {
+                event.preventDefault();
+                const target = document.getElementById("feedback");
+                if (target) {
+                  target.scrollIntoView({ behavior: "smooth", block: "start" });
+                  window.history.replaceState(null, "", "#feedback");
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-transparent px-5 py-2.5 font-sans text-sm text-neutral-600 transition-all hover:-translate-y-px hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
+            >
+              Coming soon — let me know you want it
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEEDBACK ── */}
+      <section
+        id="feedback"
+        className="relative border-t border-neutral-200/70 scroll-mt-[65px] dark:border-neutral-800/80"
+      >
+        <div className="mx-auto max-w-[59rem] px-6 py-20">
+          <span className={eyebrowClass}>
+            <span aria-hidden="true" className={eyebrowRuleClass} />
+            Still a work in progress
+          </span>
+
+          <h2
+            className="mt-4 tracking-tight text-[clamp(1.9rem,4.6vw,2.8rem)] leading-[1.05]"
+            style={{
+              fontFamily: "'IBM Plex Serif', Georgia, serif",
+              textWrap: "balance",
+            }}
+          >
+            Feedback
+          </h2>
+
+          <p className="mt-6 max-w-xl font-serif text-[1.08rem] leading-[1.65] text-neutral-600 dark:text-neutral-300">
+            Dig Text is early. Rough edges? Ideas? I would love to hear from you.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href="mailto:pawsyshq@gmail.com?subject=Dig%20Text%20feedback"
               className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white shadow-[0_1px_0_rgba(255,255,255,.08)_inset,0_6px_20px_-8px_rgba(15,23,42,.4)] transition-all hover:-translate-y-px hover:bg-neutral-700 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              Send feedback
+              <Mail className="h-4 w-4" />
+              Drop me a line
+            </a>
+            <a
+              href="https://github.com/digtext/digtext.github.io/issues/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-transparent px-5 py-2.5 font-sans text-sm text-neutral-700 transition-all hover:-translate-y-px hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
+            >
+              <Github className="h-4 w-4" />
+              Report an issue
             </a>
           </div>
         </div>
@@ -2829,8 +3438,31 @@ export const HomeV2_4Page = ({
       {/* ── FOOTER ── */}
       <footer className="border-t border-neutral-200/70 dark:border-neutral-800/80">
         <div className="mx-auto max-w-[59rem] px-6 py-12 flex flex-col gap-3 font-sans text-[12px] text-neutral-500 sm:flex-row sm:items-center sm:justify-between dark:text-neutral-400">
-          <span>Dig text: read the shortest version first.</span>
+          <span className="inline-flex items-center gap-1">
+            <CirclePlus className="h-3 w-3" aria-hidden="true" />
+            Dig Text
+            <span aria-hidden="true">:</span>
+            read the shortest version first
+          </span>
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <a
+              href="https://github.com/digtext/digtext.github.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
+            >
+              <Github className="h-3 w-3" aria-hidden="true" />
+              
+            </a>
+            <span aria-hidden="true">·</span>
+            <Link
+              to="/p"
+              aria-label="Archived pages"
+              className="inline-flex items-center transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
+            >
+              <Archive className="h-3 w-3" aria-hidden="true" />
+            </Link>
+            <span aria-hidden="true">·</span>
             <span className="tabular-nums">2026</span>
             <span aria-hidden="true">·</span>
             <a
@@ -2849,22 +3481,37 @@ export const HomeV2_4Page = ({
           </span>
         </div>
       </footer>
+      </>
+      )}
     </div>
   );
 };
 
 interface HomeV3_3_PolishedFullscreenProps {
   digSourceUrl?: string;
+  articleMode?: boolean;
+  articleInitialText?: string;
+  articleBackTo?: string;
+  articleBackLabel?: string;
 }
 
 const HomeV3_3_PolishedFullscreen = ({
   digSourceUrl = DIG_SOURCE_URL,
+  articleMode,
+  articleInitialText,
+  articleBackTo,
+  articleBackLabel,
 }: HomeV3_3_PolishedFullscreenProps) => (
   <HomeV2_4Page
     inputMode="textarea"
     digSourceUrl={digSourceUrl}
     heroFontClassName="font-sans"
+    articleMode={articleMode}
+    articleInitialText={articleInitialText}
+    articleBackTo={articleBackTo}
+    articleBackLabel={articleBackLabel}
   />
 );
 
 export default HomeV3_3_PolishedFullscreen;
+

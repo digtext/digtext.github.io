@@ -36,6 +36,17 @@ const groups: Group[] = [
     ],
   },
   {
+    title: "Article",
+    versions: [
+      { label: "Article v1 (markdown tabs)", to: "/p/article-v1" },
+      {
+        label: "Article v2 (shared composer/reader)",
+        to: "/p/article-v2",
+        live: true,
+      },
+    ],
+  },
+  {
     title: "About (deprecated)",
     versions: [
       { label: "About v1", to: "/p/about-v1" },

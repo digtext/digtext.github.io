@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import About from "./pages/About.tsx";
 import ArticlePage from "./pages/ArticlePage.tsx";
+import ArticleV1 from "./pages/ArticleV1.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import P from "./pages/P.tsx";
 import Reader from "./pages/Reader.tsx";
@@ -51,6 +52,10 @@ const App = () => (
             <Route path="/library" element={<Library />} />
             <Route path="/articles" element={<Navigate to="/library" replace />} />
             <Route path="/article/:articleId" element={<ArticlePage />} />
+            <Route path="/p/article-v1/:articleId" element={<ArticleV1 />} />
+            <Route path="/p/article-v1" element={<ArticleV1 />} />
+            <Route path="/p/article-v2/:articleId" element={<ArticlePage />} />
+            <Route path="/p/article-v2" element={<ArticlePage />} />
             <Route path="/reader" element={<Reader />} />
             <Route path="/prompt" element={<PromptPage />} />
             <Route path="/llms" element={<LlmsTxtPage />} />
