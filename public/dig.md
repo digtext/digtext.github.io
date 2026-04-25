@@ -19,10 +19,10 @@
 
 - Use our prompt to convert any text into Dig text with AI.
     - Find it below or just include it in your prompt by pasting this url [digtext.github.io/prompt.md](http://digtext.github.io/prompt.md) before the text. If you want to build with Dig text, tell your AI about it by sharing this URL [digtext.github.io/llms.txt](http://digtext.github.io/llms.txt)
-- Read or write dig text with this reader. Click the full-screen icon to do it without distractions.
+- Read or write dig text in this window, or go to [/reader](https://digtext.github.io/reader) for a blank page.
 - There are also a lot of cool, more advanced features you can learn about here
     - Hit the bulleted list icon to see text stacked vertically. / 
     - If you want to write an inline dig use double parenthesis `((text))`.
-- Dig text is open source and its dream is to be included in major Markdown syntax. Here is how this can work. 
-    - Any list between `:::dig` and `:::` tags creates a preview with [+] icons to dig into more.
+- Dig text's dream is to be included Markdown. Here is how this can work. 
+    - Any list between these tags `:::dig` `:::` tags creates a preview with [+] dig icons.
 - I’d love your [feedback](#feedback).
