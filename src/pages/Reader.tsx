@@ -4,8 +4,10 @@ const Reader = () => (
   <HomeV3_3_PolishedFullscreen
     articleMode
     articleInitialText=""
+    articleInitialMode="input"
     articleBackTo="/"
     articleBackLabel="Home"
+    hideSiteHeader
     hideFullscreenToggle
   />
 );

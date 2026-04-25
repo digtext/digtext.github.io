@@ -22,8 +22,11 @@ const ArticlePage = () => {
     <HomeV3_3_PolishedFullscreen
       articleMode
       articleInitialText={article.content}
+      articleInitialMode="input"
       articleBackTo="/library"
       articleBackLabel="Library"
+      hideSiteHeader
+      hideFullscreenToggle
     />
   );
 };

@@ -1643,6 +1643,7 @@ interface HomeV2_4PageProps {
   // `articleInitialText`.
   articleMode?: boolean;
   articleInitialText?: string;
+  articleInitialMode?: "digtext" | "input";
   articleBackTo?: string;
   articleBackLabel?: string;
   hideSiteHeader?: boolean;
@@ -1659,6 +1660,7 @@ export const HomeV2_4Page = ({
   topHeroHeadingStyle = {},
   articleMode = false,
   articleInitialText,
+  articleInitialMode = "digtext",
   articleBackTo = "/library",
   articleBackLabel = "Library",
   hideSiteHeader = false,
@@ -1669,7 +1671,7 @@ export const HomeV2_4Page = ({
   const [composerCopied, setComposerCopied] = useState(false);
   const [promptText, setPromptText] = useState<string | null>(null);
   const [mode, setMode] = useState<"digtext" | "input">(() =>
-    articleMode ? "digtext" : (getStoredComposerMode() as "digtext" | "input"),
+    articleMode ? articleInitialMode : (getStoredComposerMode() as "digtext" | "input"),
   );
   const [previewLayout, setPreviewLayout] = useState<PreviewLayout>(
     () => getStoredPreviewLayout(),
@@ -2867,7 +2869,9 @@ export const HomeV2_4Page = ({
               className={cn(
                 "fixed overflow-hidden bg-white dark:bg-neutral-950",
                 articleMode
-                  ? "left-0 right-0 bottom-0 top-[68px] z-10"
+                  ? hideSiteHeader
+                    ? "inset-0 z-10"
+                    : "left-0 right-0 bottom-0 top-[68px] z-10"
                   : "inset-0 z-40",
               )}
             >
@@ -2887,8 +2891,10 @@ export const HomeV2_4Page = ({
               !composerFullscreenOpen && "-mx-5 sm:mx-0",
               composerFullscreenOpen && !articleMode &&
                 "fixed inset-0 z-50 mt-0 flex h-dvh flex-col rounded-none border-0 md:inset-y-4 md:left-1/2 md:right-auto md:h-[calc(100dvh-2rem)] md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
-              composerFullscreenOpen && articleMode &&
+              composerFullscreenOpen && articleMode && !hideSiteHeader &&
                 "fixed left-0 right-0 bottom-0 top-[68px] z-20 mt-0 flex flex-col rounded-none border-0 md:top-[calc(68px+1rem)] md:bottom-4 md:left-1/2 md:right-auto md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
+              composerFullscreenOpen && articleMode && hideSiteHeader &&
+                "fixed inset-0 z-20 mt-0 flex h-dvh flex-col rounded-none border-0 md:inset-y-4 md:left-1/2 md:right-auto md:h-[calc(100dvh-2rem)] md:w-[calc(100%-3rem)] md:max-w-4xl md:-translate-x-1/2 md:rounded-2xl md:border",
               readerWindowShadowClass,
             )}
             style={{ viewTransitionName: "reader-shell" }}
@@ -3546,6 +3552,7 @@ interface HomeV3_3_PolishedFullscreenProps {
   digSourceUrl?: string;
   articleMode?: boolean;
   articleInitialText?: string;
+  articleInitialMode?: "digtext" | "input";
   articleBackTo?: string;
   articleBackLabel?: string;
   hideSiteHeader?: boolean;
@@ -3556,6 +3563,7 @@ const HomeV3_3_PolishedFullscreen = ({
   digSourceUrl = DIG_SOURCE_URL,
   articleMode,
   articleInitialText,
+  articleInitialMode,
   articleBackTo,
   articleBackLabel,
   hideSiteHeader,
@@ -3567,6 +3575,7 @@ const HomeV3_3_PolishedFullscreen = ({
     heroFontClassName="font-sans"
     articleMode={articleMode}
     articleInitialText={articleInitialText}
+    articleInitialMode={articleInitialMode}
     articleBackTo={articleBackTo}
     articleBackLabel={articleBackLabel}
     hideSiteHeader={hideSiteHeader}
