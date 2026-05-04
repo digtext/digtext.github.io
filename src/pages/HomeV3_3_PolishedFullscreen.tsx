@@ -3477,7 +3477,7 @@ export const HomeV2_4Page = ({
 
           <div className="mt-8 flex flex-wrap gap-3">
             <a
-              href="mailto:pawsyshq@gmail.com?subject=Dig%20Text%20feedback"
+              href="mailto:pawsys@gmail.com?subject=Dig%20Text%20feedback"
               className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-5 py-2.5 font-sans text-sm text-white shadow-[0_1px_0_rgba(255,255,255,.08)_inset,0_6px_20px_-8px_rgba(15,23,42,.4)] transition-all hover:-translate-y-px hover:bg-neutral-700 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               <Mail className="h-4 w-4" />
