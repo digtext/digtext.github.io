@@ -35,6 +35,7 @@ import HomeV3_2_AwesomeClosings from "./pages/HomeV3_2_AwesomeClosings.tsx";
 import HomeV3_3_PolishedFullscreen from "./pages/HomeV3_3_PolishedFullscreen.tsx";
 import PromptPage from "./pages/PromptPage.tsx";
 import LlmsTxtPage from "./pages/LlmsTxtPage.tsx";
+import TermsPage from "./pages/TermsPage.tsx";
 import ArticlesV1 from "./pages/ArticlesV1.tsx";
 import Library from "./pages/ArticlesV2.tsx";
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/reader" element={<Reader />} />
             <Route path="/prompt" element={<PromptPage />} />
             <Route path="/llms" element={<LlmsTxtPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/p" element={<P />} />
             <Route path="/p/home-v1" element={<HomeV1 />} />
             <Route path="/p/home-v2" element={<HomeV2 />} />

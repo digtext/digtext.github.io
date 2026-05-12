@@ -3524,6 +3524,13 @@ export const HomeV2_4Page = ({
               <Archive className="h-3 w-3" aria-hidden="true" />
             </Link>
             <span aria-hidden="true">·</span>
+            <Link
+              to="/terms"
+              className="transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
+            >
+              Terms
+            </Link>
+            <span aria-hidden="true">·</span>
             <span className="tabular-nums">2026</span>
             <span aria-hidden="true">·</span>
             <a
